@@ -1,4 +1,4 @@
-# arb-bot-ingestion
+# Polygon Blockchain (137) Indexer
 
 Envio HyperIndex pipeline that indexes DEX pool creation events on Polygon. Feeds pool discovery metadata to an arbitrage bot via Hasura GraphQL.
 
