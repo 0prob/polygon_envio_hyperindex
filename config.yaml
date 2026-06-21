@@ -1,0 +1,251 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: arb_bot_ingestion
+description: "High-performance DEX indexing for arbitrage opportunities (Polygon-optimized)"
+ecosystem: evm
+
+# Address format: lowercase makes all surfaced addresses (event.srcAddress, transaction.from/to,
+# entity ids, dynamically registered contract addresses, etc.) consistently lowercase.
+# This greatly reduces the need for manual .toLowerCase() calls in handlers.
+# See https://docs.envio.dev/docs/HyperIndex/configuration-file#address-format
+address_format: lowercase
+
+# Keep reorg support enabled in production for safety.
+# HyperIndex handles rollbacks automatically when enabled.
+rollback_on_reorg: true
+raw_events: true
+
+# === HYPERINDEX CONFIG ===
+# Run with root `bun run dev` (preferred wrapper with auto codegen/env) or `cd hyperindex && bun run dev` or `envio start`.
+#
+# This indexer serves as a lightweight live discovery feed for the arb bot:
+#   → fast startup
+#   → minimal historical backfill
+#
+# Historical backfill (processing 50M+ events from 2021) is still gated by:
+#   → effect loaders on first-seen pools
+#   → batch size (now 4500 for 200 rpm)
+#
+# === Backfill / Live performance debugging (Pipeline Split) ===
+# Envio "Pipeline split" (visible in envio dev / metrics) shows time distribution:
+#   Loaders | Handlers | DB Writes
+#
+# Ideal for a live debug indexer: Loaders + Handlers dominate, DB Writes near zero.
+#   - Only creation-time metadata writes (factory/registry events + V4 Initialize + DODO factory handlers).
+#   - *PoolState entities are not written at discovery (bot owns hot state via RPC).
+#   - DB Writes → minimal (pool discovery metadata only)
+#   - Loaders → token metadata effects on first-seen pools (dominated by STATIC_TOKEN_DECIMALS hit rate)
+#   - Handlers → tiny (mostly contractRegister + PoolMeta/TokenMeta sets on creation)
+#
+# The arb bot tolerates this because:
+#   - Primary live state source is its own RPC fetcher (fetchMissingPoolState).
+#   - Pool discovery (new PairCreated/PoolCreated/...) flows through Hasura → bot.
+#
+# To observe real-time:
+#   - Run `bun run dev` (or the bot) and watch envio stdout for "events", "processed", block arrows.
+#   - The bot's HyperIndexMonitor logs blk/s every ~30s (proxy for overall throughput).
+#   - For raw eps + pipeline split, use `envio dev` TUI/metrics or grep logs.
+
+# Polygon optimization: 3000-8000 range for Polygon (very high log volume from 1000s of DEX pools).
+# This is one of the most important config knobs for "events per second" during historical backfill.
+#
+# Dynamic batch sizing based on quota tier - uses environment variable for runtime flexibility
+# Paid 200 rpm plan: 4000-4500, Free tier: 1000-1800
+# Enhanced to read from ENVIO_ prefixed variable first
+full_batch_size: ${ENVIO_FULL_BATCH_SIZE:-6000} # Dynamic based on quota via env var. See pacing.ts for recommended values.
+
+# HyperSync is the recommended high-performance data source (2000x faster than RPC).
+# Token is passed via ENVIO_API_TOKEN (required for production use per 2026 docs).
+#
+# Effects (token metadata, Balancer/Curve/DODO reads) use a centralized batched RPC client with fallback.
+# The host process probes + filters for archival support and prefers endpoints from POLYGON_RPC_URLS
+# (set in root .env) before falling back to free public RPCs (after removing any that fail historical calls).
+# Set POLYGON_RPC_URLS (comma-separated) in your .env for custom/paid providers with archive.
+
+# === Global Contract Definitions (recommended V3 pattern) ===
+# Contracts are defined once here (name + ABI + events).
+# Per-chain entries only supply addresses + start_block overrides.
+# This follows https://docs.envio.dev/docs/HyperIndex/configuration-file#contracts-definition
+contracts:
+  # V2 Factories
+  - name: V2Factory
+    abi_file_path: abis/uniswap_v2_factory.json
+    events:
+      - event: PairCreated
+
+  # V3 Factories (Uniswap V3 / Sushi V3 / Kyber Elastic — PoolCreated)
+  - name: V3Factory
+    abi_file_path: abis/uniswap_v3_factory.json
+    events:
+      - event: PoolCreated
+
+  # Algebra factories (QuickSwap V3 on Polygon — Pool, not PoolCreated)
+  - name: AlgebraFactory
+    abi_file_path: abis/algebra_factory.json
+    events:
+      - event: Pool
+
+  # Curve
+  - name: CurveRegistry
+    abi_file_path: abis/curve_factory.json
+    events:
+      - event: PoolAdded
+      - event: PoolAdded(address,bytes)
+      - event: PoolAdded(address,uint256,bool)
+
+  # Uniswap V4
+
+  - name: PoolManager
+    abi_file_path: abis/uniswap_v4_pool_manager.json
+    events:
+      - event: Initialize
+
+  # Balancer V2
+  - name: BalancerVault
+    abi_file_path: abis/balancer_vault.json
+    events:
+      - event: PoolRegistered
+      - event: TokensRegistered
+
+  # DODO V2
+  - name: DodoFactory
+    abi_file_path: abis/dodo_factory.json
+    events:
+      - event: NewDVM
+      - event: NewDPP
+      - event: NewDSP
+
+  # WOOFi
+  - name: WooPPV2
+    abi_file_path: abis/woofi_pool.json
+    events:
+      - event: WooSwap
+
+# === Chains ===
+chains:
+  - id: 137
+    # OPTIMIZATION (Point 1): Exact start_block per chain/contract.
+    # Avoid start_block: 0 when deployment blocks are known — it wastes processing on irrelevant history.
+    # Global default here is conservative (env override or ~Quickswap-era 5.48M). Per-contract overrides
+    # below are precise to each protocol's deployment and take precedence.
+    # Recommended: set ENVIO_POLYGON_START_BLOCK in .env to a realistic recent value if doing partial re-syncs.
+    # LIVE-DEBUG DEFAULT: recent block for fast tail on free/low-tier tokens. Override in .env for full history (paid token recommended).
+    start_block: ${ENVIO_POLYGON_START_BLOCK:-5024576}
+    # RPC configuration: DISABLED (HyperSync-only mode)
+    #
+    # RPC fallback is intentionally removed because:
+    #   1. When at chain head (live tail), HyperSync waits >20s for new blocks then
+    #      triggers RPC fallback.
+    #   2. Our config has multiple wildcard contracts (UniswapV2Pool, UniswapV3Pool,
+    #      CurvePool, DodoPool, BalancerVault, V4PoolManager) which trigger:
+    #        "RPC data-source currently supports event filters only when there's a
+    #         single wildcard event."
+    #   3. That error causes a fatal process exit in the HyperSync→RPC→HyperSync cycle.
+    #
+    # To re-enable later (e.g. for historical re-sync resilience), uncomment below
+    # and limit to non-wildcard contracts only.
+    #
+    # rpc:
+    #   - url: ENVIO_POLYGON_RPC_URL   # set in hyperindex/.env (envio scans comments for dollar-brace placeholders)
+    #     for: fallback
+    #     initial_block_interval: 2000
+    #     backoff_multiplicative: 0.8
+    #     acceleration_additive: 500
+    #     interval_ceiling: 5000
+    #     backoff_millis: 3000
+    #     query_timeout_millis: 15000
+
+    # Max reorg depth for Polygon. Docs recommend 150 for Polygon, 250 for Ethereum.
+    # We use 200 (the global default) which is conservative but safe.
+    # HyperIndex rolls back all entity state automatically when a reorg is detected.
+    # Side effects in handler code (external calls, logs) are NOT rolled back.
+    max_reorg_depth: 200
+
+    # === Envio/HyperSync Optimizations (see user best-practices) ===
+    # Point 2: All contracts use tight event whitelists (never empty/generic). HyperSync drops
+    #          unneeded payloads before they reach the indexer → major historical sync speedup.
+    # Point 4: Preload optimization is enabled by default in Envio v3 (batched entity pre-fetch alongside
+    #          event processing). No explicit flag required; visible in metrics as "envio_preload_*".
+    # Point 3: Per-pool dynamic registration was removed (contractRegister + Sync/Swap subscriptions
+    #          wasted HyperSync budget). Discovery uses factory/registry onEvent handlers only.
+    #          JS guards (shouldSkipFactoryPool) + onBlock `where` strides reject garbage early.
+    # Point 5: JoinMode (JoinNothing) applies to direct @envio-dev/hypersync-client log queries
+    #          with complex field selection. Our usage is either (a) the managed HyperIndex pipeline or
+    #          (b) simple block queries + post-index Hasura GraphQL against the DB (no joins needed).
+    hypersync_config:
+      url: ${ENVIO_POLYGON_HYPERSYNC_URL:-https://polygon.hypersync.xyz}
+      # api_token can also be set here, but ENVIO_API_TOKEN env var is the standard approach.
+    contracts:
+      # V2 Factories — per-address start_block (Polygonscan deployment blocks in constants.ts).
+      # ENVIO_POLYGON_START_BLOCK overrides all entries for live-tail / partial re-sync.
+      - name: V2Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-4931780}
+        address: "0x5757371414417b8c6caad45baef941abc7d3ab32" # Quickswap
+      - name: V2Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-11333218}
+        address: "0xc35dadb65012ec5796536bd9864ed8773abc74c4" # Sushi
+      - name: V2Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-49948178}
+        address: "0x9e5a52f57b3038f1b8eee45f28b3c1967e22799c" # Uniswap
+      - name: V2Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-5436831}
+        address: "0xe7fb3e833efe5f9c441105eb65ef8b261266423b" # Dfyn
+      - name: V2Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-15298801}
+        address: "0xcf083be4164828f00cae704ec15a36d711491284" # Apeswap
+      - name: V2Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-27827673}
+        address: "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d" # Meshswap
+      - name: V2Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-16569374}
+        address: "0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7" # Jetswap
+      - name: V2Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-11633169}
+        address: "0x800b052609c355ca8103e06f022aa30647ead60a" # Cometh
+
+      # V3 Factories — per-address start_block (Polygonscan deployment / first PoolCreated).
+      # ENVIO_POLYGON_START_BLOCK overrides all entries for live-tail / partial re-sync.
+      - name: V3Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-22757547}
+        address: "0x1f98431c8ad98523631ae4a59f267346ea31f984" # Uniswap
+      - name: V3Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-44059924}
+        address: "0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e2" # Sushi
+      - name: V3Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-29350287}
+        address: "0x5f1dddbf348ac2fbe22a163e30f99f9ece3dd50a" # Kyber Elastic
+      - name: V3Factory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-82177772}
+        address: "0x2bef16a0081565e72100d73cbe19b1bd2d802380" # Ramses V3 CL
+
+      # Algebra (QuickSwap V3)
+      - name: AlgebraFactory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-34502463}
+        address: "0x411b0facc3489691f28ad58c47006af5e3ab3a28"
+
+      # Curve
+      - name: CurveRegistry
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-58597033}
+        address: "0x296d2b5c23833a70d07c8fcbb97d846c1ff90ddd" # registry + MetaRegistry (AddressProvider id=7)
+
+      # Uniswap V4
+      - name: PoolManager
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-67082470}
+        address: "0x67366782805870060151383f4bbff9dab53e5cd6"
+
+      # Balancer V2
+      - name: BalancerVault
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-15832990}
+        address: "0xba12222222228d8ba445958a75a0704d566bf2c8"
+
+      # DODO V2
+      - name: DodoFactory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-14722979}
+        address:
+          - "0x79887f65f83bdf15bcc8736b5e5bcdb48fb8fe13" # DVM
+          - "0xd24153244066f0afa9415563bfc7ba248bfb7a51" # DPP
+          - "0x43c49f8dd240e1545f147211ec9f917376ac1e87" # DSP
+
+      # WOOFi
+      - name: WooPPV2
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-30000000}
+        address: "0x5520385bfcf07ec87c4c53a7d8d65595dff69fa4"

@@ -1,0 +1,88 @@
+# HyperIndex schema for Polygon DEX arbitrage bot data ingestion.
+# See https://docs.envio.dev/docs/HyperIndex/schema for full reference.
+# Key patterns applied:
+# - Protocol enum for type-safe predefined values (instead of free String).
+# - @index on high-cardinality / filter fields (addresses, blocks, protocol).
+# - @config(precision) on all BigInt / [BigInt] for large on-chain numerics (256-bit scale).
+# - Explicit docs + clear camelCase names.
+# - Flat/denormalized design (no @derivedFrom relations) optimized for the bot's
+#   bulk GraphQL loads + in-memory pipeline (see hyperindex_graphql.ts + pass_loop).
+# - ID! on all entities (addresses or natural keys, lowercased for consistency).
+#
+# After edits: codegen is now auto-run by the HyperIndex process wrapper (in bot or via root `bun run dev`) if schema/config mtime > generated types. Explicit: `cd hyperindex && bun run codegen` (or `bunx envio codegen`).
+
+"""
+Protocol variants for DEX pools indexed by the arbitrage bot.
+Stored as GraphQL enum (and PG enum) for type safety in handlers + queries
+(per https://docs.envio.dev/docs/HyperIndex/schema#enum-types).
+Enum member names become the stored values.
+"""
+enum Protocol {
+  UNISWAP_V2
+  SUSHISWAP_V2
+  QUICKSWAP_V2
+  DFYN_V2
+  APESWAP_V2
+  MESHSWAP_V2
+  JETSWAP_V2
+  COMETHSWAP_V2
+  UNISWAP_V3
+  SUSHISWAP_V3
+  QUICKSWAP_V3
+  KYBERSWAP_ELASTIC
+  RAMSES_V3
+  CURVE
+  BALANCER_V2
+  DODO_V2
+  UNISWAP_V4
+  WOOFI
+  UNKNOWN_V2
+  UNKNOWN_V3
+}
+
+"""
+Lightweight metadata for a discovered pool (from factory events).
+Primary source for bot's discoverPoolsFromHasura + graph construction.
+tokens stored as denormalized [String!] (addresses) for fast bulk loads;
+decimals joined via separate TokenMeta or static registry.
+No @derivedFrom relations (keeps queries simple/N+1-free for bot's full-table
+in-memory pipeline pattern).
+Enhanced with composite indexing for better query performance.
+"""
+type PoolMeta @index(fields: ["protocol", "createdBlock"]) {
+  id: ID!
+  address: String! @index
+  protocol: Protocol! @index
+  tokens: [String!]!
+  fee: Int
+  tickSpacing: Int
+  createdBlock: Int! @index
+  poolId: String @index # Balancer internal poolId; Uniswap V4 bytes32 pool key
+  hooks: String # Uniswap V4 hooks contract (zero address when none)
+  poolType: String # e.g. weighted | stable | crypto
+}
+
+"""
+ERC20 decimals cache (populated via Effect API + STATIC_TOKEN_DECIMALS registry
+on first-seen tokens during factory events like PairCreated/PoolCreated).
+Heavily used + indexed for the bot's math and the handlers' preload/effects.
+"""
+type TokenMeta {
+  id: ID!
+  address: String! @index
+  decimals: Int
+}
+
+"""
+Indexer-level progress signal written by a block handler (see progress.ts:
+dual onBlock registration with different historical/realtime `where` strides
+and `context.isPreload` guard — follows Envio block-handlers docs).
+Gives a reliable, queryable view of the last block for which handlers executed.
+Complements log-scraped progress from the Envio process + used by bot for lag monitoring.
+"""
+type IndexerProgress {
+  id: ID! # chain id as string (e.g. "137")
+  chainId: Int!
+  lastProcessedBlock: Int!
+  updatedAtBlock: Int!
+}

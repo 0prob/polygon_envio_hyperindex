@@ -1,0 +1,129 @@
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  PUBLIC_FALLBACK_RPC_URLS,
+  buildPublicClient,
+  getRpcTransportTuning,
+  getRpcUrls,
+  parseRpcUrlList,
+  redactRpcUrl,
+  resetPublicClientForTest,
+} from "./rpc_client";
+
+const ENV_SNAPSHOT: Record<string, string | undefined> = {};
+
+function snapshotEnv(keys: readonly string[]): void {
+  for (const key of keys) {
+    ENV_SNAPSHOT[key] = process.env[key];
+  }
+}
+
+function restoreEnv(keys: readonly string[]): void {
+  for (const key of keys) {
+    const value = ENV_SNAPSHOT[key];
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+}
+
+const RPC_ENV_KEYS = [
+  "ENVIO_POLYGON_RPC_URLS",
+  "ENVIO_POLYGON_RPC_URL",
+  "POLYGON_RPC_URLS",
+  "POLYGON_RPC_URL",
+  "POLYGON_RPC",
+  "HYPERSYNC_RPM_TARGET",
+  "ENVIO_HYPERSYNC_RPM_TARGET",
+  "VITEST",
+] as const;
+
+describe("parseRpcUrlList", () => {
+  it("splits comma-separated URLs and trims whitespace", () => {
+    expect(parseRpcUrlList("https://a.com, https://b.com ; https://c.com")).toEqual([
+      "https://a.com",
+      "https://b.com",
+      "https://c.com",
+    ]);
+  });
+
+  it("deduplicates URLs preserving first occurrence order", () => {
+    expect(parseRpcUrlList("https://a.com,https://a.com,https://b.com")).toEqual([
+      "https://a.com",
+      "https://b.com",
+    ]);
+  });
+});
+
+describe("redactRpcUrl", () => {
+  it("redacts Alchemy-style path keys", () => {
+    expect(redactRpcUrl("https://polygon-mainnet.g.alchemy.com/v2/secret-key-12345")).toBe(
+      "https://polygon-mainnet.g.alchemy.com/v2/***",
+    );
+  });
+
+  it("redacts query-string API keys", () => {
+    expect(redactRpcUrl("https://rpc.example.com?apiKey=supersecret")).toBe(
+      "https://rpc.example.com/?apiKey=***",
+    );
+  });
+});
+
+describe("getRpcUrls", () => {
+  beforeEach(() => {
+    snapshotEnv(RPC_ENV_KEYS);
+    resetPublicClientForTest();
+    for (const key of RPC_ENV_KEYS) delete process.env[key];
+    process.env.VITEST = "true";
+  });
+
+  afterEach(() => {
+    restoreEnv(RPC_ENV_KEYS);
+    resetPublicClientForTest();
+  });
+
+  it("prefers ENVIO_POLYGON_RPC_URLS over POLYGON_RPC_URLS", () => {
+    process.env.POLYGON_RPC_URLS = "https://polygon.example/a";
+    process.env.ENVIO_POLYGON_RPC_URLS = "https://envio.example/b";
+    expect(getRpcUrls()).toEqual(["https://envio.example/b"]);
+  });
+
+  it("accepts POLYGON_RPC alias", () => {
+    process.env.POLYGON_RPC = "https://alias.example/rpc";
+    expect(getRpcUrls()).toEqual(["https://alias.example/rpc"]);
+  });
+
+  it("falls back to public endpoints when unset", () => {
+    expect(getRpcUrls()).toEqual([...PUBLIC_FALLBACK_RPC_URLS]);
+  });
+});
+
+describe("getRpcTransportTuning", () => {
+  it("uses larger multicall batches on high rpm but smaller HTTP batches to limit queue stalls", () => {
+    const high = getRpcTransportTuning(200);
+    const mid = getRpcTransportTuning(160);
+    const low = getRpcTransportTuning(100);
+    expect(high.multicallBatchSize).toBeGreaterThan(low.multicallBatchSize);
+    expect(high.httpBatchSize).toBe(8);
+    expect(mid.httpBatchSize).toBeGreaterThan(high.httpBatchSize);
+  });
+});
+
+describe("buildPublicClient", () => {
+  beforeEach(() => {
+    snapshotEnv(RPC_ENV_KEYS);
+    resetPublicClientForTest();
+    for (const key of RPC_ENV_KEYS) delete process.env[key];
+    process.env.VITEST = "true";
+    process.env.POLYGON_RPC_URL = "https://polygon-mainnet.g.alchemy.com/v2/test-key";
+  });
+
+  afterEach(() => {
+    restoreEnv(RPC_ENV_KEYS);
+    resetPublicClientForTest();
+  });
+
+  it("returns a viem public client with readContract", () => {
+    const client = buildPublicClient();
+    expect(typeof client.readContract).toBe("function");
+    expect(client.chain?.id).toBe(137);
+  });
+});

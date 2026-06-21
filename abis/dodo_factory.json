@@ -1,0 +1,35 @@
+[
+  {
+    "name": "NewDVM",
+    "type": "event",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "name": "baseToken", "type": "address" },
+      { "indexed": false, "name": "quoteToken", "type": "address" },
+      { "indexed": false, "name": "creator", "type": "address" },
+      { "indexed": false, "name": "dvm", "type": "address" }
+    ]
+  },
+  {
+    "name": "NewDPP",
+    "type": "event",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "name": "baseToken", "type": "address" },
+      { "indexed": false, "name": "quoteToken", "type": "address" },
+      { "indexed": false, "name": "creator", "type": "address" },
+      { "indexed": false, "name": "dpp", "type": "address" }
+    ]
+  },
+  {
+    "name": "NewDSP",
+    "type": "event",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "name": "baseToken", "type": "address" },
+      { "indexed": false, "name": "quoteToken", "type": "address" },
+      { "indexed": false, "name": "creator", "type": "address" },
+      { "indexed": false, "name": "dsp", "type": "address" }
+    ]
+  }
+]

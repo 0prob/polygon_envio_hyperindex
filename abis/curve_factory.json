@@ -1,0 +1,27 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [{ "indexed": true, "internalType": "address", "name": "pool", "type": "address" }],
+    "name": "PoolAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "pool", "type": "address" },
+      { "indexed": false, "internalType": "bytes", "name": "rate_method_id", "type": "bytes" }
+    ],
+    "name": "PoolAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "pool", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "n_coins", "type": "uint256" },
+      { "indexed": false, "internalType": "bool", "name": "has_initial_A", "type": "bool" }
+    ],
+    "name": "PoolAdded",
+    "type": "event"
+  }
+]

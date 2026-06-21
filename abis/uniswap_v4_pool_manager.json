@@ -1,0 +1,83 @@
+[
+  {
+    "type": "event",
+    "name": "Initialize",
+    "inputs": [
+      { "name": "id", "type": "bytes32", "indexed": true },
+      { "name": "currency0", "type": "address", "indexed": true },
+      { "name": "currency1", "type": "address", "indexed": true },
+      { "name": "fee", "type": "uint24" },
+      { "name": "tickSpacing", "type": "int24" },
+      { "name": "hooks", "type": "address" },
+      { "name": "sqrtPriceX96", "type": "uint160" },
+      { "name": "tick", "type": "int24" }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Swap",
+    "inputs": [
+      { "name": "id", "type": "bytes32", "indexed": true },
+      { "name": "sender", "type": "address", "indexed": true },
+      { "name": "amount0", "type": "int128" },
+      { "name": "amount1", "type": "int128" },
+      { "name": "sqrtPriceX96", "type": "uint160" },
+      { "name": "liquidity", "type": "uint128" },
+      { "name": "tick", "type": "int24" },
+      { "name": "fee", "type": "uint24" }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "function",
+    "name": "lock",
+    "inputs": [{ "name": "data", "type": "bytes" }],
+    "outputs": [{ "name": "result", "type": "bytes" }],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "swap",
+    "inputs": [
+      {
+        "name": "key",
+        "type": "tuple",
+        "components": [
+          { "name": "currency0", "type": "address" },
+          { "name": "currency1", "type": "address" },
+          { "name": "fee", "type": "uint24" },
+          { "name": "tickSpacing", "type": "int24" },
+          { "name": "hooks", "type": "address" }
+        ]
+      },
+      { "name": "zeroForOne", "type": "bool" },
+      { "name": "amountSpecified", "type": "int128" },
+      { "name": "sqrtPriceLimitX96", "type": "uint160" },
+      { "name": "hookData", "type": "bytes" }
+    ],
+    "outputs": [
+      { "name": "delta0", "type": "int256" },
+      { "name": "delta1", "type": "int256" }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "settle",
+    "inputs": [{ "name": "currency", "type": "address" }],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "take",
+    "inputs": [
+      { "name": "currency", "type": "address" },
+      { "name": "to", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  }
+]
