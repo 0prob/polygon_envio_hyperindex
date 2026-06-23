@@ -13,3 +13,17 @@ declare namespace NodeJS {
     VITEST?: string;
   }
 }
+
+// Bun runtime adds `import.meta.dir` — not in standard TypeScript lib.
+interface ImportMeta {
+  dir: string | undefined;
+}
+
+// Bun built-in sqlite module (loaded via dynamic import for Bun-only path).
+declare module "bun:sqlite" {
+  export class Database {
+    constructor(path: string, options?: { readonly?: boolean });
+    prepare(sql: string): { all<T = Record<string, unknown>>(): T[] };
+    close(): void;
+  }
+}

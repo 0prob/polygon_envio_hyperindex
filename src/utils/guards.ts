@@ -1,7 +1,8 @@
-import { ZERO_ADDRESS, KNOWN_FACTORIES_SET } from "./constants.ts";
+import { ZERO_ADDRESS, KNOWN_FACTORIES_SET } from "./constants";
 
 function isLikelyGarbagePairInternal(t0: string, t1: string): boolean {
   return (
+    !t0 || !t1 ||
     t0 === t1 ||
     t0 === ZERO_ADDRESS ||
     t1 === ZERO_ADDRESS ||

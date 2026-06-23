@@ -31,8 +31,9 @@ export function isCurveMetadataEmpty(meta: { fee: bigint; coins: string[] }): bo
 /** Curve on-chain fee is 1e-10 fraction; convert to basis points for PoolMeta.fee. */
 export function curveFeeToBps(fee: bigint): number {
   if (fee <= 0n) return 4;
-  const bps = Number(fee / 1_000_000n);
-  return bps > 0 ? bps : 4;
+  const MILLION = 1_000_000n;
+  const bps = fee / MILLION;
+  return Number(bps);
 }
 
 export function curvePoolTypeFromGamma(gamma: bigint | null): "stable" | "crypto" {

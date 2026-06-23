@@ -86,3 +86,32 @@ type IndexerProgress {
   lastProcessedBlock: Int!
   updatedAtBlock: Int!
 }
+
+"""
+Tracks Curve registry pagination progress for the bootstrap onBlock handler.
+Entity state is auto-rolled back by HyperIndex on reorg, preventing stale
+completion flags that could skip pools after a chain reorganization.
+Written during execution phase (after isPreload guard) in curve_bootstrap.ts.
+"""
+type CurveBootstrapProgress {
+  id: ID! # "${chainId}-${sourceId}" e.g. "137-legacy"
+  sourceId: String! @index
+  lastIndex: Int!
+  total: Int!
+  completed: Boolean!
+  updatedAtBlock: Int!
+}
+
+"""
+Maps Balancer poolId (bytes32) to pool address (string).
+Needed because TokensRegistered events only emit poolId, not the pool address.
+Written by PoolRegistered handler, read by TokensRegistered handler.
+Entity state auto-rolls back on reorg, preventing stale cache lookups.
+A minimal in-memory cache still bridges same-block PoolRegistered +
+TokensRegistered pairs (entity writes are staged until block commit).
+"""
+type BalancerPoolIdMapping {
+  id: ID! # bytes32 poolId as hex string
+  poolAddress: String! @index
+  updatedAtBlock: Int!
+}

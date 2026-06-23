@@ -31,13 +31,17 @@ interface CurveHandlerContext {
   };
 }
 
-/** Use indexed n_coins from MetaRegistry PoolAdded when present; else default. */
-function nCoinsFromEventParams(params: Record<string, unknown>): number {
-  const raw = params.n_coins ?? params.nCoins;
+export function nCoinsFromEventParams(params: Record<string, unknown>): number {
+  const raw =
+    params.n_coins ?? params.nCoins ?? (typeof params._1 === "bigint" ? params._1 : undefined);
   if (raw == null) return DEFAULT_N_COINS;
   const n = Number(raw);
   if (!Number.isFinite(n) || n < 2) return DEFAULT_N_COINS;
   return Math.min(Math.floor(n), 8);
+}
+
+function poolAddressFromEventParams(params: Record<string, unknown>): string | undefined {
+  return (params._0 as string | undefined) ?? (params.pool as string | undefined);
 }
 
 async function handleCurvePoolAdded({
@@ -51,7 +55,13 @@ async function handleCurvePoolAdded({
   };
   context: CurveHandlerContext;
 }) {
-  const pool = event.params.pool;
+  const pool = poolAddressFromEventParams(event.params as Record<string, unknown>);
+  if (!pool) {
+    if (context.log) {
+      context.log.warn("Curve PoolAdded event missing pool address", { params: event.params });
+    }
+    return;
+  }
   const blockNumber = Number(event.block.number);
 
   const existing = await context.PoolMeta.get(pool);
@@ -73,7 +83,8 @@ async function handleCurvePoolAdded({
     return;
   }
 
-  const coinMetas = (await resolveTokenMetasBatch(context, coins)) as TokenMetaResult[];
+  const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+  const coinMetas = await resolveTokenMetasBatch(context, coins, tokenExisting);
 
   if (context.isPreload) {
     return;
@@ -88,7 +99,7 @@ async function handleCurvePoolAdded({
     tokens: coins,
     fee: feeBps,
     tickSpacing: undefined,
-createdBlock: blockNumber,
+    createdBlock: blockNumber,
       poolId: undefined,
     poolType: meta.poolType,
   }));
@@ -96,8 +107,9 @@ createdBlock: blockNumber,
   await setTokenMetasIfMissing(
     context,
     coins,
-    coinMetas.map((m: TokenMetaResult) => m.decimals),
-    coinMetas.map((m: TokenMetaResult) => m.trusted),
+    coinMetas.map((m) => (m as TokenMetaResult).decimals),
+    coinMetas.map((m) => (m as TokenMetaResult).trusted),
+    tokenExisting,
   );
 }
 

@@ -56,6 +56,17 @@ describe("curveFeeToBps", () => {
     expect(curveFeeToBps(4_000_000n)).toBe(4);
     expect(curveFeeToBps(0n)).toBe(4);
   });
+
+  it("handles sub-bps fees without truncating to default", () => {
+    expect(curveFeeToBps(500_000n)).toBe(0.5);
+    expect(curveFeeToBps(100_000n)).toBe(0.1);
+    expect(curveFeeToBps(1_000_000n)).toBe(1);
+  });
+
+  it("preserves multi-bps precision", () => {
+    expect(curveFeeToBps(10_000_000n)).toBe(10);
+    expect(curveFeeToBps(999_999n)).toBe(0.999999);
+  });
 });
 
 describe("curvePoolTypeFromGamma", () => {

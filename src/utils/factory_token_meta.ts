@@ -74,25 +74,38 @@ async function resolveTokenMetaSlots(
  * 1. Hasura TokenMeta rows
  * 2. Static registry + discovered-decimals (single warmUpCache, 0 effects)
  * 3. fetchTokenMeta effects only for cold tokens in execution phase
+ *
+ * @param existingByAddr - Optional output map populated with pre-loaded TokenMeta entities,
+ *   keyed by normalized address. Callers pass this to setTokenMetasIfMissing to skip
+ *   redundant second loads.
  */
 export async function resolveFactoryPairTokenMetas(
   context: FactoryTokenMetaContext,
   token0: string,
   token1: string,
+  existingByAddr?: Map<string, { decimals?: number } | undefined>,
 ): Promise<[FactoryTokenMeta, FactoryTokenMeta]> {
+  const n0 = normalizeTokenAddress(token0);
+  const n1 = normalizeTokenAddress(token1);
+
   const [existingT0, existingT1] = await Promise.all([
-    context.TokenMeta.get(normalizeTokenAddress(token0)),
-    context.TokenMeta.get(normalizeTokenAddress(token1)),
+    context.TokenMeta.get(n0),
+    context.TokenMeta.get(n1),
   ]);
+
+  if (existingByAddr) {
+    existingByAddr.set(n0, existingT0);
+    existingByAddr.set(n1, existingT1);
+  }
 
   const t0Cached = cachedTokenMeta(existingT0);
   const t1Cached = cachedTokenMeta(existingT1);
   const pending: ResolveSlot[] = [];
   if (!t0Cached) {
-    pending.push({ slot: 0, addr: token0, normalized: normalizeTokenAddress(token0) });
+    pending.push({ slot: 0, addr: token0, normalized: n0 });
   }
   if (!t1Cached) {
-    pending.push({ slot: 1, addr: token1, normalized: normalizeTokenAddress(token1) });
+    pending.push({ slot: 1, addr: token1, normalized: n1 });
   }
 
   const fetched = await resolveTokenMetaSlots(context, pending);
@@ -105,15 +118,28 @@ export async function resolveFactoryPairTokenMetas(
 /**
  * Resolve decimals for N factory/bootstrap tokens (Curve, Balancer, WOOFi, etc.).
  * Same local-first batching as pair resolution — one registry warm-up per call.
+ *
+ * @param existingByAddr - Optional output map populated with pre-loaded TokenMeta entities,
+ *   keyed by normalized address. Callers pass this to setTokenMetasIfMissing to skip
+ *   redundant second loads.
  */
 export async function resolveTokenMetasBatch(
   context: FactoryTokenMetaContext,
   tokens: readonly string[],
+  existingByAddr?: Map<string, { decimals?: number } | undefined>,
 ): Promise<FactoryTokenMeta[]> {
   if (tokens.length === 0) return [];
 
   const normalized = tokens.map((t) => normalizeTokenAddress(t));
   const existing = await Promise.all(normalized.map((addr) => context.TokenMeta.get(addr)));
+
+  if (existingByAddr) {
+    for (let i = 0; i < tokens.length; i++) {
+      if (!existingByAddr.has(normalized[i]!)) {
+        existingByAddr.set(normalized[i]!, existing[i]);
+      }
+    }
+  }
 
   const pending: ResolveSlot[] = [];
   const preset = new Map<number, FactoryTokenMeta>();

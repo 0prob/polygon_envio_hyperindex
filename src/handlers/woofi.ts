@@ -30,13 +30,20 @@ const ZERO = "0x0000000000000000000000000000000000000000";
 /** Typical WOOFi pool fee in 1e5 units (25 = 0.025%). swapFee event param is wei paid, not the rate. */
 const DEFAULT_WOOFI_FEE = 25;
 
-function mergeTokens(existing: string[] | undefined, ...add: string[]): string[] {
-  const out = [...(existing ?? [])];
+function mergeTokensDiff(
+  existing: string[] | undefined,
+  ...add: string[]
+): { merged: string[]; added: string[] } {
+  const existingSet = new Set(existing ?? []);
+  const merged = [...(existing ?? [])];
+  const added: string[] = [];
   for (const t of add) {
-    if (t === ZERO || out.includes(t)) continue;
-    out.push(t);
+    if (t === ZERO || existingSet.has(t)) continue;
+    existingSet.add(t);
+    merged.push(t);
+    added.push(t);
   }
-  return out;
+  return { merged, added };
 }
 
 const POLYGON_CHAIN_ID = 137;
@@ -78,7 +85,8 @@ indexer.onBlock(
 
     if (activeTokens.length < 2) return;
 
-    const tokenMetas = await resolveTokenMetasBatch(context, activeTokens);
+    const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+    const tokenMetas = await resolveTokenMetasBatch(context, activeTokens, tokenExisting);
 
     if (context.isPreload) {
       return;
@@ -100,6 +108,7 @@ indexer.onBlock(
       activeTokens,
       tokenMetas.map((m) => m.decimals),
       tokenMetas.map((m) => m.trusted),
+      tokenExisting,
     );
 
     if (context.log) {
@@ -132,15 +141,17 @@ indexer.onEvent(
     const blockNumber = Number(event.block.number);
 
     const meta = await context.PoolMeta.get(poolAddr);
-    const mergedTokens = mergeTokens(meta?.tokens ? [...meta.tokens] : undefined, t0, t1);
+    const { merged: mergedTokens, added: newTokens } = mergeTokensDiff(
+      meta?.tokens ? [...meta.tokens] : undefined, t0, t1,
+    );
     if (mergedTokens.length < 2) return;
 
-    const newTokens = mergedTokens.filter((t) => !(meta?.tokens ?? []).includes(t));
     // After a successful bootstrap the token list is already complete; this path
     // is a no-op for known tokens and only fires for genuinely new ones.
     if (newTokens.length === 0) return;
 
-    const tokenMetas = await resolveTokenMetasBatch(context, newTokens);
+    const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+    const tokenMetas = await resolveTokenMetasBatch(context, newTokens, tokenExisting);
 
     if (context.isPreload) {
       return;
@@ -162,6 +173,7 @@ indexer.onEvent(
       newTokens,
       tokenMetas.map((m) => m.decimals),
       tokenMetas.map((m) => m.trusted),
+      tokenExisting,
     );
   },
 );

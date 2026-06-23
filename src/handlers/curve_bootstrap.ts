@@ -4,14 +4,13 @@ import { fetchCurveRegistryPage } from "../effects/curve_registry_bootstrap";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
+import { runWithConcurrency, getMetadataConcurrency } from "../utils/pacing";
 import { CURVE_REGISTRY_SOURCES, curveDiscoveryProtocol } from "../utils/curve_registry";
 
 const POLYGON_CHAIN_ID = 137;
 const PAGE_SIZE = 40;
 const ZERO = "0x0000000000000000000000000000000000000000";
 const DEFAULT_N_COINS = 4;
-
-const bootstrapState = new Map<string, { lastIndex: number; total: number; completed: boolean }>();
 
 const chainStart = (() => {
   const v = process.env.POLYGON_START_BLOCK || process.env.ENVIO_POLYGON_START_BLOCK;
@@ -35,26 +34,51 @@ async function bootstrapRegistryPage(
 ): Promise<void> {
   if (Number(block.number) <= source.deployBlock) return;
 
-  const state = bootstrapState.get(source.id);
-  if (state?.completed) return;
+  const stateId = `${context.chain.id}-${source.id}`;
+  const existingState = await context.CurveBootstrapProgress.get(stateId);
+  if (existingState?.completed) return;
 
-  const offset = state?.lastIndex ?? 0;
+  const offset = existingState?.lastIndex ?? 0;
   const page = await context.effect(fetchCurveRegistryPage, {
     offset,
     limit: PAGE_SIZE,
     registryAddress: source.address,
   });
 
+  const storeProgress = (lastIndex: number, total: number) => {
+    context.CurveBootstrapProgress.set({
+      id: stateId,
+      sourceId: source.id,
+      lastIndex,
+      total,
+      completed: lastIndex >= total || total === 0,
+      updatedAtBlock: Number(block.number),
+    });
+  };
+
   if (page.total === 0 || page.pools.length === 0) {
     if (page.total === 0) return;
-    bootstrapState.set(source.id, { lastIndex: offset, total: page.total, completed: offset >= page.total });
+    storeProgress(offset, page.total);
     return;
   }
 
-  for (const row of page.pools) {
-    const existing = await context.PoolMeta.get(row.address);
-    if (existing) continue;
+  // BATCH-CHECK which pools already exist (single getWhere instead of N sequential gets)
+  const allAddrs = page.pools.map((r: { address: string }) => r.address.toLowerCase());
+  const existingPools = (await context.PoolMeta.getWhere({ address: { _in: allAddrs } })) ?? [];
+  const existingSet = new Set(existingPools.map((e: { address: string }) => e.address.toLowerCase()));
+  const newPools = page.pools.filter((r: { address: string }) => !existingSet.has(r.address.toLowerCase()));
 
+  if (newPools.length === 0) {
+    const nextIndex = Math.min(page.total, offset + PAGE_SIZE);
+    storeProgress(nextIndex, page.total);
+    return;
+  }
+
+  // Process new pools with bounded concurrency (avoids request spikes)
+  const concurrency = Math.min(3, getMetadataConcurrency());
+  const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+
+  await runWithConcurrency(newPools, concurrency, async (row: { address: string }) => {
     const meta = await context.effect(fetchCurveMetadata, {
       pool: row.address,
       nCoins: DEFAULT_N_COINS,
@@ -66,10 +90,12 @@ async function bootstrapRegistryPage(
       if (isCurveMetadataEmpty(meta) && context.log) {
         context.log.warn("Curve bootstrap metadata unavailable — skipping pool", { pool: row.address });
       }
-      continue;
+      return;
     }
 
-    const coinMetas = (await resolveTokenMetasBatch(context, coins)) as TokenMetaResult[];
+    const coinMetas = await resolveTokenMetasBatch(context, coins, tokenExisting);
+
+    if (context.isPreload) return;
 
     context.PoolMeta.set(poolMetaEntity({
       id: row.address,
@@ -87,17 +113,16 @@ async function bootstrapRegistryPage(
       coins,
       coinMetas.map((m: TokenMetaResult) => m.decimals),
       coinMetas.map((m: TokenMetaResult) => m.trusted),
+      tokenExisting,
     );
-  }
+  });
 
   const nextIndex = Math.min(page.total, offset + PAGE_SIZE);
-  bootstrapState.set(source.id, { lastIndex: nextIndex, total: page.total, completed: nextIndex >= page.total });
+  storeProgress(nextIndex, page.total);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function bootstrapCurvePools({ block, context }: any) {
-  if (context.isPreload) return;
-
   for (const source of CURVE_REGISTRY_SOURCES) {
     await bootstrapRegistryPage(context, block, source);
   }

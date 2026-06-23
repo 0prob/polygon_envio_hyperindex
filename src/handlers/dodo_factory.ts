@@ -39,8 +39,9 @@ async function handleDodoPool(
   //
   // Use bounded concurrency (via runWithConcurrency) when HYPERSYNC_RPM_TARGET is low to avoid request spikes.
   // We start the DODO meta effect + the (possibly limited) token effects concurrently.
+  const tokenExisting = new Map<string, { decimals?: number } | undefined>();
   const dodoP = context.effect(fetchDodoMetadata, { pool, blockNumber: BigInt(blockNumber) });
-  const tokensP = resolveFactoryPairTokenMetas(context, base, quote);
+  const tokensP = resolveFactoryPairTokenMetas(context, base, quote, tokenExisting);
   const [meta, [baseMeta, quoteMeta]] = await Promise.all([dodoP, tokensP]);
 
   if (context.isPreload) {
@@ -73,6 +74,7 @@ async function handleDodoPool(
     [base, quote],
     [baseMeta.decimals, quoteMeta.decimals],
     [baseMeta.trusted, quoteMeta.trusted],
+    tokenExisting,
   );
 }
 

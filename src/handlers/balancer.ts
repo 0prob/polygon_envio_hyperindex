@@ -4,8 +4,12 @@ import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 
-const balancerMetaCache = new Map<string, { tokens: string[]; fee: number }>();
-const balancerIdToAddrCache = new Map<string, string>();
+// In-memory cache for same-block poolId→address bridging (entity writes are staged
+// until block commit, so TokensRegistered in the same block as PoolRegistered needs
+// a fast path). Falls back to BalancerPoolIdMapping entity for cross-block lookups
+// and self-heals on reorg: if PoolMeta.get(poolAddr) returns undefined (entity
+// rolled back), the entry is evicted and the handler returns early.
+const poolIdToAddrCache = new Map<string, string>();
 
 indexer.onEvent(
   {
@@ -24,18 +28,32 @@ indexer.onEvent(
     // Token effects moved before isPreload guard (were after) for full preload optimization.
     const meta = await context.effect(fetchBalancerMetadata, { pool, poolId, blockNumber: BigInt(blockNumber) });
 
-    const tokenMetas = await resolveTokenMetasBatch(context, meta.tokens);
+    if (meta.tokens.length < 2) {
+      if (context.log) {
+        context.log.warn("Balancer pool has < 2 tokens — skipping PoolMeta write", { pool, poolId });
+      }
+      return;
+    }
+
+    const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+    const tokenMetas = await resolveTokenMetasBatch(context, meta.tokens, tokenExisting);
 
     if (context.isPreload) {
       return;
     }
 
     const fee = meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
-    const tokens = [...meta.tokens]; // ensure mutable string[] for cache + PoolMeta type
+    const tokens = [...meta.tokens];
     const poolType = meta.amp != null && meta.amp > 0n ? "stable" : meta.weights?.length ? "weighted" : undefined;
 
-    balancerMetaCache.set(pool, { tokens, fee });
-    balancerIdToAddrCache.set(poolId, pool);
+    // Write to both entity (durable, auto-rolled back on reorg) and in-memory cache
+    // (same-block bridging for TokensRegistered which only emits poolId).
+    poolIdToAddrCache.set(poolId, pool);
+    context.BalancerPoolIdMapping.set({
+      id: poolId,
+      poolAddress: pool,
+      updatedAtBlock: blockNumber,
+    });
 
     context.PoolMeta.set(poolMetaEntity({
       id: pool,
@@ -54,6 +72,7 @@ indexer.onEvent(
       tokens,
       tokenMetas.map((m) => m.decimals),
       tokenMetas.map((m) => m.trusted),
+      tokenExisting,
     );
   },
 );
@@ -64,16 +83,21 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
   const blockNumber = Number(event.block.number);
 
   // Schedule token resolution early so effects register in the preload batch.
-  const tokenMetasPromise = resolveTokenMetasBatch(context, tokens);
+  const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+  const tokenMetasPromise = resolveTokenMetasBatch(context, tokens, tokenExisting);
 
   const poolId = event.params.poolId;
 
-  let poolAddr = balancerIdToAddrCache.get(poolId);
+  let poolAddr = poolIdToAddrCache.get(poolId);
   if (!poolAddr) {
-    // Cache miss: on start/reorg PoolRegistered repopulates the cache.
-    // Without BootPoolIdToAddress entity, we skip the incremental update.
-    await tokenMetasPromise;
-    return;
+    // Cross-block or after-reorg: read from entity (auto-rolled back by HyperIndex).
+    const mapping = await context.BalancerPoolIdMapping.get(poolId);
+    if (!mapping?.poolAddress) {
+      await tokenMetasPromise;
+      return;
+    }
+    poolAddr = mapping.poolAddress;
+    poolIdToAddrCache.set(poolId, poolAddr);
   }
 
   // Await effects + DB read concurrently so all effects are registered in the preload
@@ -83,7 +107,14 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     context.PoolMeta.get(poolAddr),
     tokenMetasPromise,
   ]);
-  const fee = existing?.fee ?? 0;
+
+  // Self-heal on reorg: if the pool was rolled back, evict stale cache and skip.
+  if (!existing) {
+    poolIdToAddrCache.delete(poolId);
+    return;
+  }
+
+  const fee = existing?.fee ?? null;
   const poolType = existing?.poolType;
 
   if (context.isPreload) return;
@@ -93,8 +124,6 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     existing.tokens.length === tokens.length &&
     tokens.every((t, i) => t === existing.tokens![i]);
   if (tokensUnchanged) return;
-
-  balancerMetaCache.set(poolAddr, { tokens, fee });
 
   context.PoolMeta.set(poolMetaEntity({
     id: poolAddr,
@@ -113,6 +142,7 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     tokens,
     tokenMetas.map((m) => m.decimals),
     tokenMetas.map((m) => m.trusted),
+    tokenExisting,
   );
 });
 

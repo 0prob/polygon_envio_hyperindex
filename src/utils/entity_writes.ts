@@ -51,6 +51,7 @@ export async function setTokenMetasIfMissing(
   tokens: readonly string[],
   decimals: readonly number[],
   trusted?: readonly boolean[],
+  preloadedByAddr?: Map<string, { decimals?: number } | undefined>,
 ): Promise<void> {
   await setTokenMetaEntriesIfMissing(
     context,
@@ -59,33 +60,40 @@ export async function setTokenMetasIfMissing(
       decimals: decimals[i]!,
       trusted: trusted?.[i] ?? false,
     })),
+    preloadedByAddr,
   );
 }
 
 export async function setTokenMetaEntriesIfMissing(
   context: TokenMetaContext,
   entries: readonly TokenMetaWrite[],
+  preloadedByAddr?: Map<string, { decimals?: number } | undefined>,
 ): Promise<void> {
-  const seen = new Set<string>();
-  const normalized: TokenMetaWrite[] = [];
+  const seen = new Map<string, TokenMetaWrite>();
   for (const entry of entries) {
     const addr = entry.address.toLowerCase();
-    if (seen.has(addr)) continue;
-    seen.add(addr);
-    normalized.push({
-      address: addr,
-      decimals: safeDecimals(entry.decimals),
-      trusted: entry.trusted ?? false,
-    });
+    if (!seen.has(addr)) {
+      seen.set(addr, {
+        address: addr,
+        decimals: safeDecimals(entry.decimals),
+        trusted: entry.trusted ?? false,
+      });
+    }
   }
-  const existing = await Promise.all(normalized.map((e) => context.TokenMeta.get(e.address)));
-  for (let i = 0; i < normalized.length; i++) {
-    const entry = normalized[i]!;
-    if (!shouldPersistTokenMeta(existing[i], entry.decimals, entry.trusted ?? false)) continue;
+
+  const addrs = [...seen.keys()];
+  const existing = preloadedByAddr
+    ? addrs.map((a) => preloadedByAddr.get(a))
+    : await Promise.all(addrs.map((addr) => context.TokenMeta.get(addr)));
+
+  for (let i = 0; i < addrs.length; i++) {
+    const entry = seen.get(addrs[i]!)!;
+    const trusted = entry.trusted ?? false;
+    if (!shouldPersistTokenMeta(existing[i], entry.decimals, trusted)) continue;
     context.TokenMeta.set({
-      id: entry.address,
-      address: entry.address,
-      decimals: safeDecimals(entry.decimals),
+      id: addrs[i]!,
+      address: addrs[i]!,
+      decimals: entry.decimals,
     });
   }
 }

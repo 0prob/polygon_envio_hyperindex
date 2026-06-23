@@ -42,7 +42,8 @@ export async function persistFactoryPoolMeta(
   const existing = await context.PoolMeta.get(input.poolAddr);
   if (existing) return;
 
-  const [t0meta, t1meta] = await resolveFactoryPairTokenMetas(context, input.token0, input.token1);
+  const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+  const [t0meta, t1meta] = await resolveFactoryPairTokenMetas(context, input.token0, input.token1, tokenExisting);
 
   if (context.isPreload) {
     return;
@@ -68,5 +69,6 @@ export async function persistFactoryPoolMeta(
     [input.token0, input.token1],
     [t0meta.decimals, t1meta.decimals],
     [t0meta.trusted, t1meta.trusted],
+    tokenExisting,
   );
 }

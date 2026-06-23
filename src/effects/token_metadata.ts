@@ -465,6 +465,15 @@ const fetchTokenMetaHandler = async ({ input, context }: { input: { address: str
     return promise;
   };
 
+// Note — Preload/Execution Double-Pass Cost:
+// Each handler runs twice per block (preload phase + execution phase). For cold
+// tokens with no cached decimals, context.cache=false is set in the handler, which
+// means Envio re-executes the RPC effect in both phases (2 eth_calls per new token
+// per block). This is correct behavior (preload guarantees deterministic output),
+// but doubles the RPC cost for first-seen tokens. The 2× overhead is a known
+// tradeoff: ~99% of fetchTokenMeta calls resolve from the static registryCache
+// (0 RPC), so only genuinely cold tokens incur the double cost. Budget holders
+// should account for this when sizing RPC endpoint capacity.
 export const fetchTokenMeta = createEffect(
   {
     name: "fetchTokenMeta",

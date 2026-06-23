@@ -11,5 +11,5 @@
     "typeRoots": ["./node_modules/@types"],
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "envio-env.d.ts"]
+  "include": ["src/**/*.ts", "envio-env.d.ts", "env.d.ts"]
 }

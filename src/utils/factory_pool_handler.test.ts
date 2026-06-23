@@ -25,7 +25,6 @@ describe("persistFactoryPoolMeta", () => {
       token0: T0,
       token1: T1,
       blockNumber: 100,
-      txHash: "0xabc",
       fee: 3000,
     });
 
@@ -56,7 +55,6 @@ describe("persistFactoryPoolMeta", () => {
       token0: T0,
       token1: T1,
       blockNumber: 100,
-      txHash: "0xabc",
       fee: 3000,
     });
 
@@ -91,7 +89,6 @@ describe("persistFactoryPoolMeta", () => {
       token0: T0,
       token1: T1,
       blockNumber: 100,
-      txHash: "0xabc",
       fee: 3000,
     });
 
@@ -128,7 +125,6 @@ describe("persistFactoryPoolMeta", () => {
       token0: T0,
       token1: T1,
       blockNumber: 100,
-      txHash: "0xabc",
       fee: 500,
       tickSpacing: 10,
       poolId: POOL,
