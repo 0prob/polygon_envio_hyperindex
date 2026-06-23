@@ -88,9 +88,15 @@ export async function resolveFactoryPairTokenMetas(
   const n0 = normalizeTokenAddress(token0);
   const n1 = normalizeTokenAddress(token1);
 
+  // Check static registry FIRST (in-memory, 0 I/O) — saves 2 DB reads for registry-known tokens
+  const localHits = await lookupRegistryDecimalsBatch([token0, token1]);
+  const t0InRegistry: FactoryTokenMeta | undefined = localHits.get(n0);
+  const t1InRegistry: FactoryTokenMeta | undefined = localHits.get(n1);
+
+  // Only read DB for tokens NOT in registry
   const [existingT0, existingT1] = await Promise.all([
-    context.TokenMeta.get(n0),
-    context.TokenMeta.get(n1),
+    t0InRegistry ? undefined : context.TokenMeta.get(n0),
+    t1InRegistry ? undefined : context.TokenMeta.get(n1),
   ]);
 
   if (existingByAddr) {
@@ -98,8 +104,9 @@ export async function resolveFactoryPairTokenMetas(
     existingByAddr.set(n1, existingT1);
   }
 
-  const t0Cached = cachedTokenMeta(existingT0);
-  const t1Cached = cachedTokenMeta(existingT1);
+  // Compose from registry first, then DB, then RPC fallback
+  const t0Cached = t0InRegistry ?? cachedTokenMeta(existingT0);
+  const t1Cached = t1InRegistry ?? cachedTokenMeta(existingT1);
   const pending: ResolveSlot[] = [];
   if (!t0Cached) {
     pending.push({ slot: 0, addr: token0, normalized: n0 });
@@ -131,7 +138,16 @@ export async function resolveTokenMetasBatch(
   if (tokens.length === 0) return [];
 
   const normalized = tokens.map((t) => normalizeTokenAddress(t));
-  const existing = await Promise.all(normalized.map((addr) => context.TokenMeta.get(addr)));
+
+  // Check static registry FIRST (in-memory, 0 I/O)
+  const localHits = await lookupRegistryDecimalsBatch(tokens);
+
+  // Only read DB for tokens NOT in registry
+  const existing = await Promise.all(
+    normalized.map((addr) =>
+      localHits.has(addr) ? undefined : context.TokenMeta.get(addr),
+    ),
+  );
 
   if (existingByAddr) {
     for (let i = 0; i < tokens.length; i++) {
@@ -144,11 +160,16 @@ export async function resolveTokenMetasBatch(
   const pending: ResolveSlot[] = [];
   const preset = new Map<number, FactoryTokenMeta>();
   for (let i = 0; i < tokens.length; i++) {
-    const cached = cachedTokenMeta(existing[i]);
-    if (cached) {
-      preset.set(i, cached);
+    const fromRegistry = localHits.get(normalized[i]!);
+    if (fromRegistry) {
+      preset.set(i, fromRegistry);
     } else {
-      pending.push({ slot: i, addr: tokens[i]!, normalized: normalized[i]! });
+      const cached = cachedTokenMeta(existing[i]);
+      if (cached) {
+        preset.set(i, cached);
+      } else {
+        pending.push({ slot: i, addr: tokens[i]!, normalized: normalized[i]! });
+      }
     }
   }
 

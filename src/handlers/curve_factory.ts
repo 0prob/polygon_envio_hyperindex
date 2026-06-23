@@ -100,7 +100,8 @@ async function handleCurvePoolAdded({
     fee: feeBps,
     tickSpacing: undefined,
     createdBlock: blockNumber,
-      poolId: undefined,
+    updatedAtBlock: blockNumber,
+    poolId: undefined,
     poolType: meta.poolType,
   }));
 

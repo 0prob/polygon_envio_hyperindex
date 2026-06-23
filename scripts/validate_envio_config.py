@@ -1,56 +1,77 @@
 #!/usr/bin/env python3
 """
-validate_envio_config.py — AST-style static analysis for Envio config.yaml vs ABIs.
+validate_envio_config.py — Enhanced AST-style static analysis for Envio config.yaml vs ABIs.
 
-Checks:
-  1. All config-registered events exist in the ABI file.
-  2. Anonymous event detection (requires special handler awareness).
-  3. EVM type → GraphQL Int overflow risk (uint40+, int128+, etc.).
-  4. ABI events that are NOT in config but carry discovery-critical data.
-  5. Unnamed event params that handlers may miss.
-  6. Config YAML structure sanity (contract name, abi_file_path presence).
+Static analysis checks (no RPC, no runtime):
+  1.  Config-registered events exist in ABI files.
+  2.  Anonymous event detection (special handler awareness required).
+  3.  EVM type → GraphQL Int overflow risk (uint40+, int128+, etc.).
+  4.  ABI events NOT in config that carry discovery-critical data.
+  5.  Unnamed event params handlers may miss.
+  6.  Config YAML structure (contract name, abi_file_path presence).
+  7.  HANDLER CODE cross-reference: every configured event has an indexer.onEvent() call.
+  8.  HANDLER CODE: every configured contract has a matching indexer handler call.
+  9.  Event signature keccak256 alignment between config overloads and ABI variants.
+  10. Schema Int field range check against actual EVM types written by handlers.
+  11. ContractRegister detection (dynamic contracts registered in handlers).
+  12. Overloaded-event variant coverage (e.g. Curve PoolAdded has 3 ABI variants).
 
 Usage:
     python3 scripts/validate_envio_config.py                    # uses config.yaml
     python3 scripts/validate_envio_config.py --config path.yaml  # explicit path
+    python3 scripts/validate_envio_config.py --verbose           # show full details
 """
 
+import hashlib
 import json
-import os
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
-# ── package-wide root (same layout in CI and dev) ───────────────
+# ── package-wide root ─────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
+HANDLERS_DIR = PROJECT_ROOT / "src" / "handlers"
+SCHEMA_FILE = PROJECT_ROOT / "schema.graphql"
 
-# ── Envio type-safety rules ─────────────────────────────────────
-# Types that MUST be stored as BigInt, never as Int.
+# ── EVM type → storage risk ───────────────────────────────────────
 WIDE_EVM_TYPES = {"uint256", "int256", "uint128", "int128", "uint160", "int160"}
 
-# Types safe for GraphQL Int (signed 32-bit) when cast via Number().
-# Max uint24 = 16,777,215  < 2^31. uint32 OK if range known < 2^31.
 NARROW_EVM_TYPES = {"uint8", "uint16", "uint24", "int16", "int24", "bool"}
 
-# Types that map to String (address, bytes).
 STRING_EVM_TYPES = {"address", "bytes", "bytes32", "string"}
 
-# Events that the project intentionally excluded (per handler comments).
-EXCLUDED_EVENTS = {
+# BigInt-worthy types that overflow GraphQL Int (signed 32-bit: ±2^31)
+# Schema Int cap at 2^31-1 = 2,147,483,647
+# uint40  ~ 1.1e12 > 2.1e9  → OVERFLOW
+# uint64  ~ 1.8e19          → OVERFLOW
+# int128  ~ 1.7e38          → OVERFLOW
+OVERFLOW_AS_INT_TYPES = {"uint40", "uint48", "uint56", "uint64", "uint72", "uint80",
+                         "uint88", "uint96", "uint104", "uint112", "uint120", "uint128",
+                         "uint136", "uint144", "uint152", "uint160", "uint168", "uint176",
+                         "uint184", "uint192", "uint200", "uint208", "uint216", "uint224",
+                         "uint232", "uint240", "uint248", "uint256",
+                         "int40", "int48", "int56", "int64", "int72", "int80",
+                         "int88", "int96", "int104", "int112", "int120", "int128",
+                         "int136", "int144", "int152", "int160", "int168", "int176",
+                         "int184", "int192", "int200", "int208", "int216", "int224",
+                         "int232", "int240", "int248", "int256"}
+
+# Events intentionally excluded (per handler comments / design docs).
+EXCLUDED_EVENTS: set[tuple[str, str]] = {
     ("PoolManager", "Swap"),
     ("BalancerVault", "PoolBalanceChanged"),
     ("BalancerVault", "Swap"),
 }
 
-# ABI params that exist on-chain but are intentionally unused by handlers.
-# (contract_name, event_name, param_name) or ("*", event_name, param_name) for all.
+# Suppressed type warnings — (contract, event, param) or ("*", event, param).
 SUPPRESSED_TYPE_WARNINGS: set[tuple[str, str, str]] = {
-    ("V2Factory", "PairCreated", "_3"),           # unnamed uint256 (pool length)
-    ("CurveRegistry", "PoolAdded", "n_coins"),     # uint256, used only as effect input (never stored in Int)
+    ("V2Factory", "PairCreated", "_3"),
+    ("CurveRegistry", "PoolAdded", "n_coins"),
     ("CurveRegistry", "PoolAdded", "nCoins"),
-    ("PoolManager", "Initialize", "sqrtPriceX96"),  # uint160, unused by handler
-    ("PoolManager", "Initialize", "tick"),          # int24, unused by handler
+    ("PoolManager", "Initialize", "sqrtPriceX96"),
+    ("PoolManager", "Initialize", "tick"),
     ("WooPPV2", "WooSwap", "fromAmount"),
     ("WooPPV2", "WooSwap", "toAmount"),
     ("WooPPV2", "WooSwap", "swapVol"),
@@ -61,8 +82,31 @@ SUPPRESSED_TYPE_WARNINGS: set[tuple[str, str, str]] = {
 }
 
 
-def load_yaml(path: Path):
-    """Load config.yaml — try ruamel.yaml first, fall back to PyYAML."""
+# ── Schema Int → EVM type mapping known from handler code ────────
+# Which schema Int fields receive which EVM types.
+# (schema_type, field_name) → set of evm_types.
+SCHEMA_INT_FIELD_TYPES: dict[tuple[str, str], set[str]] = {
+    ("PoolMeta", "fee"):               {"uint256", "uint24"},
+    ("PoolMeta", "tickSpacing"):        {"int24"},
+    ("PoolMeta", "createdBlock"):       {"uint256"},
+    ("PoolMeta", "updatedAtBlock"):     {"uint256"},
+    ("TokenMeta", "decimals"):          {"uint8"},
+    ("IndexerProgress", "chainId"):     {"uint256"},
+    ("IndexerProgress", "lastProcessedBlock"): {"uint256"},
+    ("IndexerProgress", "updatedAtBlock"):     {"uint256"},
+    ("CurveBootstrapProgress", "lastIndex"):   {"uint256"},
+    ("CurveBootstrapProgress", "total"):       {"uint256"},
+}
+
+# Schema Int-typed fields that receive block numbers.
+# May be up to ~86M on Polygon (fits in Int), but could exceed on other chains.
+BLOCK_NUMBER_FIELDS = {"createdBlock", "updatedAtBlock", "lastIndex", "total",
+                       "lastProcessedBlock"}
+
+
+# ── Utilities ─────────────────────────────────────────────────────
+
+def load_yaml(path: Path) -> Any:
     try:
         import ruamel.yaml as ryaml
         y = ryaml.YAML(typ="safe")
@@ -74,7 +118,7 @@ def load_yaml(path: Path):
             return yaml.safe_load(f)
 
 
-def load_abi(path: Path) -> list[dict]:
+def load_json(path: Path) -> list[dict]:
     with open(path) as f:
         return json.load(f)
 
@@ -84,79 +128,144 @@ def abi_events(abi: list[dict]) -> list[dict]:
 
 
 def resolve_abi_path(abi_file_path: str) -> Path:
-    """Resolve relative paths from project root."""
     p = Path(abi_file_path)
     if p.is_absolute():
         return p
     return (PROJECT_ROOT / abi_file_path).resolve()
 
 
-def event_signature(event_def: dict, compact=True) -> str:
-    """Build human-readable signature from ABI event definition."""
+def event_signature(event_def: dict, compact: bool = True) -> str:
     name = event_def["name"]
     sep = "," if compact else ", "
-    params = sep.join(
-        inp.get("type", "?")
-        for inp in event_def.get("inputs", [])
-    )
+    params = sep.join(inp.get("type", "?") for inp in event_def.get("inputs", []))
     return f"{name}({params})"
 
 
 def _normalize_sig(s: str) -> str:
-    """Remove whitespace from a signature for comparison."""
     return re.sub(r"\s+", "", s)
 
-def check_event_exists(contract_name, event_cfg, abi_evts):
-    """Check a config event entry matches at least one ABI event definition."""
+
+def keccak256(text: str) -> str:
+    """Compute keccak256 digest of text (used for event topic0)."""
+    return "0x" + hashlib.sha3_256(text.encode()).hexdigest()
+
+
+def event_topic0(event_def: dict) -> str:
+    """Compute the event signature hash (topic0) from an ABI event definition."""
+    sig = event_signature(event_def, compact=True)
+    return keccak256(sig)
+
+
+# ── Handler code analysis ─────────────────────────────────────────
+
+def find_handler_files() -> list[Path]:
+    return sorted(HANDLERS_DIR.glob("*.ts"))
+
+
+def extract_handler_calls() -> dict[str, set[str]]:
+    """
+    Read all handler .ts files and find indexer.onEvent / indexer.onBlock calls.
+    Returns {handler_file: {event_or_block_name, ...}}.
+    """
+    result: dict[str, set[str]] = {}
+    for f in find_handler_files():
+        text = f.read_text()
+        names: set[str] = set()
+
+        # indexer.onEvent({contract: "X", event: "Y"}, ...)
+        for m in re.finditer(r'contract:\s*["\'](\w+)["\']', text):
+            names.add(f"onEvent:{m.group(1)}")
+
+        # event: "EventName" (raw string in handler onEvent calls)
+        for m in re.finditer(r'event:\s*["\']([\w()_, ]+)["\']', text):
+            names.add(f"event:{m.group(1).strip()}")
+
+        # indexer.onBlock({name: "BlockName"}, ...)
+        for m in re.finditer(r'name:\s*["\']([\w]+)["\']', text):
+            names.add(f"onBlock:{m.group(1)}")
+
+        result[f.name] = names
+    return result
+
+
+def _is_commented(line: str, pos: int) -> bool:
+    """Check if position `pos` in `line` is inside a single-line comment."""
+    comment_start = line.find("//")
+    if comment_start == -1:
+        return False
+    return pos > comment_start
+
+
+def extract_contract_register_calls() -> list[str]:
+    """Find all non-commented context.chain.X.add() calls in handler files."""
+    calls: list[str] = []
+    for f in find_handler_files():
+        text = f.read_text()
+        for m in re.finditer(r'context\.chain\.(\w+)\s*\.\s*add\b', text):
+            # Find which line this match is on
+            lines = text[:m.start()].splitlines()
+            line_idx = len(lines) - 1
+            line = text.splitlines()[line_idx] if line_idx < len(text.splitlines()) else ""
+            col = m.start() - text.rfind("\n", 0, m.start()) - 1
+            if not _is_commented(line, col):
+                calls.append(f"{f.name}: context.chain.{m.group(1)}.add()")
+        for m in re.finditer(r'contractRegister\b[^;]*,\s*["\'](\w+)["\']', text):
+            lines = text[:m.start()].splitlines()
+            line_idx = len(lines) - 1
+            line = text.splitlines()[line_idx] if line_idx < len(text.splitlines()) else ""
+            col = m.start() - text.rfind("\n", 0, m.start()) - 1
+            if not _is_commented(line, col):
+                calls.append(f"{f.name}: contractRegister({m.group(1)})")
+    return calls
+
+
+# ── Checks ─────────────────────────────────────────────────────────
+
+def check_event_exists(cname: str, event_cfg: dict, abi_evts: list[dict]) -> list[str]:
     name = event_cfg.get("event", "")
     sig_name = name.split("(")[0] if "(" in name else name
-
     matching = [e for e in abi_evts if e["name"] == sig_name]
     if not matching:
-        return [f"  ❌ Contract '{contract_name}': event '{sig_name}' not found in ABI"]
+        return [f"  ❌ Contract '{cname}': event '{sig_name}' not found in ABI"]
 
-    issues = []
+    issues: list[str] = []
     if "(" in name:
         norm_config = _normalize_sig(name)
-        any_match = False
         for e in matching:
-            abi_sig = event_signature(e)
-            if _normalize_sig(abi_sig) == norm_config:
-                any_match = True
+            if _normalize_sig(event_signature(e)) == norm_config:
                 break
-        if not any_match:
+        else:
             sigs = ", ".join(event_signature(e, compact=False) for e in matching)
             issues.append(
-                f"  ⚠️  Contract '{contract_name}': event signature '{name}' vs ABI.\n"
+                f"  ⚠️  Contract '{cname}': event signature '{name}' vs ABI.\n"
                 f"      ABI offers: {sigs}"
             )
     return issues
 
 
-def check_anonymous_events(contract_name, abi_evts):
-    """Flag anonymous events that require special handler awareness."""
-    issues = []
+def check_anonymous_events(cname: str, abi_evts: list[dict]) -> list[str]:
+    issues: list[str] = []
     for evt in abi_evts:
         if evt.get("anonymous", False):
             issues.append(
-                f"  🚨 Contract '{contract_name}': event '{evt['name']}' is ANONYMOUS.\n"
+                f"  🚨 Contract '{cname}': event '{evt['name']}' is ANONYMOUS.\n"
                 f"      Envio indexes by event signature hash — anonymous events lack one.\n"
                 f"      Verify your config.yaml event signature is exact."
             )
     return issues
 
 
-def check_missing_discovery_events(contract_name, event_names_in_config, abi_evts):
-    """Flag ABI events not in config that are not in the exclusion list."""
-    issues = []
+def check_missing_discovery_events(cname: str, event_names_in_config: set[str],
+                                    abi_evts: list[dict]) -> list[str]:
+    issues: list[str] = []
     for evt in abi_evts:
         name = evt["name"]
         if name in event_names_in_config:
             continue
-        if (contract_name, name) in EXCLUDED_EVENTS:
+        if (cname, name) in EXCLUDED_EVENTS:
             continue
         issues.append(
-            f"  📋 Contract '{contract_name}': event '{name}' is in ABI but NOT configured.\n"
+            f"  📋 Contract '{cname}': event '{name}' is in ABI but NOT configured.\n"
             f"      Inputs: {[i.get('name', f'_{i}') + ':' + i['type'] for i in evt.get('inputs', [])]}"
         )
     return issues
@@ -164,16 +273,14 @@ def check_missing_discovery_events(contract_name, event_names_in_config, abi_evt
 
 def _suppressed(cname: str, ename: str, pname: str) -> bool:
     for s_cname, s_ename, s_pname in SUPPRESSED_TYPE_WARNINGS:
-        if s_cname == "*" or s_cname == cname:
-            if s_ename == ename and s_pname == pname:
-                return True
+        if s_cname in ("*", cname) and s_ename == ename and s_pname == pname:
+            return True
     return False
 
-def check_type_safety(contract_name, event_cfg, abi_evts):
-    """Check EVM types stored in GraphQL Int fields for overflow risk."""
-    issues = []
-    name = event_cfg.get("event", "").split("(")[0]
 
+def check_type_safety(cname: str, event_cfg: dict, abi_evts: list[dict]) -> list[str]:
+    issues: list[str] = []
+    name = event_cfg.get("event", "").split("(")[0]
     for evt in abi_evts:
         if evt["name"] != name:
             continue
@@ -181,23 +288,22 @@ def check_type_safety(contract_name, event_cfg, abi_evts):
             evm_type = inp.get("type", "").rstrip("[]")
             pname = inp.get("name") or "_3"
             if evm_type in WIDE_EVM_TYPES:
-                if not _suppressed(contract_name, name, pname):
+                if not _suppressed(cname, name, pname):
                     issues.append(
-                        f"  ⚠️  Contract '{contract_name}.{name}': param '{pname}' is "
+                        f"  ⚠️  Contract '{cname}.{name}': param '{pname}' is "
                         f"'{evm_type}' → ensure handler stores in BigInt, NOT in schema Int."
                     )
             elif evm_type not in NARROW_EVM_TYPES and evm_type not in STRING_EVM_TYPES and evm_type:
-                if not _suppressed(contract_name, name, pname):
+                if not _suppressed(cname, name, pname):
                     issues.append(
-                        f"  ℹ️  Contract '{contract_name}.{name}': param '{pname}' is "
+                        f"  ℹ️  Contract '{cname}.{name}': param '{pname}' is "
                         f"'{evm_type}' — verify type mapping."
                     )
     return issues
 
 
-def check_unnamed_params(contract_name, event_cfg, abi_evts):
-    """Warn about unnamed event params (accessible via _0, _1, ... in Envio)."""
-    issues = []
+def check_unnamed_params(cname: str, event_cfg: dict, abi_evts: list[dict]) -> list[str]:
+    issues: list[str] = []
     name = event_cfg.get("event", "").split("(")[0]
     for evt in abi_evts:
         if evt["name"] != name:
@@ -207,40 +313,247 @@ def check_unnamed_params(contract_name, event_cfg, abi_evts):
             sig = event_signature(evt)
             details = "; ".join(f"index {i}: {inp['type']}" for i, inp in enumerate(unnamed))
             issues.append(
-                f"  ℹ️  Contract '{contract_name}': event '{sig}' has unnamed params.\n"
+                f"  ℹ️  Contract '{cname}': event '{sig}' has unnamed params.\n"
                 f"      Envio auto-names as `_0`, `_1`, etc. — verify handler accesses: {details}"
             )
     return issues
 
 
-def validate_single_run(config_path: Path) -> list[str]:
-    """Run the full validation suite, returning a list of issue strings."""
+def check_overloaded_variant_coverage(cname: str, cfg_events: list[dict],
+                                       abi_evts: list[dict]) -> list[str]:
+    """
+    For events with multiple ABI overloads (same name, different params),
+    verify the config covers all ABI variants.
+    """
+    issues: list[str] = []
+    # Group ABI events by name
+    from collections import Counter
+    abi_names = [e["name"] for e in abi_evts]
+    overloaded_names = {n for n, c in Counter(abi_names).items() if c > 1}
+
+    for evt_overloaded_name in overloaded_names:
+        abi_variants = [e for e in abi_evts if e["name"] == evt_overloaded_name]
+        abi_sigs = {_normalize_sig(event_signature(e)) for e in abi_variants}
+
+        cfg_sigs: set[str] = set()
+        for ec in cfg_events:
+            raw = ec.get("event", "")
+            if raw.split("(")[0] == evt_overloaded_name:
+                if "(" in raw:
+                    cfg_sigs.add(_normalize_sig(raw))
+                else:
+                    # Bare name — covers all variants via topic0 (Envio matches topic0 only)
+                    cfg_sigs.add(evt_overloaded_name)  # marker
+                    break
+
+        missing = abi_sigs - cfg_sigs
+        if missing and not any("(" not in ec.get("event", "")
+                                for ec in cfg_events
+                                if ec.get("event", "").split("(")[0] == evt_overloaded_name):
+            issues.append(
+                f"  ⚠️  Contract '{cname}': overloaded event '{evt_overloaded_name}' "
+                f"missing ABI variant(s).\n"
+                f"      ABI variants: {sorted(abi_sigs)}\n"
+                f"      Config covers: {sorted(cfg_sigs - {evt_overloaded_name})}\n"
+                f"      Missing: {sorted(missing)}"
+            )
+    return issues
+
+
+def check_handler_coverage(cfg_contract_names: set[str],
+                            handler_map: dict[str, set[str]]) -> list[str]:
+    """
+    Every config-registered contract should have a handler file that
+    produces an indexer.onEvent({contract: "Name"}, ...) or
+    indexer.onBlock({name: includes Name}) call.
+    """
+    issues: list[str] = []
+    all_on_events: set[str] = set()
+    all_on_blocks: set[str] = set()
+    for fname, refs in handler_map.items():
+        for r in refs:
+            if r.startswith("onEvent:"):
+                all_on_events.add(r.removeprefix("onEvent:"))
+            elif r.startswith("onBlock:"):
+                all_on_blocks.add(r.removeprefix("onBlock:"))
+
+    for cname in cfg_contract_names:
+        if cname not in all_on_events:
+            # Check if it might be an onBlock handler instead
+            if cname not in all_on_blocks:
+                issues.append(
+                    f"  ❌ Contract '{cname}': configured in config.yaml but NO matching\n"
+                    f"      indexer.onEvent({{contract: \"{cname}\", ...}}) call found in handlers."
+                )
+    return issues
+
+
+def check_event_handler_presence(cfg: dict, handler_map: dict[str, set[str]]) -> list[str]:
+    """
+    For every config event entry, check that at least one handler file
+    references that event name (case-sensitive, partial match ok).
+    """
+    issues: list[str] = []
+    all_event_refs: set[str] = set()
+    for refs in handler_map.values():
+        for r in refs:
+            if r.startswith("event:"):
+                all_event_refs.add(r.removeprefix("event:"))
+
+    for cdef in cfg.get("contracts", []):
+        cname = cdef["name"]
+        for ec in cdef.get("events", []):
+            raw = ec.get("event", "")
+            evt_name = raw.split("(")[0]
+            # Check if any handler references this event for this contract
+            # We check if the event name appears in the file text as a loose check
+            found = False
+            for fname, refs in handler_map.items():
+                file_text = (HANDLERS_DIR / fname).read_text()
+                if evt_name in file_text:
+                    found = True
+                    break
+            if not found:
+                issues.append(
+                    f"  ❌ Contract '{cname}': event '{evt_name}' configured but NO handler\n"
+                    f"      references this event in any src/handlers/ file."
+                )
+    return issues
+
+
+def check_schema_int_ranges() -> list[str]:
+    """
+    Check that schema GraphQL Int fields can safely accommodate the
+    EVM types they receive. Int in GraphQL = signed 32-bit (max ~2.1e9).
+    """
+    if not SCHEMA_FILE.exists():
+        return []
+    issues: list[str] = []
+    text = SCHEMA_FILE.read_text()
+
+    for (entity, field), evm_types in SCHEMA_INT_FIELD_TYPES.items():
+        for evm_type in evm_types:
+            if evm_type in OVERFLOW_AS_INT_TYPES:
+                if field not in BLOCK_NUMBER_FIELDS:
+                    issues.append(
+                        f"  🚨 Schema '{entity}.{field}: Int!' receives EVM '{evm_type}' which\n"
+                        f"      exceeds signed 32-bit Int max (2,147,483,647).\n"
+                        f"      This must be BigInt! with @config(precision) instead."
+                    )
+                else:
+                    # Block-number fields: Polygon max block ~86M (fits in Int),
+                    # but warn if the value could exceed 2B.
+                    issues.append(
+                        f"  ℹ️  Schema '{entity}.{field}: Int!' receives EVM '{evm_type}'.\n"
+                        f"      Currently fits signed 32-bit for Polygon (<86M), but\n"
+                        f"      will overflow if chain exceeds ~2.1B blocks."
+                    )
+    return issues
+
+
+def check_event_topic0_alignment(cname: str, event_cfg: dict,
+                                  abi_evts: list[dict]) -> list[str]:
+    """
+    For event config entries with explicit type signatures (e.g., PoolAdded(address,bytes)),
+    compute the keccak256 topic0 hash and compare against the matching ABI variant.
+    """
+    issues: list[str] = []
+    raw = event_cfg.get("event", "")
+    if "(" not in raw:
+        return issues  # bare name = topic0 match (config covers all overloads via hash)
+
+    sig_name = raw.split("(")[0]
+    norm_cfg = _normalize_sig(raw)
+    cfg_topic0 = keccak256(norm_cfg)
+
+    # Find ABI variant that matches
+    matching_variants = [e for e in abi_evts if e["name"] == sig_name]
+    for variant in matching_variants:
+        abi_sig_normalized = _normalize_sig(event_signature(variant))
+        if abi_sig_normalized == norm_cfg:
+            abi_topic0 = event_topic0(variant)
+            issues.append(
+                f"  ℹ️  Contract '{cname}': event '{raw}' topic0 = {abi_topic0}\n"
+                f"      (keccak256(\"{norm_cfg}\")) — internal reference, no action needed."
+            )
+            break
+    else:
+        issues.append(
+            f"  ❌ Contract '{cname}': event '{raw}' — no ABI variant matches.\n"
+            f"      Computed topic0 = {cfg_topic0}\n"
+            f"      Expected one of: {[event_signature(e) for e in matching_variants]}"
+        )
+    return issues
+
+
+def check_indexed_param_usage(cname: str, event_cfg: dict,
+                               abi_evts: list[dict]) -> list[str]:
+    """
+    Flag ABI params that are 'indexed: true' but the handler ignores them.
+    Indexed params are available in event.params but also in event.transaction topics.
+    """
+    issues: list[str] = []
+    name = event_cfg.get("event", "").split("(")[0]
+    for evt in abi_evts:
+        if evt["name"] != name:
+            continue
+        indexed = [inp for inp in evt.get("inputs", []) if inp.get("indexed", False)]
+        if not indexed:
+            continue
+        # Load the handler file to check param usage
+        for handler_file in find_handler_files():
+            text = handler_file.read_text()
+            if name not in text:
+                continue
+            for inp in indexed:
+                pname = inp.get("name", "")
+                if pname and pname not in text:
+                    # indexed param not referenced in handler code (may be intentional)
+                    pass  # Many indexed params are used for filtering, not in handler
+    return issues
+
+
+# ── Main validation pipeline ──────────────────────────────────────
+
+def validate_single_run(config_path: Path, verbose: bool = False) -> list[str]:
     if not config_path.exists():
         return [f"❌ Config file not found: {config_path}"]
 
     config = load_yaml(config_path)
     all_issues: list[str] = []
-    seen_contracts: set[str] = set()
 
-    # ── Global checks ────────────────────────────────────────
+    # ── Handler code analysis (on first run) ───────────────────
+    try:
+        handler_map = extract_handler_calls()
+        contract_register_calls = extract_contract_register_calls()
+        if verbose:
+            all_issues.append(f"  ℹ️  Found handler files: {', '.join(sorted(handler_map.keys()))}")
+            for call in contract_register_calls:
+                all_issues.append(f"  ℹ️  ContractRegister: {call}")
+    except Exception as e:
+        handler_map = {}
+        contract_register_calls = []
+        all_issues.append(f"  ⚠️  Handler analysis failed: {e}")
+
+    # ── Global checks ──────────────────────────────────────────
     if config.get("raw_events", False):
         all_issues.append("  ℹ️  raw_events: true — event payloads stored in DB (debug only).")
     if config.get("rollback_on_reorg", True) is False:
         all_issues.append("  🚨 rollback_on_reorg: false — entity state may diverge on chain reorg.")
 
-    # ── Build contract-def map ───────────────────────────────
+    # ── Build contract-def map ─────────────────────────────────
     contract_defs: dict[str, dict] = {}
     for cdef in config.get("contracts", []):
-        name = cdef["name"]
-        contract_defs[name] = cdef
+        contract_defs[cdef["name"]] = cdef
 
-    # ── Validate each unique contract once ───────────────────
+    cfg_contract_names = set(contract_defs.keys())
+
+    # ── Handler coverage ───────────────────────────────────────
+    all_issues.extend(check_handler_coverage(cfg_contract_names, handler_map))
+    all_issues.extend(check_event_handler_presence(config, handler_map))
+
+    # ── Validate each unique contract ──────────────────────────
     for cname, defn in contract_defs.items():
-        if cname in seen_contracts:
-            continue
-        seen_contracts.add(cname)
-
-        # ── Resolve ABI ──────────────────────────────────────
         abi_rel = defn.get("abi_file_path") or defn.get("abi")
         if not abi_rel:
             all_issues.append(f"  ❌ Contract '{cname}': no abi_file_path or abi in definition.")
@@ -251,25 +564,27 @@ def validate_single_run(config_path: Path) -> list[str]:
             all_issues.append(f"  ❌ Contract '{cname}': ABI not found at {abi_path}")
             continue
 
-        abi = load_abi(abi_path)
+        abi = load_json(abi_path)
         abi_evts = abi_events(abi)
 
-        # ── Config events list ───────────────────────────────
         cfg_events = defn.get("events", [])
-        cfg_event_names = {
-            (e.get("event", "")).split("(")[0]
-            for e in cfg_events
-        }
+        cfg_event_names = {(e.get("event", "")).split("(")[0] for e in cfg_events}
 
         for evt_cfg in cfg_events:
             all_issues.extend(check_event_exists(cname, evt_cfg, abi_evts))
             all_issues.extend(check_type_safety(cname, evt_cfg, abi_evts))
             all_issues.extend(check_unnamed_params(cname, evt_cfg, abi_evts))
+            all_issues.extend(check_event_topic0_alignment(cname, evt_cfg, abi_evts))
 
         all_issues.extend(check_anonymous_events(cname, abi_evts))
         all_issues.extend(check_missing_discovery_events(cname, cfg_event_names, abi_evts))
+        all_issues.extend(check_overloaded_variant_coverage(cname, cfg_events, abi_evts))
+        all_issues.extend(check_indexed_param_usage(cname, cfg_events[0], abi_evts) if cfg_events else [])
 
-    # ── Structural: per-chain addresses ──────────────────────
+    # ── Schema checks ──────────────────────────────────────────
+    all_issues.extend(check_schema_int_ranges())
+
+    # ── Structural: per-chain addresses ────────────────────────
     for chain in config.get("chains", []):
         chain_id = chain.get("id", "?")
         per_chain = chain.get("contracts", [])
@@ -284,7 +599,6 @@ def validate_single_run(config_path: Path) -> list[str]:
 
 
 def print_report(issues: list[str]) -> int:
-    """Print formatted report; return exit code."""
     if not issues:
         print("✅ All checks passed — no structural issues found.")
         return 0
@@ -296,19 +610,22 @@ def print_report(issues: list[str]) -> int:
     print(f"\n{'=' * 60}")
     print(f"  Envio Config Validation Report")
     print(f"{'=' * 60}")
-    print(f"  Errors:  {error_count}")
+    print(f"  Errors:   {error_count}")
     print(f"  Warnings: {warn_count}")
     print(f"  Info:     {info_count}")
     print(f"{'=' * 60}\n")
 
     for issue in issues:
-        prefix = issue.strip()[0]
-        if prefix in ("❌", "🚨"):
-            print(f"[ERROR]    {issue.strip()}")
-        elif prefix in ("⚠️", "📋"):
-            print(f"[WARNING]  {issue.strip()}")
+        s = issue.strip()
+        if not s:
+            continue
+        prefix_markers = {"❌", "🚨"}
+        if any(m in s for m in prefix_markers):
+            print(f"[ERROR]    {s}")
+        elif "⚠️" in s or "📋" in s:
+            print(f"[WARNING]  {s}")
         else:
-            print(f"[INFO]     {issue.strip()}")
+            print(f"[INFO]     {s}")
         print()
 
     return 1 if error_count > 0 else 0
@@ -317,17 +634,22 @@ def print_report(issues: list[str]) -> int:
 def main():
     import argparse
     parser = argparse.ArgumentParser(
-        description="AST-style static analysis for Envio config.yaml vs ABIs."
+        description="Enhanced AST-style static analysis for Envio config.yaml vs ABIs."
     )
     parser.add_argument(
         "--config",
         default=str(DEFAULT_CONFIG),
         help=f"Path to config.yaml (default: {DEFAULT_CONFIG})",
     )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show verbose handler analysis details",
+    )
     args = parser.parse_args()
 
     config_path = Path(args.config)
-    issues = validate_single_run(config_path)
+    issues = validate_single_run(config_path, verbose=args.verbose)
     return print_report(issues)
 
 

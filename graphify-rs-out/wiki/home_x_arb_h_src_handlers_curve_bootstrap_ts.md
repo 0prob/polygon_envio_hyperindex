@@ -1,0 +1,24 @@
+# curve_bootstrap
+
+- **ID:** `home_x_arb_h_src_handlers_curve_bootstrap_ts`
+- **Type:** File
+- **File:** `/home/x/arb/h/src/handlers/curve_bootstrap.ts`
+- **Community:** 5 (bootstrapRegistryPage())
+
+## Relationships
+
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_envio_indexer (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_effects_curve_metadata_curvefeetobps (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_effects_curve_metadata_fetchcurvemetadata (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_effects_curve_metadata_iscurvemetadataempty (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_effects_curve_registry_bootstrap_fetchcurveregistrypage (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_utils_entity_writes_settokenmetasifmissing (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_utils_pool_meta_entity_poolmetaentity (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_utils_factory_token_meta_resolvetokenmetasbatch (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_utils_pacing_runwithconcurrency (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_utils_pacing_getmetadataconcurrency (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_utils_curve_registry_curve_registry_sources (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_import_utils_curve_registry_curvediscoveryprotocol (imports, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_bootstrapregistrypage (defines, Extracted)
+- home_x_arb_h_src_handlers_curve_bootstrap_ts → home_x_arb_h_src_handlers_curve_bootstrap_ts_bootstrapcurvepools (defines, Extracted)
+

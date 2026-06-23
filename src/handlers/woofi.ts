@@ -100,6 +100,7 @@ indexer.onBlock(
       fee: existing?.fee && existing.fee > 0 ? existing.fee : DEFAULT_WOOFI_FEE,
       tickSpacing: undefined,
       createdBlock: existing?.createdBlock ?? Number(block.number),
+      updatedAtBlock: Number(block.number),
       poolId: undefined,
     }));
 
@@ -165,6 +166,7 @@ indexer.onEvent(
       fee: meta?.fee && meta.fee > 0 ? meta.fee : DEFAULT_WOOFI_FEE,
       tickSpacing: undefined,
       createdBlock: meta?.createdBlock ?? blockNumber,
+      updatedAtBlock: blockNumber,
       poolId: undefined,
     }));
 

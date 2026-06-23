@@ -64,8 +64,9 @@ async function handleDodoPool(
     tokens: [base, quote],
     fee: feeBps,
     tickSpacing: undefined,
-      createdBlock: blockNumber,
-      poolId: undefined,
+    createdBlock: blockNumber,
+    updatedAtBlock: blockNumber,
+    poolId: undefined,
   }));
 
   // Hot DODO state comes from arb bot RPC — skip DodoPoolState DB write.

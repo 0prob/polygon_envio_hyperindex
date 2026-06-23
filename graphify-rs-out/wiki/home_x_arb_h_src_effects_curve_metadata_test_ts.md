@@ -1,0 +1,22 @@
+# curve_metadata.test
+
+- **ID:** `home_x_arb_h_src_effects_curve_metadata_test_ts`
+- **Type:** File
+- **File:** `/home/x/arb/h/src/effects/curve_metadata.test.ts`
+- **Community:** 8 (mockCurveReads())
+
+## Relationships
+
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_vitest_describe (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_vitest_expect (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_vitest_it (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_vitest_vi (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_vitest_beforeeach (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_curve_metadata_curvediscoverypooltype (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_curve_metadata_curvefeetobps (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_curve_metadata_curvepooltypefromgamma (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_curve_metadata_fetchcurvemetadatahandler (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_curve_metadata_iscurvemetadataempty (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_import_curve_metadata_resolvecurvencoins (imports, Extracted)
+- home_x_arb_h_src_effects_curve_metadata_test_ts → home_x_arb_h_src_effects_curve_metadata_test_ts_mockcurvereads (defines, Extracted)
+

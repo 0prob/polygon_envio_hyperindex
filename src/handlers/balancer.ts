@@ -9,7 +9,11 @@ import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 // a fast path). Falls back to BalancerPoolIdMapping entity for cross-block lookups
 // and self-heals on reorg: if PoolMeta.get(poolAddr) returns undefined (entity
 // rolled back), the entry is evicted and the handler returns early.
-const poolIdToAddrCache = new Map<string, string>();
+//
+// Each entry stores the block number so we can detect stale cache entries after a
+// reorg: if the cached block is higher than the current block, it came from a
+// pre-reorg chain fork and must be evicted.
+const poolIdToAddrCache = new Map<string, { poolAddress: string; blockNumber: number }>();
 
 indexer.onEvent(
   {
@@ -42,13 +46,16 @@ indexer.onEvent(
       return;
     }
 
+    // BigInt division truncates: swapFee in (1, 10^14) → 0 bps → stored as undefined.
+    // Legitimate Balancer swap fees are always ≥ 0.0001 bps (swapFee ≥ 10^12), so
+    // only broken RPC returns or trivial pools hit the truncation path.
     const fee = meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
     const tokens = [...meta.tokens];
     const poolType = meta.amp != null && meta.amp > 0n ? "stable" : meta.weights?.length ? "weighted" : undefined;
 
     // Write to both entity (durable, auto-rolled back on reorg) and in-memory cache
     // (same-block bridging for TokensRegistered which only emits poolId).
-    poolIdToAddrCache.set(poolId, pool);
+    poolIdToAddrCache.set(poolId, { poolAddress: pool, blockNumber });
     context.BalancerPoolIdMapping.set({
       id: poolId,
       poolAddress: pool,
@@ -63,6 +70,7 @@ indexer.onEvent(
       fee: fee > 0 ? fee : undefined,
       tickSpacing: undefined,
       createdBlock: blockNumber,
+      updatedAtBlock: blockNumber,
       poolId: poolId,
       poolType,
     }));
@@ -88,7 +96,16 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
 
   const poolId = event.params.poolId;
 
-  let poolAddr = poolIdToAddrCache.get(poolId);
+  let poolAddr: string | undefined;
+  const cached = poolIdToAddrCache.get(poolId);
+  if (cached) {
+    // Reorg guard: evict cache entries from higher blocks (pre-reorg fork).
+    if (cached.blockNumber > blockNumber) {
+      poolIdToAddrCache.delete(poolId);
+    } else {
+      poolAddr = cached.poolAddress;
+    }
+  }
   if (!poolAddr) {
     // Cross-block or after-reorg: read from entity (auto-rolled back by HyperIndex).
     const mapping = await context.BalancerPoolIdMapping.get(poolId);
@@ -97,7 +114,7 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
       return;
     }
     poolAddr = mapping.poolAddress;
-    poolIdToAddrCache.set(poolId, poolAddr);
+    poolIdToAddrCache.set(poolId, { poolAddress: poolAddr, blockNumber });
   }
 
   // Await effects + DB read concurrently so all effects are registered in the preload
@@ -132,7 +149,8 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     tokens: tokens,
     fee,
     tickSpacing: undefined,
-    createdBlock: blockNumber,
+    createdBlock: existing.createdBlock,
+    updatedAtBlock: blockNumber,
     poolId: poolId,
     poolType,
   }));

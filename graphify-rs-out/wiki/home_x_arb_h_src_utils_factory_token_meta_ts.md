@@ -1,0 +1,21 @@
+# factory_token_meta
+
+- **ID:** `home_x_arb_h_src_utils_factory_token_meta_ts`
+- **Type:** File
+- **File:** `/home/x/arb/h/src/utils/factory_token_meta.ts`
+- **Community:** 9 (resolveTokenMetaSlots())
+
+## Relationships
+
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_import_envio_effect (imports, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_import_effects_token_metadata_fetchtokenmeta (imports, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_import_effects_token_metadata_lookupregistrydecimalsbatch (imports, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_import_effects_token_metadata_preloadtokendecimalsdefault (imports, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_import_normalize_address_normalizetokenaddress (imports, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_import_pacing_getmetadataconcurrency (imports, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_import_pacing_runwithconcurrency (imports, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_cachedtokenmeta (defines, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_resolvetokenmetaslots (defines, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_resolvefactorypairtokenmetas (defines, Extracted)
+- home_x_arb_h_src_utils_factory_token_meta_ts → home_x_arb_h_src_utils_factory_token_meta_ts_resolvetokenmetasbatch (defines, Extracted)
+

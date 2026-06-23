@@ -30,6 +30,7 @@ export type PoolMetaWritePayload = {
   readonly fee: number | undefined;
   readonly tickSpacing: number | undefined;
   readonly createdBlock: number;
+  readonly updatedAtBlock: number;
   readonly poolId: string | undefined;
   readonly hooks: string | undefined;
   readonly poolType: string | undefined;

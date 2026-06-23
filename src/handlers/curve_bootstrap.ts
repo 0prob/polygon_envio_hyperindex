@@ -93,9 +93,9 @@ async function bootstrapRegistryPage(
       return;
     }
 
-    const coinMetas = await resolveTokenMetasBatch(context, coins, tokenExisting);
-
     if (context.isPreload) return;
+
+    const coinMetas = await resolveTokenMetasBatch(context, coins, tokenExisting);
 
     context.PoolMeta.set(poolMetaEntity({
       id: row.address,
@@ -104,6 +104,7 @@ async function bootstrapRegistryPage(
       tokens: coins,
       fee: curveFeeToBps(meta.fee),
       createdBlock: Number(block.number),
+      updatedAtBlock: Number(block.number),
       poolId: undefined,
       poolType: meta.poolType,
     }));

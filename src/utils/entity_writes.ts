@@ -3,6 +3,7 @@
  * PoolMeta is always written on discovery; TokenMeta is written only for confirmed decimals.
  */
 
+import { normalizeTokenAddress } from "./normalize_address";
 import { safeDecimals } from "./safe_decimals";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,7 +41,7 @@ export async function setTokenMetaIfMissing(
   decimals: number,
   trusted = false,
 ): Promise<void> {
-  const addr = address.toLowerCase();
+  const addr = normalizeTokenAddress(address);
   const existing = await context.TokenMeta.get(addr);
   if (!shouldPersistTokenMeta(existing, decimals, trusted)) return;
   context.TokenMeta.set({ id: addr, address: addr, decimals: safeDecimals(decimals) });
@@ -71,7 +72,7 @@ export async function setTokenMetaEntriesIfMissing(
 ): Promise<void> {
   const seen = new Map<string, TokenMetaWrite>();
   for (const entry of entries) {
-    const addr = entry.address.toLowerCase();
+    const addr = normalizeTokenAddress(entry.address);
     if (!seen.has(addr)) {
       seen.set(addr, {
         address: addr,

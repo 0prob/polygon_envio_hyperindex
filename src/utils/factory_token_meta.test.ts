@@ -40,7 +40,7 @@ describe("resolveFactoryPairTokenMetas", () => {
     expect(t0).toEqual({ decimals: 18, trusted: true });
     expect(t1).toEqual({ decimals: 6, trusted: true });
     expect(effect).not.toHaveBeenCalled();
-    expect(lookupRegistryDecimalsBatchMock).not.toHaveBeenCalled();
+    expect(lookupRegistryDecimalsBatchMock).toHaveBeenCalledTimes(1);
   });
 
   it("uses batch registry lookup before fetchTokenMeta", async () => {
@@ -59,7 +59,7 @@ describe("resolveFactoryPairTokenMetas", () => {
 
     expect(t0).toEqual({ decimals: 9, trusted: true });
     expect(t1).toEqual({ decimals: 6, trusted: true });
-    expect(lookupRegistryDecimalsBatchMock).toHaveBeenCalledWith([COLD]);
+    expect(lookupRegistryDecimalsBatchMock).toHaveBeenCalledWith([COLD, USDC]);
     expect(effect).not.toHaveBeenCalled();
   });
 
@@ -80,7 +80,7 @@ describe("resolveFactoryPairTokenMetas", () => {
 
     expect(t0).toMatchObject({ decimals: 9, trusted: true });
     expect(t1).toEqual({ decimals: 6, trusted: true });
-    expect(lookupRegistryDecimalsBatchMock).toHaveBeenCalledWith([COLD]);
+    expect(lookupRegistryDecimalsBatchMock).toHaveBeenNthCalledWith(2, [COLD]);
     expect(effect).toHaveBeenCalledTimes(1);
   });
 
@@ -96,7 +96,7 @@ describe("resolveFactoryPairTokenMetas", () => {
 
     expect(t0).toEqual({ decimals: 18, trusted: false });
     expect(t1).toEqual({ decimals: 18, trusted: false });
-    expect(lookupRegistryDecimalsBatchMock).toHaveBeenCalledTimes(1);
+    expect(lookupRegistryDecimalsBatchMock).toHaveBeenCalledTimes(2);
     expect(effect).not.toHaveBeenCalled();
   });
 });

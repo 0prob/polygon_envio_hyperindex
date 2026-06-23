@@ -60,11 +60,14 @@ const updateIndexerProgress = async ({ block, context }: any) => {
 
   const chainId = context.chain.id;
 
+  // block.number is BigInt — convert to Number for GraphQL Int! fields.
+  // Safe at current Polygon height (~86M); 32-bit Int overflows at 2.14B.
+  const bn = Number(block.number);
   context.IndexerProgress.set({
     id: String(chainId),
     chainId,
-    lastProcessedBlock: block.number,
-    updatedAtBlock: block.number,
+    lastProcessedBlock: bn,
+    updatedAtBlock: bn,
   });
 };
 

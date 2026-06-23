@@ -1,0 +1,19 @@
+# curve_registry_bootstrap.test
+
+- **ID:** `home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts`
+- **Type:** File
+- **File:** `/home/x/arb/h/src/effects/curve_registry_bootstrap.test.ts`
+- **Community:** 19 (vitest/vi (19))
+
+## Relationships
+
+- home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts → home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts_import_vitest_describe (imports, Extracted)
+- home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts → home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts_import_vitest_expect (imports, Extracted)
+- home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts → home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts_import_vitest_it (imports, Extracted)
+- home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts → home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts_import_vitest_vi (imports, Extracted)
+- home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts → home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts_import_vitest_beforeeach (imports, Extracted)
+- home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts → home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts_import_utils_constants_curve_registry_legacy (imports, Extracted)
+- home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts → home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts_import_utils_constants_usdc (imports, Extracted)
+- home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts → home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts_import_utils_constants_usdt (imports, Extracted)
+- home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts → home_x_arb_h_src_effects_curve_registry_bootstrap_test_ts_import_curve_registry_bootstrap_fetchcurveregistrypagehandler (imports, Extracted)
+

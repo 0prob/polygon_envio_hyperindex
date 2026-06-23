@@ -1,0 +1,936 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+<rect width="100%" height="100%" fill="#0f0f1a"/>
+<line x1="605.4" y1="60.0" x2="610.8" y2="60.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="605.4" y1="60.0" x2="616.2" y2="60.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="605.4" y1="60.0" x2="621.5" y2="60.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="605.4" y1="60.0" x2="626.9" y2="60.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="605.4" y1="60.0" x2="632.3" y2="61.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="643.0" y2="62.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="648.3" y2="63.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="653.7" y2="63.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="659.0" y2="64.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="664.3" y2="65.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="669.6" y2="66.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="674.9" y2="67.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="680.2" y2="68.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="685.5" y2="69.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="637.6" y1="61.8" x2="690.7" y2="70.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="685.5" y1="69.5" x2="664.3" y2="65.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="685.5" y1="69.5" x2="674.9" y2="67.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="685.5" y1="69.5" x2="680.2" y2="68.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="685.5" y1="69.5" x2="669.6" y2="66.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="685.5" y1="69.5" x2="690.7" y2="70.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="701.2" y2="73.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="706.3" y2="74.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="711.5" y2="76.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="716.7" y2="77.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="721.8" y2="79.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="726.9" y2="81.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="732.0" y2="83.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="737.0" y2="84.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="742.1" y2="86.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="747.1" y2="88.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="752.0" y2="90.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="757.0" y2="93.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="761.9" y2="95.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="766.8" y2="97.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="771.6" y2="99.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="776.5" y2="102.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="781.2" y2="104.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="786.0" y2="107.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="790.7" y2="109.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="695.9" y1="72.0" x2="795.4" y2="112.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="757.0" y1="93.0" x2="752.0" y2="90.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="757.0" y1="93.0" x2="747.1" y2="88.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="776.5" y1="102.2" x2="771.6" y2="99.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="781.2" y1="104.7" x2="747.1" y2="88.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="786.0" y1="107.2" x2="726.9" y2="81.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="786.0" y1="107.2" x2="742.1" y2="86.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="786.0" y1="107.2" x2="732.0" y2="83.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="786.0" y1="107.2" x2="737.0" y2="84.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="786.0" y1="107.2" x2="757.0" y2="93.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="786.0" y1="107.2" x2="776.5" y2="102.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="786.0" y1="107.2" x2="781.2" y2="104.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="786.0" y1="107.2" x2="761.9" y2="95.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="786.0" y1="107.2" x2="766.8" y2="97.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="795.4" y1="112.5" x2="786.0" y2="107.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="795.4" y1="112.5" x2="790.7" y2="109.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="800.0" y1="115.2" x2="804.6" y2="118.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="809.2" y1="120.9" x2="813.7" y2="123.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="818.2" y1="126.8" x2="822.7" y2="129.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="818.2" y1="126.8" x2="827.1" y2="132.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="818.2" y1="126.8" x2="831.4" y2="136.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="818.2" y1="126.8" x2="835.7" y2="139.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="844.2" y2="145.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="848.4" y2="149.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="852.5" y2="152.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="856.6" y2="156.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="860.6" y2="159.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="864.6" y2="163.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="868.5" y2="167.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="872.4" y2="170.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="876.2" y2="174.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="880.0" y2="178.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="840.0" y1="142.6" x2="883.7" y2="182.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="883.7" y1="182.4" x2="880.0" y2="178.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="887.4" y1="186.4" x2="891.0" y2="190.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="887.4" y1="186.4" x2="894.6" y2="194.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="887.4" y1="186.4" x2="898.1" y2="198.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="887.4" y1="186.4" x2="901.5" y2="202.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="887.4" y1="186.4" x2="904.9" y2="206.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="887.4" y1="186.4" x2="908.2" y2="211.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="887.4" y1="186.4" x2="911.5" y2="215.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="887.4" y1="186.4" x2="914.7" y2="219.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="917.9" y1="224.0" x2="921.0" y2="228.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="917.9" y1="224.0" x2="924.0" y2="232.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="917.9" y1="224.0" x2="927.0" y2="237.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="932.7" y2="246.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="935.5" y2="251.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="938.2" y2="255.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="940.8" y2="260.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="943.4" y2="265.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="946.0" y2="270.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="948.4" y2="274.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="950.8" y2="279.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="953.1" y2="284.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="955.4" y2="289.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="957.5" y2="294.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="959.7" y2="299.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="961.7" y2="304.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="929.9" y1="241.9" x2="963.7" y2="309.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="963.7" y1="309.2" x2="961.7" y2="304.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="965.6" y1="314.2" x2="967.4" y2="319.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="965.6" y1="314.2" x2="969.2" y2="324.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="965.6" y1="314.2" x2="970.9" y2="329.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="965.6" y1="314.2" x2="972.5" y2="334.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="965.6" y1="314.2" x2="974.1" y2="339.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="975.6" y1="344.9" x2="977.0" y2="350.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="975.6" y1="344.9" x2="978.3" y2="355.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="975.6" y1="344.9" x2="979.6" y2="360.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="975.6" y1="344.9" x2="980.8" y2="365.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="981.9" y1="371.1" x2="983.0" y2="376.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="981.9" y1="371.1" x2="984.0" y2="381.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="981.9" y1="371.1" x2="984.9" y2="387.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="981.9" y1="371.1" x2="985.7" y2="392.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="987.2" y2="403.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="987.8" y2="408.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="988.3" y2="413.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="988.8" y2="419.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="989.2" y2="424.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="989.5" y2="429.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="989.7" y2="435.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="989.9" y2="440.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="990.0" y2="446.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="990.0" y2="451.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="989.9" y2="456.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="989.8" y2="462.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.5" y1="397.6" x2="989.6" y2="467.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="989.8" y1="462.1" x2="989.9" y2="456.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="989.8" y1="462.1" x2="990.0" y2="451.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="989.3" y1="472.9" x2="989.0" y2="478.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="989.3" y1="472.9" x2="988.5" y2="483.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="989.3" y1="472.9" x2="988.0" y2="489.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="989.3" y1="472.9" x2="987.5" y2="494.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="986.1" y2="505.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="985.3" y2="510.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="984.4" y2="515.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="983.5" y2="521.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="982.5" y2="526.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="981.4" y2="531.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="980.2" y2="536.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="979.0" y2="542.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="977.7" y2="547.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="976.3" y2="552.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="974.9" y2="557.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="973.3" y2="562.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="971.7" y2="568.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="970.1" y2="573.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="968.3" y2="578.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.8" y1="499.7" x2="966.5" y2="583.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.1" y1="505.0" x2="966.5" y2="583.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.1" y1="505.0" x2="983.5" y2="521.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="986.1" y1="505.0" x2="982.5" y2="526.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="984.4" y1="515.7" x2="985.3" y2="510.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="983.5" y1="521.0" x2="984.4" y2="515.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="981.4" y1="531.5" x2="984.4" y2="515.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="980.2" y1="536.8" x2="981.4" y2="531.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="979.0" y1="542.0" x2="981.4" y2="531.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="977.7" y1="547.2" x2="982.5" y2="526.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="977.7" y1="547.2" x2="981.4" y2="531.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="976.3" y1="552.5" x2="981.4" y2="531.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="974.9" y1="557.6" x2="981.4" y2="531.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="973.3" y1="562.8" x2="981.4" y2="531.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="971.7" y1="568.0" x2="981.4" y2="531.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="970.1" y1="573.1" x2="979.0" y2="542.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="970.1" y1="573.1" x2="980.2" y2="536.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="962.7" y2="593.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="960.7" y2="598.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="958.6" y2="603.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="956.5" y2="608.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="954.2" y2="613.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="952.0" y2="618.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="949.6" y2="622.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="947.2" y2="627.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="944.7" y2="632.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="942.1" y2="637.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="964.7" y1="588.3" x2="939.5" y2="641.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="942.1" y1="637.2" x2="947.2" y2="627.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="942.1" y1="637.2" x2="944.7" y2="632.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="939.5" y1="641.9" x2="947.2" y2="627.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="939.5" y1="641.9" x2="944.7" y2="632.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="936.8" y1="646.6" x2="934.1" y2="651.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="936.8" y1="646.6" x2="931.3" y2="655.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="936.8" y1="646.6" x2="928.4" y2="660.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="936.8" y1="646.6" x2="925.5" y2="664.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="922.5" y1="669.3" x2="919.4" y2="673.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="922.5" y1="669.3" x2="916.3" y2="678.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="922.5" y1="669.3" x2="913.1" y2="682.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="922.5" y1="669.3" x2="909.9" y2="686.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="906.6" y1="691.0" x2="903.2" y2="695.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="906.6" y1="691.0" x2="899.8" y2="699.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="906.6" y1="691.0" x2="896.3" y2="703.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="906.6" y1="691.0" x2="892.8" y2="707.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="906.6" y1="691.0" x2="889.2" y2="711.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="906.6" y1="691.0" x2="885.6" y2="715.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="906.6" y1="691.0" x2="881.9" y2="719.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="906.6" y1="691.0" x2="878.1" y2="723.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="874.3" y1="727.2" x2="870.5" y2="731.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="874.3" y1="727.2" x2="866.6" y2="734.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="874.3" y1="727.2" x2="862.6" y2="738.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="858.6" y1="741.9" x2="854.6" y2="745.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="858.6" y1="741.9" x2="850.5" y2="748.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="858.6" y1="741.9" x2="846.3" y2="752.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="858.6" y1="741.9" x2="842.1" y2="755.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="858.6" y1="741.9" x2="837.9" y2="759.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="858.6" y1="741.9" x2="833.6" y2="762.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="829.2" y1="765.5" x2="824.9" y2="768.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="820.4" y1="771.7" x2="816.0" y2="774.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="820.4" y1="771.7" x2="811.5" y2="777.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="820.4" y1="771.7" x2="806.9" y2="780.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="820.4" y1="771.7" x2="802.3" y2="783.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="820.4" y1="771.7" x2="797.7" y2="786.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="820.4" y1="771.7" x2="793.1" y2="788.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="820.4" y1="771.7" x2="788.4" y2="791.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="783.6" y1="794.1" x2="778.9" y2="796.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="783.6" y1="794.1" x2="774.1" y2="799.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="783.6" y1="794.1" x2="769.2" y2="801.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="783.6" y1="794.1" x2="764.3" y2="803.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="783.6" y1="794.1" x2="759.4" y2="805.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="764.3" y1="803.7" x2="769.2" y2="801.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="759.4" y1="805.9" x2="769.2" y2="801.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="754.5" y1="808.1" x2="749.6" y2="810.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="744.6" y1="812.2" x2="739.6" y2="814.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="744.6" y1="812.2" x2="734.5" y2="816.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="744.6" y1="812.2" x2="729.4" y2="817.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="744.6" y1="812.2" x2="724.4" y2="819.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="744.6" y1="812.2" x2="719.2" y2="821.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="708.9" y1="824.5" x2="703.8" y2="825.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="708.9" y1="824.5" x2="698.6" y2="827.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="708.9" y1="824.5" x2="693.3" y2="828.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="708.9" y1="824.5" x2="688.1" y2="829.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="708.9" y1="824.5" x2="682.8" y2="831.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="708.9" y1="824.5" x2="677.6" y2="832.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="708.9" y1="824.5" x2="672.3" y2="833.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="667.0" y1="834.2" x2="661.7" y2="835.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="667.0" y1="834.2" x2="656.4" y2="835.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="651.0" y1="836.6" x2="645.7" y2="837.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="651.0" y1="836.6" x2="640.3" y2="837.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="651.0" y1="836.6" x2="635.0" y2="838.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="651.0" y1="836.6" x2="629.6" y2="838.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="651.0" y1="836.6" x2="624.2" y2="839.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="651.0" y1="836.6" x2="618.8" y2="839.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="613.5" y1="839.8" x2="608.1" y2="839.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="613.5" y1="839.8" x2="602.7" y2="840.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="613.5" y1="839.8" x2="597.3" y2="840.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="613.5" y1="839.8" x2="591.9" y2="839.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="613.5" y1="839.8" x2="586.5" y2="839.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="597.3" y1="840.0" x2="602.7" y2="840.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="591.9" y1="839.9" x2="586.5" y2="839.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="586.5" y1="839.8" x2="602.7" y2="840.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="581.2" y1="839.5" x2="575.8" y2="839.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="581.2" y1="839.5" x2="570.4" y2="838.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="581.2" y1="839.5" x2="565.0" y2="838.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="581.2" y1="839.5" x2="559.7" y2="837.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="581.2" y1="839.5" x2="554.3" y2="837.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="549.0" y1="836.6" x2="543.6" y2="835.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="533.0" y2="834.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="527.7" y2="833.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="522.4" y2="832.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="517.2" y2="831.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="511.9" y2="829.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="506.7" y2="828.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="501.4" y2="827.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="496.2" y2="825.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="491.1" y2="824.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="538.3" y1="835.1" x2="485.9" y2="822.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="475.6" y2="819.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="470.6" y2="817.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="465.5" y2="816.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="460.4" y2="814.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="455.4" y2="812.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="450.4" y2="810.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="445.5" y2="808.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="440.6" y2="805.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="435.7" y2="803.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="430.8" y2="801.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="425.9" y2="799.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="421.1" y2="796.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="416.4" y2="794.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="411.6" y2="791.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="406.9" y2="788.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="480.8" y1="821.3" x2="402.3" y2="786.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="397.7" y1="783.4" x2="393.1" y2="780.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="397.7" y1="783.4" x2="388.5" y2="777.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="397.7" y1="783.4" x2="384.0" y2="774.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="397.7" y1="783.4" x2="379.6" y2="771.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="397.7" y1="783.4" x2="375.1" y2="768.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="397.7" y1="783.4" x2="370.8" y2="765.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="397.7" y1="783.4" x2="366.4" y2="762.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="397.7" y1="783.4" x2="362.1" y2="759.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="397.7" y1="783.4" x2="357.9" y2="755.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="353.7" y1="752.4" x2="349.5" y2="748.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="353.7" y1="752.4" x2="345.4" y2="745.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="353.7" y1="752.4" x2="341.4" y2="741.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="353.7" y1="752.4" x2="337.4" y2="738.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="353.7" y1="752.4" x2="333.4" y2="734.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="353.7" y1="752.4" x2="329.5" y2="731.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="353.7" y1="752.4" x2="325.7" y2="727.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="353.7" y1="752.4" x2="321.9" y2="723.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="353.7" y1="752.4" x2="318.1" y2="719.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="314.4" y1="715.6" x2="310.8" y2="711.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="314.4" y1="715.6" x2="307.2" y2="707.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="314.4" y1="715.6" x2="303.7" y2="703.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="314.4" y1="715.6" x2="300.2" y2="699.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="314.4" y1="715.6" x2="296.8" y2="695.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="314.4" y1="715.6" x2="293.4" y2="691.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="314.4" y1="715.6" x2="290.1" y2="686.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="314.4" y1="715.6" x2="286.9" y2="682.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="314.4" y1="715.6" x2="283.7" y2="678.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="283.7" y1="678.1" x2="286.9" y2="682.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="283.7" y1="678.1" x2="293.4" y2="691.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="280.6" y1="673.8" x2="277.5" y2="669.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="280.6" y1="673.8" x2="274.5" y2="664.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="280.6" y1="673.8" x2="271.6" y2="660.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="280.6" y1="673.8" x2="268.7" y2="655.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="280.6" y1="673.8" x2="265.9" y2="651.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="280.6" y1="673.8" x2="263.2" y2="646.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="280.6" y1="673.8" x2="260.5" y2="641.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="280.6" y1="673.8" x2="257.9" y2="637.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="280.6" y1="673.8" x2="255.3" y2="632.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="252.8" y1="627.7" x2="250.4" y2="622.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="252.8" y1="627.7" x2="248.0" y2="618.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="252.8" y1="627.7" x2="245.8" y2="613.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="252.8" y1="627.7" x2="243.5" y2="608.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="252.8" y1="627.7" x2="241.4" y2="603.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="252.8" y1="627.7" x2="239.3" y2="598.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="252.8" y1="627.7" x2="237.3" y2="593.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="252.8" y1="627.7" x2="235.3" y2="588.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="252.8" y1="627.7" x2="233.5" y2="583.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="235.3" y1="588.3" x2="237.3" y2="593.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="233.5" y1="583.2" x2="235.3" y2="588.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="229.9" y2="573.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="228.3" y2="568.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="226.7" y2="562.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="225.1" y2="557.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="223.7" y2="552.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="222.3" y2="547.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="221.0" y2="542.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="219.8" y2="536.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="218.6" y2="531.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="217.5" y2="526.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="216.5" y2="521.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.7" y1="578.2" x2="215.6" y2="515.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.7" y1="510.3" x2="213.9" y2="505.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.7" y1="510.3" x2="213.2" y2="499.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.7" y1="510.3" x2="212.5" y2="494.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.7" y1="510.3" x2="212.0" y2="489.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.7" y1="510.3" x2="211.5" y2="483.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.7" y1="510.3" x2="211.0" y2="478.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.7" y1="510.3" x2="210.7" y2="472.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="210.2" y2="462.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="210.1" y2="456.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="210.0" y2="451.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="210.0" y2="446.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="210.1" y2="440.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="210.3" y2="435.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="210.5" y2="429.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="210.8" y2="424.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="211.2" y2="419.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="211.7" y2="413.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="212.2" y2="408.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="212.8" y2="403.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="213.5" y2="397.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="214.3" y2="392.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="215.1" y2="387.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="216.0" y2="381.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="217.0" y2="376.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="218.1" y2="371.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="219.2" y2="365.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="220.4" y2="360.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="221.7" y2="355.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="223.0" y2="350.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="224.4" y2="344.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="225.9" y2="339.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="227.5" y2="334.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="229.1" y2="329.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="230.8" y2="324.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="232.6" y2="319.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="234.4" y2="314.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="236.3" y2="309.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="238.3" y2="304.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="240.3" y2="299.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="242.5" y2="294.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="244.6" y2="289.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="246.9" y2="284.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="249.2" y2="279.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="251.6" y2="274.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="254.0" y2="270.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="256.6" y2="265.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="259.2" y2="260.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="261.8" y2="255.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="210.4" y1="467.5" x2="264.5" y2="251.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="234.4" y1="314.2" x2="242.5" y2="294.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="242.5" y1="294.2" x2="232.6" y2="319.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="242.5" y1="294.2" x2="244.6" y2="289.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="242.5" y1="294.2" x2="240.3" y2="299.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="242.5" y1="294.2" x2="238.3" y2="304.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="246.9" y1="284.4" x2="249.2" y2="279.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="256.6" y1="265.2" x2="259.2" y2="260.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="261.8" y1="255.8" x2="242.5" y2="294.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="261.8" y1="255.8" x2="254.0" y2="270.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="261.8" y1="255.8" x2="246.9" y2="284.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="261.8" y1="255.8" x2="251.6" y2="274.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="261.8" y1="255.8" x2="256.6" y2="265.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="267.3" y1="246.5" x2="270.1" y2="241.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="267.3" y1="246.5" x2="273.0" y2="237.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="267.3" y1="246.5" x2="276.0" y2="232.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="267.3" y1="246.5" x2="279.0" y2="228.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="267.3" y1="246.5" x2="282.1" y2="224.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="267.3" y1="246.5" x2="285.3" y2="219.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="267.3" y1="246.5" x2="288.5" y2="215.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="267.3" y1="246.5" x2="291.8" y2="211.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="267.3" y1="246.5" x2="295.1" y2="206.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="301.9" y2="198.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="305.4" y2="194.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="309.0" y2="190.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="312.6" y2="186.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="316.3" y2="182.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="320.0" y2="178.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="323.8" y2="174.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="327.6" y2="170.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="331.5" y2="167.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="335.4" y2="163.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="298.5" y1="202.7" x2="339.4" y2="159.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="331.5" y1="167.2" x2="327.6" y2="170.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="339.4" y1="159.9" x2="335.4" y2="163.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="339.4" y1="159.9" x2="331.5" y2="167.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="339.4" y1="159.9" x2="320.0" y2="178.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="347.5" y2="152.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="351.6" y2="149.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="355.8" y2="145.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="360.0" y2="142.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="364.3" y2="139.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="368.6" y2="136.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="372.9" y2="132.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="377.3" y2="129.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="381.8" y2="126.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="386.3" y2="123.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="390.8" y2="120.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="395.4" y2="118.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="400.0" y2="115.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="404.6" y2="112.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="409.3" y2="109.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.4" y1="156.3" x2="414.0" y2="107.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="390.8" y1="120.9" x2="377.3" y2="129.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="400.0" y1="115.2" x2="386.3" y2="123.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="404.6" y1="112.5" x2="390.8" y2="120.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="404.6" y1="112.5" x2="395.4" y2="118.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="404.6" y1="112.5" x2="400.0" y2="115.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="409.3" y1="109.8" x2="404.6" y2="112.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="418.8" y1="104.7" x2="423.5" y2="102.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="418.8" y1="104.7" x2="428.4" y2="99.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="418.8" y1="104.7" x2="433.2" y2="97.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="418.8" y1="104.7" x2="438.1" y2="95.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="418.8" y1="104.7" x2="443.0" y2="93.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="418.8" y1="104.7" x2="448.0" y2="90.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="418.8" y1="104.7" x2="452.9" y2="88.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="468.0" y2="83.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="473.1" y2="81.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="478.2" y2="79.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="483.3" y2="77.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="488.5" y2="76.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="493.7" y2="74.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="498.8" y2="73.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="504.1" y2="72.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="509.3" y2="70.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="514.5" y2="69.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="519.8" y2="68.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="525.1" y2="67.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="530.4" y2="66.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="463.0" y1="84.9" x2="535.7" y2="65.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="546.3" y2="63.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="551.7" y2="63.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="557.0" y2="62.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="562.4" y2="61.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="567.7" y2="61.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="573.1" y2="60.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="578.5" y2="60.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="583.8" y2="60.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="589.2" y2="60.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="541.0" y1="64.5" x2="594.6" y2="60.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<circle cx="600.0" cy="60.0" r="6" fill="#F28E2B" opacity="0.85"><title>envio-env.d</title></circle>
+<circle cx="605.4" cy="60.0" r="6" fill="#59A14F" opacity="0.85"><title>update-token-registry</title></circle>
+<circle cx="610.8" cy="60.1" r="6" fill="#59A14F" opacity="0.85"><title>child_process/spawn</title></circle>
+<circle cx="616.2" cy="60.3" r="6" fill="#59A14F" opacity="0.85"><title>node:fs/promises/writeFile</title></circle>
+<circle cx="621.5" cy="60.6" r="6" fill="#59A14F" opacity="0.85"><title>node:fs/promises/rename</title></circle>
+<circle cx="626.9" cy="60.9" r="6" fill="#59A14F" opacity="0.85"><title>node:path/path</title></circle>
+<circle cx="632.3" cy="61.3" r="6" fill="#59A14F" opacity="0.85"><title>main()</title></circle>
+<circle cx="637.6" cy="61.8" r="6" fill="#76B7B2" opacity="0.85"><title>generate-polygon-tokens</title></circle>
+<circle cx="643.0" cy="62.4" r="6" fill="#76B7B2" opacity="0.85"><title>node:path/path</title></circle>
+<circle cx="648.3" cy="63.0" r="6" fill="#76B7B2" opacity="0.85"><title>node:url/fileURLToPath</title></circle>
+<circle cx="653.7" cy="63.7" r="6" fill="#76B7B2" opacity="0.85"><title>../src/utils/token_disk.ts/loadAutoExtraEntries</title></circle>
+<circle cx="659.0" cy="64.5" r="6" fill="#76B7B2" opacity="0.85"><title>../src/utils/token_disk.ts/loadDiscoveredDecimalsEntries</title></circle>
+<circle cx="664.3" cy="65.3" r="6" fill="#76B7B2" opacity="0.85"><title>fetchList()</title></circle>
+<circle cx="669.6" cy="66.3" r="6" fill="#76B7B2" opacity="0.85"><title>loadExtraTokens()</title></circle>
+<circle cx="674.9" cy="67.3" r="6" fill="#76B7B2" opacity="0.85"><title>loadFromPoolsFile()</title></circle>
+<circle cx="680.2" cy="68.3" r="6" fill="#76B7B2" opacity="0.85"><title>loadDiscoveredTokens()</title></circle>
+<circle cx="685.5" cy="69.5" r="6" fill="#76B7B2" opacity="0.85"><title>main()</title></circle>
+<circle cx="690.7" cy="70.7" r="6" fill="#76B7B2" opacity="0.85"><title>writeTokenRegistryDb()</title></circle>
+<circle cx="695.9" cy="72.0" r="6" fill="#F28E2B" opacity="0.85"><title>validate_envio_config</title></circle>
+<circle cx="701.2" cy="73.3" r="6" fill="#F28E2B" opacity="0.85"><title>json</title></circle>
+<circle cx="706.3" cy="74.8" r="6" fill="#F28E2B" opacity="0.85"><title>os</title></circle>
+<circle cx="711.5" cy="76.3" r="6" fill="#F28E2B" opacity="0.85"><title>re</title></circle>
+<circle cx="716.7" cy="77.9" r="6" fill="#F28E2B" opacity="0.85"><title>sys</title></circle>
+<circle cx="721.8" cy="79.5" r="6" fill="#F28E2B" opacity="0.85"><title>pathlib.Path</title></circle>
+<circle cx="726.9" cy="81.2" r="6" fill="#F28E2B" opacity="0.85"><title>load_yaml()</title></circle>
+<circle cx="732.0" cy="83.0" r="6" fill="#F28E2B" opacity="0.85"><title>load_abi()</title></circle>
+<circle cx="737.0" cy="84.9" r="6" fill="#F28E2B" opacity="0.85"><title>abi_events()</title></circle>
+<circle cx="742.1" cy="86.8" r="6" fill="#F28E2B" opacity="0.85"><title>resolve_abi_path()</title></circle>
+<circle cx="747.1" cy="88.8" r="6" fill="#F28E2B" opacity="0.85"><title>event_signature()</title></circle>
+<circle cx="752.0" cy="90.9" r="6" fill="#F28E2B" opacity="0.85"><title>_normalize_sig()</title></circle>
+<circle cx="757.0" cy="93.0" r="6" fill="#F28E2B" opacity="0.85"><title>check_event_exists()</title></circle>
+<circle cx="761.9" cy="95.2" r="6" fill="#F28E2B" opacity="0.85"><title>check_anonymous_events()</title></circle>
+<circle cx="766.8" cy="97.5" r="6" fill="#F28E2B" opacity="0.85"><title>check_missing_discovery_events()</title></circle>
+<circle cx="771.6" cy="99.8" r="6" fill="#F28E2B" opacity="0.85"><title>_suppressed()</title></circle>
+<circle cx="776.5" cy="102.2" r="6" fill="#F28E2B" opacity="0.85"><title>check_type_safety()</title></circle>
+<circle cx="781.2" cy="104.7" r="6" fill="#F28E2B" opacity="0.85"><title>check_unnamed_params()</title></circle>
+<circle cx="786.0" cy="107.2" r="6" fill="#F28E2B" opacity="0.85"><title>validate_single_run()</title></circle>
+<circle cx="790.7" cy="109.8" r="6" fill="#F28E2B" opacity="0.85"><title>print_report()</title></circle>
+<circle cx="795.4" cy="112.5" r="6" fill="#F28E2B" opacity="0.85"><title>main()</title></circle>
+<circle cx="800.0" cy="115.2" r="6" fill="#9C755F" opacity="0.85"><title>env.d</title></circle>
+<circle cx="804.6" cy="118.0" r="6" fill="#9C755F" opacity="0.85"><title>Database</title></circle>
+<circle cx="809.2" cy="120.9" r="6" fill="#BAB0AC" opacity="0.85"><title>vitest.config</title></circle>
+<circle cx="813.7" cy="123.8" r="6" fill="#BAB0AC" opacity="0.85"><title>vitest/config/defineConfig</title></circle>
+<circle cx="818.2" cy="126.8" r="6" fill="#FF9DA7" opacity="0.85"><title>v4</title></circle>
+<circle cx="822.7" cy="129.8" r="6" fill="#FF9DA7" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="827.1" cy="132.9" r="6" fill="#FF9DA7" opacity="0.85"><title>../utils/guards/isLikelyGarbagePair</title></circle>
+<circle cx="831.4" cy="136.1" r="6" fill="#FF9DA7" opacity="0.85"><title>../utils/factory_pool_handler/persistFactoryPoolMeta</title></circle>
+<circle cx="835.7" cy="139.3" r="6" fill="#FF9DA7" opacity="0.85"><title>../utils/constants/ZERO_ADDRESS</title></circle>
+<circle cx="840.0" cy="142.6" r="6" fill="#F28E2B" opacity="0.85"><title>dodo_factory</title></circle>
+<circle cx="844.2" cy="145.9" r="6" fill="#F28E2B" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="848.4" cy="149.3" r="6" fill="#F28E2B" opacity="0.85"><title>envio/Effect</title></circle>
+<circle cx="852.5" cy="152.8" r="6" fill="#F28E2B" opacity="0.85"><title>../effects/dodo_metadata/dodoFeeToBps</title></circle>
+<circle cx="856.6" cy="156.3" r="6" fill="#F28E2B" opacity="0.85"><title>../effects/dodo_metadata/fetchDodoMetadata</title></circle>
+<circle cx="860.6" cy="159.9" r="6" fill="#F28E2B" opacity="0.85"><title>../effects/dodo_metadata/isDodoMetadataEmpty</title></circle>
+<circle cx="864.6" cy="163.5" r="6" fill="#F28E2B" opacity="0.85"><title>../utils/factory_token_meta/resolveFactoryPairTokenMetas</title></circle>
+<circle cx="868.5" cy="167.2" r="6" fill="#F28E2B" opacity="0.85"><title>../utils/entity_writes/setTokenMetasIfMissing</title></circle>
+<circle cx="872.4" cy="170.9" r="6" fill="#F28E2B" opacity="0.85"><title>../utils/pool_meta_entity/poolMetaEntity</title></circle>
+<circle cx="876.2" cy="174.7" r="6" fill="#F28E2B" opacity="0.85"><title>../utils/guards/shouldSkipFactoryPool</title></circle>
+<circle cx="880.0" cy="178.5" r="6" fill="#F28E2B" opacity="0.85"><title>handleDodoPool()</title></circle>
+<circle cx="883.7" cy="182.4" r="6" fill="#F28E2B" opacity="0.85"><title>registerDodoEvent()</title></circle>
+<circle cx="887.4" cy="186.4" r="6" fill="#E15759" opacity="0.85"><title>woofi</title></circle>
+<circle cx="891.0" cy="190.4" r="6" fill="#E15759" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="894.6" cy="194.4" r="6" fill="#E15759" opacity="0.85"><title>../effects/woofi_bootstrap/fetchWooFiTokens</title></circle>
+<circle cx="898.1" cy="198.5" r="6" fill="#E15759" opacity="0.85"><title>../utils/entity_writes/setTokenMetasIfMissing</title></circle>
+<circle cx="901.5" cy="202.7" r="6" fill="#E15759" opacity="0.85"><title>../utils/pool_meta_entity/poolMetaEntity</title></circle>
+<circle cx="904.9" cy="206.8" r="6" fill="#E15759" opacity="0.85"><title>../utils/factory_token_meta/resolveTokenMetasBatch</title></circle>
+<circle cx="908.2" cy="211.1" r="6" fill="#E15759" opacity="0.85"><title>../utils/constants/WOOFI_PP_V2</title></circle>
+<circle cx="911.5" cy="215.4" r="6" fill="#E15759" opacity="0.85"><title>../utils/constants/WOOFI_PP_V2_DEPLOY_BLOCK</title></circle>
+<circle cx="914.7" cy="219.7" r="6" fill="#E15759" opacity="0.85"><title>mergeTokensDiff()</title></circle>
+<circle cx="917.9" cy="224.0" r="6" fill="#E15759" opacity="0.85"><title>progress</title></circle>
+<circle cx="921.0" cy="228.5" r="6" fill="#E15759" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="924.0" cy="232.9" r="6" fill="#E15759" opacity="0.85"><title>../utils/pacing/getProgressOnBlockStride</title></circle>
+<circle cx="927.0" cy="237.4" r="6" fill="#E15759" opacity="0.85"><title>updateIndexerProgress()</title></circle>
+<circle cx="929.9" cy="241.9" r="6" fill="#EDC948" opacity="0.85"><title>curve_bootstrap</title></circle>
+<circle cx="932.7" cy="246.5" r="6" fill="#EDC948" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="935.5" cy="251.1" r="6" fill="#EDC948" opacity="0.85"><title>../effects/curve_metadata/curveFeeToBps</title></circle>
+<circle cx="938.2" cy="255.8" r="6" fill="#EDC948" opacity="0.85"><title>../effects/curve_metadata/fetchCurveMetadata</title></circle>
+<circle cx="940.8" cy="260.5" r="6" fill="#EDC948" opacity="0.85"><title>../effects/curve_metadata/isCurveMetadataEmpty</title></circle>
+<circle cx="943.4" cy="265.2" r="6" fill="#EDC948" opacity="0.85"><title>../effects/curve_registry_bootstrap/fetchCurveRegistryPage</title></circle>
+<circle cx="946.0" cy="270.0" r="6" fill="#EDC948" opacity="0.85"><title>../utils/entity_writes/setTokenMetasIfMissing</title></circle>
+<circle cx="948.4" cy="274.7" r="6" fill="#EDC948" opacity="0.85"><title>../utils/pool_meta_entity/poolMetaEntity</title></circle>
+<circle cx="950.8" cy="279.6" r="6" fill="#EDC948" opacity="0.85"><title>../utils/factory_token_meta/resolveTokenMetasBatch</title></circle>
+<circle cx="953.1" cy="284.4" r="6" fill="#EDC948" opacity="0.85"><title>../utils/pacing/runWithConcurrency</title></circle>
+<circle cx="955.4" cy="289.3" r="6" fill="#EDC948" opacity="0.85"><title>../utils/pacing/getMetadataConcurrency</title></circle>
+<circle cx="957.5" cy="294.2" r="6" fill="#EDC948" opacity="0.85"><title>../utils/curve_registry/CURVE_REGISTRY_SOURCES</title></circle>
+<circle cx="959.7" cy="299.2" r="6" fill="#EDC948" opacity="0.85"><title>../utils/curve_registry/curveDiscoveryProtocol</title></circle>
+<circle cx="961.7" cy="304.2" r="6" fill="#EDC948" opacity="0.85"><title>bootstrapRegistryPage()</title></circle>
+<circle cx="963.7" cy="309.2" r="6" fill="#EDC948" opacity="0.85"><title>bootstrapCurvePools()</title></circle>
+<circle cx="965.6" cy="314.2" r="6" fill="#EDC948" opacity="0.85"><title>balancer</title></circle>
+<circle cx="967.4" cy="319.3" r="6" fill="#EDC948" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="969.2" cy="324.4" r="6" fill="#EDC948" opacity="0.85"><title>../effects/balancer_metadata/fetchBalancerMetadata</title></circle>
+<circle cx="970.9" cy="329.5" r="6" fill="#EDC948" opacity="0.85"><title>../utils/entity_writes/setTokenMetasIfMissing</title></circle>
+<circle cx="972.5" cy="334.6" r="6" fill="#EDC948" opacity="0.85"><title>../utils/pool_meta_entity/poolMetaEntity</title></circle>
+<circle cx="974.1" cy="339.8" r="6" fill="#EDC948" opacity="0.85"><title>../utils/factory_token_meta/resolveTokenMetasBatch</title></circle>
+<circle cx="975.6" cy="344.9" r="6" fill="#BAB0AC" opacity="0.85"><title>v3_factory</title></circle>
+<circle cx="977.0" cy="350.1" r="6" fill="#BAB0AC" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="978.3" cy="355.4" r="6" fill="#BAB0AC" opacity="0.85"><title>../utils/constants/lookupV3FactoryProtocol</title></circle>
+<circle cx="979.6" cy="360.6" r="6" fill="#BAB0AC" opacity="0.85"><title>../utils/guards/shouldSkipFactoryPool</title></circle>
+<circle cx="980.8" cy="365.8" r="6" fill="#BAB0AC" opacity="0.85"><title>../utils/factory_pool_handler/persistFactoryPoolMeta</title></circle>
+<circle cx="981.9" cy="371.1" r="6" fill="#F28E2B" opacity="0.85"><title>algebra_factory</title></circle>
+<circle cx="983.0" cy="376.4" r="6" fill="#F28E2B" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="984.0" cy="381.7" r="6" fill="#F28E2B" opacity="0.85"><title>../utils/constants/lookupAlgebraFactoryProtocol</title></circle>
+<circle cx="984.9" cy="387.0" r="6" fill="#F28E2B" opacity="0.85"><title>../utils/guards/shouldSkipFactoryPool</title></circle>
+<circle cx="985.7" cy="392.3" r="6" fill="#F28E2B" opacity="0.85"><title>../utils/factory_pool_handler/persistFactoryPoolMeta</title></circle>
+<circle cx="986.5" cy="397.6" r="6" fill="#FF9DA7" opacity="0.85"><title>curve_factory</title></circle>
+<circle cx="987.2" cy="403.0" r="6" fill="#FF9DA7" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="987.8" cy="408.3" r="6" fill="#FF9DA7" opacity="0.85"><title>envio/Effect</title></circle>
+<circle cx="988.3" cy="413.7" r="6" fill="#FF9DA7" opacity="0.85"><title>../effects/curve_metadata/curveFeeToBps</title></circle>
+<circle cx="988.8" cy="419.1" r="6" fill="#FF9DA7" opacity="0.85"><title>../effects/curve_metadata/fetchCurveMetadata</title></circle>
+<circle cx="989.2" cy="424.4" r="6" fill="#FF9DA7" opacity="0.85"><title>../effects/curve_metadata/isCurveMetadataEmpty</title></circle>
+<circle cx="989.5" cy="429.8" r="6" fill="#FF9DA7" opacity="0.85"><title>../utils/entity_writes/setTokenMetasIfMissing</title></circle>
+<circle cx="989.7" cy="435.2" r="6" fill="#FF9DA7" opacity="0.85"><title>../utils/pool_meta_entity/poolMetaEntity</title></circle>
+<circle cx="989.9" cy="440.6" r="6" fill="#FF9DA7" opacity="0.85"><title>../utils/factory_token_meta/resolveTokenMetasBatch</title></circle>
+<circle cx="990.0" cy="446.0" r="6" fill="#FF9DA7" opacity="0.85"><title>../utils/curve_registry/curveDiscoveryProtocol</title></circle>
+<circle cx="990.0" cy="451.3" r="6" fill="#FF9DA7" opacity="0.85"><title>nCoinsFromEventParams()</title></circle>
+<circle cx="989.9" cy="456.7" r="6" fill="#FF9DA7" opacity="0.85"><title>poolAddressFromEventParams()</title></circle>
+<circle cx="989.8" cy="462.1" r="6" fill="#FF9DA7" opacity="0.85"><title>handleCurvePoolAdded()</title></circle>
+<circle cx="989.6" cy="467.5" r="6" fill="#FF9DA7" opacity="0.85"><title>registerCurvePoolAdded()</title></circle>
+<circle cx="989.3" cy="472.9" r="6" fill="#4E79A7" opacity="0.85"><title>v2_factory</title></circle>
+<circle cx="989.0" cy="478.2" r="6" fill="#4E79A7" opacity="0.85"><title>envio/indexer</title></circle>
+<circle cx="988.5" cy="483.6" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/lookupV2FactoryProtocol</title></circle>
+<circle cx="988.0" cy="489.0" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/guards/shouldSkipFactoryPool</title></circle>
+<circle cx="987.5" cy="494.3" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/factory_pool_handler/persistFactoryPoolMeta</title></circle>
+<circle cx="986.8" cy="499.7" r="6" fill="#76B7B2" opacity="0.85"><title>pacing</title></circle>
+<circle cx="986.1" cy="505.0" r="6" fill="#76B7B2" opacity="0.85"><title>applyHyperSyncPacingEnv()</title></circle>
+<circle cx="985.3" cy="510.3" r="6" fill="#76B7B2" opacity="0.85"><title>parseRpmTarget()</title></circle>
+<circle cx="984.4" cy="515.7" r="6" fill="#76B7B2" opacity="0.85"><title>rpmFromEnv()</title></circle>
+<circle cx="983.5" cy="521.0" r="6" fill="#76B7B2" opacity="0.85"><title>getRpmTargetFromEnv()</title></circle>
+<circle cx="982.5" cy="526.3" r="6" fill="#76B7B2" opacity="0.85"><title>getRecommendedFullBatchSizeForRpm()</title></circle>
+<circle cx="981.4" cy="531.5" r="6" fill="#76B7B2" opacity="0.85"><title>getRpmTarget()</title></circle>
+<circle cx="980.2" cy="536.8" r="6" fill="#76B7B2" opacity="0.85"><title>isLowQuota()</title></circle>
+<circle cx="979.0" cy="542.0" r="6" fill="#76B7B2" opacity="0.85"><title>isVeryLowQuota()</title></circle>
+<circle cx="977.7" cy="547.2" r="6" fill="#76B7B2" opacity="0.85"><title>getRecommendedFullBatchSize()</title></circle>
+<circle cx="976.3" cy="552.5" r="6" fill="#76B7B2" opacity="0.85"><title>getMetadataConcurrency()</title></circle>
+<circle cx="974.9" cy="557.6" r="6" fill="#76B7B2" opacity="0.85"><title>getTokenMetaEffectRateLimit()</title></circle>
+<circle cx="973.3" cy="562.8" r="6" fill="#76B7B2" opacity="0.85"><title>getHistoricalMetaEffectRateLimit()</title></circle>
+<circle cx="971.7" cy="568.0" r="6" fill="#76B7B2" opacity="0.85"><title>getCurveMetaEffectRateLimit()</title></circle>
+<circle cx="970.1" cy="573.1" r="6" fill="#76B7B2" opacity="0.85"><title>getProgressOnBlockStride()</title></circle>
+<circle cx="968.3" cy="578.2" r="6" fill="#76B7B2" opacity="0.85"><title>runWithConcurrency()</title></circle>
+<circle cx="966.5" cy="583.2" r="6" fill="#76B7B2" opacity="0.85"><title>bridgeIndexerEnvAliases()</title></circle>
+<circle cx="964.7" cy="588.3" r="6" fill="#BAB0AC" opacity="0.85"><title>factory_token_meta</title></circle>
+<circle cx="962.7" cy="593.3" r="6" fill="#BAB0AC" opacity="0.85"><title>envio/Effect</title></circle>
+<circle cx="960.7" cy="598.3" r="6" fill="#BAB0AC" opacity="0.85"><title>../effects/token_metadata/fetchTokenMeta</title></circle>
+<circle cx="958.6" cy="603.3" r="6" fill="#BAB0AC" opacity="0.85"><title>../effects/token_metadata/lookupRegistryDecimalsBatch</title></circle>
+<circle cx="956.5" cy="608.2" r="6" fill="#BAB0AC" opacity="0.85"><title>../effects/token_metadata/preloadTokenDecimalsDefault</title></circle>
+<circle cx="954.2" cy="613.1" r="6" fill="#BAB0AC" opacity="0.85"><title>./normalize_address/normalizeTokenAddress</title></circle>
+<circle cx="952.0" cy="618.0" r="6" fill="#BAB0AC" opacity="0.85"><title>./pacing/getMetadataConcurrency</title></circle>
+<circle cx="949.6" cy="622.8" r="6" fill="#BAB0AC" opacity="0.85"><title>./pacing/runWithConcurrency</title></circle>
+<circle cx="947.2" cy="627.7" r="6" fill="#BAB0AC" opacity="0.85"><title>cachedTokenMeta()</title></circle>
+<circle cx="944.7" cy="632.4" r="6" fill="#BAB0AC" opacity="0.85"><title>resolveTokenMetaSlots()</title></circle>
+<circle cx="942.1" cy="637.2" r="6" fill="#BAB0AC" opacity="0.85"><title>resolveFactoryPairTokenMetas()</title></circle>
+<circle cx="939.5" cy="641.9" r="6" fill="#BAB0AC" opacity="0.85"><title>resolveTokenMetasBatch()</title></circle>
+<circle cx="936.8" cy="646.6" r="6" fill="#B07AA1" opacity="0.85"><title>curve_registry.test</title></circle>
+<circle cx="934.1" cy="651.2" r="6" fill="#B07AA1" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="931.3" cy="655.8" r="6" fill="#B07AA1" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="928.4" cy="660.3" r="6" fill="#B07AA1" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="925.5" cy="664.8" r="6" fill="#B07AA1" opacity="0.85"><title>./curve_registry/curveDiscoveryProtocol</title></circle>
+<circle cx="922.5" cy="669.3" r="6" fill="#9C755F" opacity="0.85"><title>normalize_address.test</title></circle>
+<circle cx="919.4" cy="673.8" r="6" fill="#9C755F" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="916.3" cy="678.1" r="6" fill="#9C755F" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="913.1" cy="682.5" r="6" fill="#9C755F" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="909.9" cy="686.8" r="6" fill="#9C755F" opacity="0.85"><title>./normalize_address/normalizeTokenAddress</title></circle>
+<circle cx="906.6" cy="691.0" r="6" fill="#F28E2B" opacity="0.85"><title>constants</title></circle>
+<circle cx="903.2" cy="695.3" r="6" fill="#F28E2B" opacity="0.85"><title>bootstrapMaticRatePerUnit()</title></circle>
+<circle cx="899.8" cy="699.4" r="6" fill="#F28E2B" opacity="0.85"><title>lookupV2FactoryProtocol()</title></circle>
+<circle cx="896.3" cy="703.5" r="6" fill="#F28E2B" opacity="0.85"><title>lookupV2FactoryStartBlock()</title></circle>
+<circle cx="892.8" cy="707.6" r="6" fill="#F28E2B" opacity="0.85"><title>lookupV3FactoryProtocol()</title></circle>
+<circle cx="889.2" cy="711.6" r="6" fill="#F28E2B" opacity="0.85"><title>lookupAlgebraFactoryProtocol()</title></circle>
+<circle cx="885.6" cy="715.6" r="6" fill="#F28E2B" opacity="0.85"><title>lookupV3FactoryStartBlock()</title></circle>
+<circle cx="881.9" cy="719.5" r="6" fill="#F28E2B" opacity="0.85"><title>lookupAlgebraFactoryStartBlock()</title></circle>
+<circle cx="878.1" cy="723.4" r="6" fill="#F28E2B" opacity="0.85"><title>lookupIndexedContractStartBlock()</title></circle>
+<circle cx="874.3" cy="727.2" r="6" fill="#76B7B2" opacity="0.85"><title>curve_registry</title></circle>
+<circle cx="870.5" cy="731.0" r="6" fill="#76B7B2" opacity="0.85"><title>../utils/constants/CURVE_REGISTRY_DEPLOY_BLOCK</title></circle>
+<circle cx="866.6" cy="734.7" r="6" fill="#76B7B2" opacity="0.85"><title>../utils/constants/CURVE_REGISTRY_LEGACY</title></circle>
+<circle cx="862.6" cy="738.3" r="6" fill="#76B7B2" opacity="0.85"><title>curveDiscoveryProtocol()</title></circle>
+<circle cx="858.6" cy="741.9" r="6" fill="#9C755F" opacity="0.85"><title>factory_pool_handler</title></circle>
+<circle cx="854.6" cy="745.5" r="6" fill="#9C755F" opacity="0.85"><title>./entity_writes/setTokenMetasIfMissing</title></circle>
+<circle cx="850.5" cy="748.9" r="6" fill="#9C755F" opacity="0.85"><title>./pool_meta_entity/poolMetaEntity</title></circle>
+<circle cx="846.3" cy="752.4" r="6" fill="#9C755F" opacity="0.85"><title>./factory_token_meta/resolveFactoryPairTokenMetas</title></circle>
+<circle cx="842.1" cy="755.8" r="6" fill="#9C755F" opacity="0.85"><title>./indexer_protocol/IndexerProtocol</title></circle>
+<circle cx="837.9" cy="759.1" r="6" fill="#9C755F" opacity="0.85"><title>./indexer_protocol/PoolMetaWritePayload</title></circle>
+<circle cx="833.6" cy="762.3" r="6" fill="#9C755F" opacity="0.85"><title>persistFactoryPoolMeta()</title></circle>
+<circle cx="829.2" cy="765.5" r="6" fill="#FF9DA7" opacity="0.85"><title>pool_meta_entity</title></circle>
+<circle cx="824.9" cy="768.7" r="6" fill="#FF9DA7" opacity="0.85"><title>poolMetaEntity()</title></circle>
+<circle cx="820.4" cy="771.7" r="6" fill="#59A14F" opacity="0.85"><title>pacing.test</title></circle>
+<circle cx="816.0" cy="774.7" r="6" fill="#59A14F" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="811.5" cy="777.7" r="6" fill="#59A14F" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="806.9" cy="780.6" r="6" fill="#59A14F" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="802.3" cy="783.4" r="6" fill="#59A14F" opacity="0.85"><title>./pacing/getMetadataConcurrency</title></circle>
+<circle cx="797.7" cy="786.2" r="6" fill="#59A14F" opacity="0.85"><title>./pacing/getRecommendedFullBatchSize</title></circle>
+<circle cx="793.1" cy="788.9" r="6" fill="#59A14F" opacity="0.85"><title>./pacing/getTokenMetaEffectRateLimit</title></circle>
+<circle cx="788.4" cy="791.5" r="6" fill="#59A14F" opacity="0.85"><title>./pacing/isLowQuota</title></circle>
+<circle cx="783.6" cy="794.1" r="6" fill="#76B7B2" opacity="0.85"><title>guards</title></circle>
+<circle cx="778.9" cy="796.6" r="6" fill="#76B7B2" opacity="0.85"><title>./constants/ZERO_ADDRESS</title></circle>
+<circle cx="774.1" cy="799.0" r="6" fill="#76B7B2" opacity="0.85"><title>./constants/KNOWN_FACTORIES_SET</title></circle>
+<circle cx="769.2" cy="801.4" r="6" fill="#76B7B2" opacity="0.85"><title>isLikelyGarbagePairInternal()</title></circle>
+<circle cx="764.3" cy="803.7" r="6" fill="#76B7B2" opacity="0.85"><title>isLikelyGarbagePair()</title></circle>
+<circle cx="759.4" cy="805.9" r="6" fill="#76B7B2" opacity="0.85"><title>shouldSkipFactoryPool()</title></circle>
+<circle cx="754.5" cy="808.1" r="6" fill="#B07AA1" opacity="0.85"><title>safe_decimals</title></circle>
+<circle cx="749.6" cy="810.2" r="6" fill="#B07AA1" opacity="0.85"><title>safeDecimals()</title></circle>
+<circle cx="744.6" cy="812.2" r="6" fill="#F28E2B" opacity="0.85"><title>factory_pool_handler.test</title></circle>
+<circle cx="739.6" cy="814.2" r="6" fill="#F28E2B" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="734.5" cy="816.1" r="6" fill="#F28E2B" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="729.4" cy="817.9" r="6" fill="#F28E2B" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="724.4" cy="819.6" r="6" fill="#F28E2B" opacity="0.85"><title>vitest/vi</title></circle>
+<circle cx="719.2" cy="821.3" r="6" fill="#F28E2B" opacity="0.85"><title>./factory_pool_handler/persistFactoryPoolMeta</title></circle>
+<circle cx="714.1" cy="822.9" r="6" fill="#E15759" opacity="0.85"><title>indexer_protocol</title></circle>
+<circle cx="708.9" cy="824.5" r="6" fill="#EDC948" opacity="0.85"><title>factory_token_meta.test</title></circle>
+<circle cx="703.8" cy="825.9" r="6" fill="#EDC948" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="698.6" cy="827.3" r="6" fill="#EDC948" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="693.3" cy="828.7" r="6" fill="#EDC948" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="688.1" cy="829.9" r="6" fill="#EDC948" opacity="0.85"><title>vitest/vi</title></circle>
+<circle cx="682.8" cy="831.1" r="6" fill="#EDC948" opacity="0.85"><title>vitest/beforeEach</title></circle>
+<circle cx="677.6" cy="832.2" r="6" fill="#EDC948" opacity="0.85"><title>./factory_token_meta/resolveFactoryPairTokenMetas</title></circle>
+<circle cx="672.3" cy="833.2" r="6" fill="#EDC948" opacity="0.85"><title>./factory_token_meta/resolveTokenMetasBatch</title></circle>
+<circle cx="667.0" cy="834.2" r="6" fill="#59A14F" opacity="0.85"><title>rpc_errors</title></circle>
+<circle cx="661.7" cy="835.1" r="6" fill="#59A14F" opacity="0.85"><title>isQuotaError()</title></circle>
+<circle cx="656.4" cy="835.9" r="6" fill="#59A14F" opacity="0.85"><title>isNetworkError()</title></circle>
+<circle cx="651.0" cy="836.6" r="6" fill="#FF9DA7" opacity="0.85"><title>entity_writes.test</title></circle>
+<circle cx="645.7" cy="837.3" r="6" fill="#FF9DA7" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="640.3" cy="837.9" r="6" fill="#FF9DA7" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="635.0" cy="838.4" r="6" fill="#FF9DA7" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="629.6" cy="838.9" r="6" fill="#FF9DA7" opacity="0.85"><title>vitest/vi</title></circle>
+<circle cx="624.2" cy="839.2" r="6" fill="#FF9DA7" opacity="0.85"><title>./entity_writes/setTokenMetaEntriesIfMissing</title></circle>
+<circle cx="618.8" cy="839.5" r="6" fill="#FF9DA7" opacity="0.85"><title>./entity_writes/setTokenMetasIfMissing</title></circle>
+<circle cx="613.5" cy="839.8" r="6" fill="#4E79A7" opacity="0.85"><title>entity_writes</title></circle>
+<circle cx="608.1" cy="839.9" r="6" fill="#4E79A7" opacity="0.85"><title>./safe_decimals/safeDecimals</title></circle>
+<circle cx="602.7" cy="840.0" r="6" fill="#4E79A7" opacity="0.85"><title>shouldPersistTokenMeta()</title></circle>
+<circle cx="597.3" cy="840.0" r="6" fill="#4E79A7" opacity="0.85"><title>setTokenMetaIfMissing()</title></circle>
+<circle cx="591.9" cy="839.9" r="6" fill="#4E79A7" opacity="0.85"><title>setTokenMetasIfMissing()</title></circle>
+<circle cx="586.5" cy="839.8" r="6" fill="#4E79A7" opacity="0.85"><title>setTokenMetaEntriesIfMissing()</title></circle>
+<circle cx="581.2" cy="839.5" r="6" fill="#E15759" opacity="0.85"><title>rpc_errors.test</title></circle>
+<circle cx="575.8" cy="839.2" r="6" fill="#E15759" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="570.4" cy="838.9" r="6" fill="#E15759" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="565.0" cy="838.4" r="6" fill="#E15759" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="559.7" cy="837.9" r="6" fill="#E15759" opacity="0.85"><title>./rpc_errors/isNetworkError</title></circle>
+<circle cx="554.3" cy="837.3" r="6" fill="#E15759" opacity="0.85"><title>./rpc_errors/isQuotaError</title></circle>
+<circle cx="549.0" cy="836.6" r="6" fill="#EDC948" opacity="0.85"><title>normalize_address</title></circle>
+<circle cx="543.6" cy="835.9" r="6" fill="#EDC948" opacity="0.85"><title>normalizeTokenAddress()</title></circle>
+<circle cx="538.3" cy="835.1" r="6" fill="#59A14F" opacity="0.85"><title>guards.test</title></circle>
+<circle cx="533.0" cy="834.2" r="6" fill="#59A14F" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="527.7" cy="833.2" r="6" fill="#59A14F" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="522.4" cy="832.2" r="6" fill="#59A14F" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="517.2" cy="831.1" r="6" fill="#59A14F" opacity="0.85"><title>./constants/APESWAP_V2_FACTORY</title></circle>
+<circle cx="511.9" cy="829.9" r="6" fill="#59A14F" opacity="0.85"><title>./constants/QUICKSWAP_V2_FACTORY</title></circle>
+<circle cx="506.7" cy="828.7" r="6" fill="#59A14F" opacity="0.85"><title>./constants/USDC</title></circle>
+<circle cx="501.4" cy="827.3" r="6" fill="#59A14F" opacity="0.85"><title>./constants/WETH</title></circle>
+<circle cx="496.2" cy="825.9" r="6" fill="#59A14F" opacity="0.85"><title>./constants/ZERO_ADDRESS</title></circle>
+<circle cx="491.1" cy="824.5" r="6" fill="#59A14F" opacity="0.85"><title>./guards/isLikelyGarbagePair</title></circle>
+<circle cx="485.9" cy="822.9" r="6" fill="#59A14F" opacity="0.85"><title>./guards/shouldSkipFactoryPool</title></circle>
+<circle cx="480.8" cy="821.3" r="6" fill="#E15759" opacity="0.85"><title>token_disk</title></circle>
+<circle cx="475.6" cy="819.6" r="6" fill="#E15759" opacity="0.85"><title>node:fs/promises/appendFile</title></circle>
+<circle cx="470.6" cy="817.9" r="6" fill="#E15759" opacity="0.85"><title>node:fs/promises/mkdir</title></circle>
+<circle cx="465.5" cy="816.1" r="6" fill="#E15759" opacity="0.85"><title>node:fs/promises/readFile</title></circle>
+<circle cx="460.4" cy="814.2" r="6" fill="#E15759" opacity="0.85"><title>node:fs/promises/rename</title></circle>
+<circle cx="455.4" cy="812.2" r="6" fill="#E15759" opacity="0.85"><title>node:fs/promises/writeFile</title></circle>
+<circle cx="450.4" cy="810.2" r="6" fill="#E15759" opacity="0.85"><title>node:path/path</title></circle>
+<circle cx="445.5" cy="808.1" r="6" fill="#E15759" opacity="0.85"><title>appendPoolDiscoveryDelta()</title></circle>
+<circle cx="440.6" cy="805.9" r="6" fill="#E15759" opacity="0.85"><title>loadAutoExtraEntries()</title></circle>
+<circle cx="435.7" cy="803.7" r="6" fill="#E15759" opacity="0.85"><title>appendAutoExtraEntry()</title></circle>
+<circle cx="430.8" cy="801.4" r="6" fill="#E15759" opacity="0.85"><title>loadGarbageAddressEntries()</title></circle>
+<circle cx="425.9" cy="799.0" r="6" fill="#E15759" opacity="0.85"><title>appendGarbageAddresses()</title></circle>
+<circle cx="421.1" cy="796.6" r="6" fill="#E15759" opacity="0.85"><title>loadDiscoveredDecimalsEntries()</title></circle>
+<circle cx="416.4" cy="794.1" r="6" fill="#E15759" opacity="0.85"><title>appendDiscoveredDecimals()</title></circle>
+<circle cx="411.6" cy="791.5" r="6" fill="#E15759" opacity="0.85"><title>loadFailedTokenEntries()</title></circle>
+<circle cx="406.9" cy="788.9" r="6" fill="#E15759" opacity="0.85"><title>appendFailedTokens()</title></circle>
+<circle cx="402.3" cy="786.2" r="6" fill="#E15759" opacity="0.85"><title>writeJsonAtomic()</title></circle>
+<circle cx="397.7" cy="783.4" r="6" fill="#4E79A7" opacity="0.85"><title>balancer_metadata.test</title></circle>
+<circle cx="393.1" cy="780.6" r="6" fill="#4E79A7" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="388.5" cy="777.7" r="6" fill="#4E79A7" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="384.0" cy="774.7" r="6" fill="#4E79A7" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="379.6" cy="771.7" r="6" fill="#4E79A7" opacity="0.85"><title>vitest/vi</title></circle>
+<circle cx="375.1" cy="768.7" r="6" fill="#4E79A7" opacity="0.85"><title>vitest/beforeEach</title></circle>
+<circle cx="370.8" cy="765.5" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/BALANCER_VAULT</title></circle>
+<circle cx="366.4" cy="762.3" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/USDC</title></circle>
+<circle cx="362.1" cy="759.1" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/WETH</title></circle>
+<circle cx="357.9" cy="755.8" r="6" fill="#4E79A7" opacity="0.85"><title>./balancer_metadata/fetchBalancerMetadataHandler</title></circle>
+<circle cx="353.7" cy="752.4" r="6" fill="#9C755F" opacity="0.85"><title>woofi_bootstrap.test</title></circle>
+<circle cx="349.5" cy="748.9" r="6" fill="#9C755F" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="345.4" cy="745.5" r="6" fill="#9C755F" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="341.4" cy="741.9" r="6" fill="#9C755F" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="337.4" cy="738.3" r="6" fill="#9C755F" opacity="0.85"><title>vitest/vi</title></circle>
+<circle cx="333.4" cy="734.7" r="6" fill="#9C755F" opacity="0.85"><title>vitest/beforeEach</title></circle>
+<circle cx="329.5" cy="731.0" r="6" fill="#9C755F" opacity="0.85"><title>../utils/constants/USDC</title></circle>
+<circle cx="325.7" cy="727.2" r="6" fill="#9C755F" opacity="0.85"><title>../utils/constants/WMATIC</title></circle>
+<circle cx="321.9" cy="723.4" r="6" fill="#9C755F" opacity="0.85"><title>../utils/constants/WOOFI_PP_V2</title></circle>
+<circle cx="318.1" cy="719.5" r="6" fill="#9C755F" opacity="0.85"><title>./woofi_bootstrap/fetchWooFiTokensHandler</title></circle>
+<circle cx="314.4" cy="715.6" r="6" fill="#B07AA1" opacity="0.85"><title>dodo_metadata</title></circle>
+<circle cx="310.8" cy="711.6" r="6" fill="#B07AA1" opacity="0.85"><title>envio/createEffect</title></circle>
+<circle cx="307.2" cy="707.6" r="6" fill="#B07AA1" opacity="0.85"><title>envio/S</title></circle>
+<circle cx="303.7" cy="703.5" r="6" fill="#B07AA1" opacity="0.85"><title>viem/parseAbi</title></circle>
+<circle cx="300.2" cy="699.4" r="6" fill="#B07AA1" opacity="0.85"><title>./rpc_client/publicClient</title></circle>
+<circle cx="296.8" cy="695.3" r="6" fill="#B07AA1" opacity="0.85"><title>../utils/pacing/getHistoricalMetaEffectRateLimit</title></circle>
+<circle cx="293.4" cy="691.0" r="6" fill="#B07AA1" opacity="0.85"><title>isDodoMetadataEmpty()</title></circle>
+<circle cx="290.1" cy="686.8" r="6" fill="#B07AA1" opacity="0.85"><title>dodoFeeToBps()</title></circle>
+<circle cx="286.9" cy="682.5" r="6" fill="#B07AA1" opacity="0.85"><title>readFeeBigint()</title></circle>
+<circle cx="283.7" cy="678.1" r="6" fill="#B07AA1" opacity="0.85"><title>fetchDodoMetadataHandler()</title></circle>
+<circle cx="280.6" cy="673.8" r="6" fill="#EDC948" opacity="0.85"><title>dodo_metadata.test</title></circle>
+<circle cx="277.5" cy="669.3" r="6" fill="#EDC948" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="274.5" cy="664.8" r="6" fill="#EDC948" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="271.6" cy="660.3" r="6" fill="#EDC948" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="268.7" cy="655.8" r="6" fill="#EDC948" opacity="0.85"><title>vitest/vi</title></circle>
+<circle cx="265.9" cy="651.2" r="6" fill="#EDC948" opacity="0.85"><title>vitest/beforeEach</title></circle>
+<circle cx="263.2" cy="646.6" r="6" fill="#EDC948" opacity="0.85"><title>./dodo_metadata/dodoFeeToBps</title></circle>
+<circle cx="260.5" cy="641.9" r="6" fill="#EDC948" opacity="0.85"><title>./dodo_metadata/fetchDodoMetadataHandler</title></circle>
+<circle cx="257.9" cy="637.2" r="6" fill="#EDC948" opacity="0.85"><title>./dodo_metadata/isDodoMetadataEmpty</title></circle>
+<circle cx="255.3" cy="632.4" r="6" fill="#EDC948" opacity="0.85"><title>mockFeeReads()</title></circle>
+<circle cx="252.8" cy="627.7" r="6" fill="#FF9DA7" opacity="0.85"><title>balancer_metadata</title></circle>
+<circle cx="250.4" cy="622.8" r="6" fill="#FF9DA7" opacity="0.85"><title>envio/createEffect</title></circle>
+<circle cx="248.0" cy="618.0" r="6" fill="#FF9DA7" opacity="0.85"><title>envio/S</title></circle>
+<circle cx="245.8" cy="613.1" r="6" fill="#FF9DA7" opacity="0.85"><title>viem/parseAbi</title></circle>
+<circle cx="243.5" cy="608.2" r="6" fill="#FF9DA7" opacity="0.85"><title>./rpc_client/publicClient</title></circle>
+<circle cx="241.4" cy="603.3" r="6" fill="#FF9DA7" opacity="0.85"><title>../utils/constants/BALANCER_VAULT</title></circle>
+<circle cx="239.3" cy="598.3" r="6" fill="#FF9DA7" opacity="0.85"><title>../utils/pacing/getHistoricalMetaEffectRateLimit</title></circle>
+<circle cx="237.3" cy="593.3" r="6" fill="#FF9DA7" opacity="0.85"><title>isRetryableRpcError()</title></circle>
+<circle cx="235.3" cy="588.3" r="6" fill="#FF9DA7" opacity="0.85"><title>readVaultPoolTokens()</title></circle>
+<circle cx="233.5" cy="583.2" r="6" fill="#FF9DA7" opacity="0.85"><title>fetchBalancerMetadataHandler()</title></circle>
+<circle cx="231.7" cy="578.2" r="6" fill="#9C755F" opacity="0.85"><title>curve_metadata.test</title></circle>
+<circle cx="229.9" cy="573.1" r="6" fill="#9C755F" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="228.3" cy="568.0" r="6" fill="#9C755F" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="226.7" cy="562.8" r="6" fill="#9C755F" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="225.1" cy="557.6" r="6" fill="#9C755F" opacity="0.85"><title>vitest/vi</title></circle>
+<circle cx="223.7" cy="552.5" r="6" fill="#9C755F" opacity="0.85"><title>vitest/beforeEach</title></circle>
+<circle cx="222.3" cy="547.2" r="6" fill="#9C755F" opacity="0.85"><title>./curve_metadata/curveDiscoveryPoolType</title></circle>
+<circle cx="221.0" cy="542.0" r="6" fill="#9C755F" opacity="0.85"><title>./curve_metadata/curveFeeToBps</title></circle>
+<circle cx="219.8" cy="536.8" r="6" fill="#9C755F" opacity="0.85"><title>./curve_metadata/curvePoolTypeFromGamma</title></circle>
+<circle cx="218.6" cy="531.5" r="6" fill="#9C755F" opacity="0.85"><title>./curve_metadata/fetchCurveMetadataHandler</title></circle>
+<circle cx="217.5" cy="526.3" r="6" fill="#9C755F" opacity="0.85"><title>./curve_metadata/isCurveMetadataEmpty</title></circle>
+<circle cx="216.5" cy="521.0" r="6" fill="#9C755F" opacity="0.85"><title>./curve_metadata/resolveCurveNCoins</title></circle>
+<circle cx="215.6" cy="515.7" r="6" fill="#9C755F" opacity="0.85"><title>mockCurveReads()</title></circle>
+<circle cx="214.7" cy="510.3" r="6" fill="#76B7B2" opacity="0.85"><title>woofi_bootstrap</title></circle>
+<circle cx="213.9" cy="505.0" r="6" fill="#76B7B2" opacity="0.85"><title>envio/createEffect</title></circle>
+<circle cx="213.2" cy="499.7" r="6" fill="#76B7B2" opacity="0.85"><title>envio/S</title></circle>
+<circle cx="212.5" cy="494.3" r="6" fill="#76B7B2" opacity="0.85"><title>viem/parseAbi</title></circle>
+<circle cx="212.0" cy="489.0" r="6" fill="#76B7B2" opacity="0.85"><title>./rpc_client/publicClient</title></circle>
+<circle cx="211.5" cy="483.6" r="6" fill="#76B7B2" opacity="0.85"><title>../utils/constants/MAJOR_TOKENS</title></circle>
+<circle cx="211.0" cy="478.2" r="6" fill="#76B7B2" opacity="0.85"><title>../utils/pacing/getHistoricalMetaEffectRateLimit</title></circle>
+<circle cx="210.7" cy="472.9" r="6" fill="#76B7B2" opacity="0.85"><title>fetchWooFiTokensHandler()</title></circle>
+<circle cx="210.4" cy="467.5" r="6" fill="#4E79A7" opacity="0.85"><title>token_metadata</title></circle>
+<circle cx="210.2" cy="462.1" r="6" fill="#4E79A7" opacity="0.85"><title>envio/createEffect</title></circle>
+<circle cx="210.1" cy="456.7" r="6" fill="#4E79A7" opacity="0.85"><title>envio/S</title></circle>
+<circle cx="210.0" cy="451.3" r="6" fill="#4E79A7" opacity="0.85"><title>viem/BaseError</title></circle>
+<circle cx="210.0" cy="446.0" r="6" fill="#4E79A7" opacity="0.85"><title>viem/ContractFunctionRevertedError</title></circle>
+<circle cx="210.1" cy="440.6" r="6" fill="#4E79A7" opacity="0.85"><title>viem/ContractFunctionZeroDataError</title></circle>
+<circle cx="210.3" cy="435.2" r="6" fill="#4E79A7" opacity="0.85"><title>viem/parseAbi</title></circle>
+<circle cx="210.5" cy="429.8" r="6" fill="#4E79A7" opacity="0.85"><title>./rpc_client/publicClient</title></circle>
+<circle cx="210.8" cy="424.4" r="6" fill="#4E79A7" opacity="0.85"><title>node:path/path</title></circle>
+<circle cx="211.2" cy="419.1" r="6" fill="#4E79A7" opacity="0.85"><title>node:url/fileURLToPath</title></circle>
+<circle cx="211.7" cy="413.7" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/DAI</title></circle>
+<circle cx="212.2" cy="408.3" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/USDC</title></circle>
+<circle cx="212.8" cy="403.0" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/USDC_E</title></circle>
+<circle cx="213.5" cy="397.6" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/USDT</title></circle>
+<circle cx="214.3" cy="392.3" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/WBTC</title></circle>
+<circle cx="215.1" cy="387.0" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/WETH</title></circle>
+<circle cx="216.0" cy="381.7" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/constants/WMATIC</title></circle>
+<circle cx="217.0" cy="376.4" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/pacing/getTokenMetaEffectRateLimit</title></circle>
+<circle cx="218.1" cy="371.1" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/token_disk/appendAutoExtraEntry</title></circle>
+<circle cx="219.2" cy="365.8" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/token_disk/appendDiscoveredDecimals</title></circle>
+<circle cx="220.4" cy="360.6" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/token_disk/appendFailedTokens</title></circle>
+<circle cx="221.7" cy="355.4" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/token_disk/loadAutoExtraEntries</title></circle>
+<circle cx="223.0" cy="350.1" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/token_disk/loadDiscoveredDecimalsEntries</title></circle>
+<circle cx="224.4" cy="344.9" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/token_disk/loadFailedTokenEntries</title></circle>
+<circle cx="225.9" cy="339.8" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/safe_decimals/safeDecimals</title></circle>
+<circle cx="227.5" cy="334.6" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/rpc_errors/isNetworkError</title></circle>
+<circle cx="229.1" cy="329.5" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/rpc_errors/isQuotaError</title></circle>
+<circle cx="230.8" cy="324.4" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/normalize_address/normalizeTokenAddress</title></circle>
+<circle cx="232.6" cy="319.3" r="6" fill="#BAB0AC" opacity="0.85"><title>initDb()</title></circle>
+<circle cx="234.4" cy="314.2" r="6" fill="#BAB0AC" opacity="0.85"><title>lookupRegistryDecimalsBatch()</title></circle>
+<circle cx="236.3" cy="309.2" r="6" fill="#4E79A7" opacity="0.85"><title>preloadTokenDecimalsDefault()</title></circle>
+<circle cx="238.3" cy="304.2" r="6" fill="#BAB0AC" opacity="0.85"><title>seedVitestRegistry()</title></circle>
+<circle cx="240.3" cy="299.2" r="6" fill="#BAB0AC" opacity="0.85"><title>loadAutoExtraTokens()</title></circle>
+<circle cx="242.5" cy="294.2" r="6" fill="#BAB0AC" opacity="0.85"><title>warmUpCache()</title></circle>
+<circle cx="244.6" cy="289.3" r="6" fill="#BAB0AC" opacity="0.85"><title>loadDiscoveredDecimals()</title></circle>
+<circle cx="246.9" cy="284.4" r="6" fill="#4E79A7" opacity="0.85"><title>scheduleDiscoveredDecimalsSave()</title></circle>
+<circle cx="249.2" cy="279.6" r="6" fill="#4E79A7" opacity="0.85"><title>flushDiscoveredDecimals()</title></circle>
+<circle cx="251.6" cy="274.7" r="6" fill="#4E79A7" opacity="0.85"><title>appendToAutoExtraTokens()</title></circle>
+<circle cx="254.0" cy="270.0" r="6" fill="#4E79A7" opacity="0.85"><title>loadFailedTokens()</title></circle>
+<circle cx="256.6" cy="265.2" r="6" fill="#4E79A7" opacity="0.85"><title>scheduleFailedTokensSave()</title></circle>
+<circle cx="259.2" cy="260.5" r="6" fill="#4E79A7" opacity="0.85"><title>flushFailedTokens()</title></circle>
+<circle cx="261.8" cy="255.8" r="6" fill="#4E79A7" opacity="0.85"><title>fetchTokenMetaHandler()</title></circle>
+<circle cx="264.5" cy="251.1" r="6" fill="#4E79A7" opacity="0.85"><title>resetTokenMetadataCachesForTest()</title></circle>
+<circle cx="267.3" cy="246.5" r="6" fill="#BAB0AC" opacity="0.85"><title>curve_registry_bootstrap.test</title></circle>
+<circle cx="270.1" cy="241.9" r="6" fill="#BAB0AC" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="273.0" cy="237.4" r="6" fill="#BAB0AC" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="276.0" cy="232.9" r="6" fill="#BAB0AC" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="279.0" cy="228.5" r="6" fill="#BAB0AC" opacity="0.85"><title>vitest/vi</title></circle>
+<circle cx="282.1" cy="224.0" r="6" fill="#BAB0AC" opacity="0.85"><title>vitest/beforeEach</title></circle>
+<circle cx="285.3" cy="219.7" r="6" fill="#BAB0AC" opacity="0.85"><title>../utils/constants/CURVE_REGISTRY_LEGACY</title></circle>
+<circle cx="288.5" cy="215.4" r="6" fill="#BAB0AC" opacity="0.85"><title>../utils/constants/USDC</title></circle>
+<circle cx="291.8" cy="211.1" r="6" fill="#BAB0AC" opacity="0.85"><title>../utils/constants/USDT</title></circle>
+<circle cx="295.1" cy="206.8" r="6" fill="#BAB0AC" opacity="0.85"><title>./curve_registry_bootstrap/fetchCurveRegistryPageHandler</title></circle>
+<circle cx="298.5" cy="202.7" r="6" fill="#4E79A7" opacity="0.85"><title>curve_metadata</title></circle>
+<circle cx="301.9" cy="198.5" r="6" fill="#4E79A7" opacity="0.85"><title>envio/createEffect</title></circle>
+<circle cx="305.4" cy="194.4" r="6" fill="#4E79A7" opacity="0.85"><title>envio/S</title></circle>
+<circle cx="309.0" cy="190.4" r="6" fill="#4E79A7" opacity="0.85"><title>viem/parseAbi</title></circle>
+<circle cx="312.6" cy="186.4" r="6" fill="#4E79A7" opacity="0.85"><title>./rpc_client/publicClient</title></circle>
+<circle cx="316.3" cy="182.4" r="6" fill="#4E79A7" opacity="0.85"><title>../utils/pacing/getCurveMetaEffectRateLimit</title></circle>
+<circle cx="320.0" cy="178.5" r="6" fill="#4E79A7" opacity="0.85"><title>isCurveMetadataEmpty()</title></circle>
+<circle cx="323.8" cy="174.7" r="6" fill="#4E79A7" opacity="0.85"><title>curveFeeToBps()</title></circle>
+<circle cx="327.6" cy="170.9" r="6" fill="#4E79A7" opacity="0.85"><title>curvePoolTypeFromGamma()</title></circle>
+<circle cx="331.5" cy="167.2" r="6" fill="#4E79A7" opacity="0.85"><title>curveDiscoveryPoolType()</title></circle>
+<circle cx="335.4" cy="163.5" r="6" fill="#4E79A7" opacity="0.85"><title>resolveCurveNCoins()</title></circle>
+<circle cx="339.4" cy="159.9" r="6" fill="#4E79A7" opacity="0.85"><title>fetchCurveMetadataHandler()</title></circle>
+<circle cx="343.4" cy="156.3" r="6" fill="#59A14F" opacity="0.85"><title>rpc_client</title></circle>
+<circle cx="347.5" cy="152.8" r="6" fill="#59A14F" opacity="0.85"><title>viem/createPublicClient</title></circle>
+<circle cx="351.6" cy="149.3" r="6" fill="#59A14F" opacity="0.85"><title>viem/http</title></circle>
+<circle cx="355.8" cy="145.9" r="6" fill="#59A14F" opacity="0.85"><title>viem/fallback</title></circle>
+<circle cx="360.0" cy="142.6" r="6" fill="#59A14F" opacity="0.85"><title>viem/PublicClient</title></circle>
+<circle cx="364.3" cy="139.3" r="6" fill="#59A14F" opacity="0.85"><title>viem/HttpTransport</title></circle>
+<circle cx="368.6" cy="136.1" r="6" fill="#59A14F" opacity="0.85"><title>viem/chains/polygon</title></circle>
+<circle cx="372.9" cy="132.9" r="6" fill="#59A14F" opacity="0.85"><title>../utils/pacing/getRpmTarget</title></circle>
+<circle cx="377.3" cy="129.8" r="6" fill="#59A14F" opacity="0.85"><title>parseRpcUrlList()</title></circle>
+<circle cx="381.8" cy="126.8" r="6" fill="#59A14F" opacity="0.85"><title>redactRpcUrl()</title></circle>
+<circle cx="386.3" cy="123.8" r="6" fill="#59A14F" opacity="0.85"><title>getAlchemyApiKey()</title></circle>
+<circle cx="390.8" cy="120.9" r="6" fill="#59A14F" opacity="0.85"><title>getRpcUrls()</title></circle>
+<circle cx="395.4" cy="118.0" r="6" fill="#59A14F" opacity="0.85"><title>getRpcTransportTuning()</title></circle>
+<circle cx="400.0" cy="115.2" r="6" fill="#59A14F" opacity="0.85"><title>buildHttpTransport()</title></circle>
+<circle cx="404.6" cy="112.5" r="6" fill="#59A14F" opacity="0.85"><title>buildPublicClient()</title></circle>
+<circle cx="409.3" cy="109.8" r="6" fill="#59A14F" opacity="0.85"><title>get()</title></circle>
+<circle cx="414.0" cy="107.2" r="6" fill="#59A14F" opacity="0.85"><title>resetPublicClientForTest()</title></circle>
+<circle cx="418.8" cy="104.7" r="6" fill="#B07AA1" opacity="0.85"><title>curve_registry_bootstrap</title></circle>
+<circle cx="423.5" cy="102.2" r="6" fill="#B07AA1" opacity="0.85"><title>envio/createEffect</title></circle>
+<circle cx="428.4" cy="99.8" r="6" fill="#B07AA1" opacity="0.85"><title>envio/S</title></circle>
+<circle cx="433.2" cy="97.5" r="6" fill="#B07AA1" opacity="0.85"><title>viem/parseAbi</title></circle>
+<circle cx="438.1" cy="95.2" r="6" fill="#B07AA1" opacity="0.85"><title>./rpc_client/publicClient</title></circle>
+<circle cx="443.0" cy="93.0" r="6" fill="#B07AA1" opacity="0.85"><title>../utils/constants/CURVE_REGISTRY_LEGACY</title></circle>
+<circle cx="448.0" cy="90.9" r="6" fill="#B07AA1" opacity="0.85"><title>../utils/pacing/getHistoricalMetaEffectRateLimit</title></circle>
+<circle cx="452.9" cy="88.8" r="6" fill="#B07AA1" opacity="0.85"><title>fetchCurveRegistryPageHandler()</title></circle>
+<circle cx="457.9" cy="86.8" r="6" fill="#4E79A7" opacity="0.85"><title>token_registry</title></circle>
+<circle cx="463.0" cy="84.9" r="6" fill="#B07AA1" opacity="0.85"><title>rpc_client.test</title></circle>
+<circle cx="468.0" cy="83.0" r="6" fill="#B07AA1" opacity="0.85"><title>vitest/afterEach</title></circle>
+<circle cx="473.1" cy="81.2" r="6" fill="#B07AA1" opacity="0.85"><title>vitest/beforeEach</title></circle>
+<circle cx="478.2" cy="79.5" r="6" fill="#B07AA1" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="483.3" cy="77.9" r="6" fill="#B07AA1" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="488.5" cy="76.3" r="6" fill="#B07AA1" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="493.7" cy="74.8" r="6" fill="#B07AA1" opacity="0.85"><title>./rpc_client/PUBLIC_FALLBACK_RPC_URLS</title></circle>
+<circle cx="498.8" cy="73.3" r="6" fill="#B07AA1" opacity="0.85"><title>./rpc_client/buildPublicClient</title></circle>
+<circle cx="504.1" cy="72.0" r="6" fill="#B07AA1" opacity="0.85"><title>./rpc_client/getRpcTransportTuning</title></circle>
+<circle cx="509.3" cy="70.7" r="6" fill="#B07AA1" opacity="0.85"><title>./rpc_client/getRpcUrls</title></circle>
+<circle cx="514.5" cy="69.5" r="6" fill="#B07AA1" opacity="0.85"><title>./rpc_client/parseRpcUrlList</title></circle>
+<circle cx="519.8" cy="68.3" r="6" fill="#B07AA1" opacity="0.85"><title>./rpc_client/redactRpcUrl</title></circle>
+<circle cx="525.1" cy="67.3" r="6" fill="#B07AA1" opacity="0.85"><title>./rpc_client/resetPublicClientForTest</title></circle>
+<circle cx="530.4" cy="66.3" r="6" fill="#B07AA1" opacity="0.85"><title>snapshotEnv()</title></circle>
+<circle cx="535.7" cy="65.3" r="6" fill="#B07AA1" opacity="0.85"><title>restoreEnv()</title></circle>
+<circle cx="541.0" cy="64.5" r="6" fill="#E15759" opacity="0.85"><title>token_metadata.test</title></circle>
+<circle cx="546.3" cy="63.7" r="6" fill="#E15759" opacity="0.85"><title>vitest/describe</title></circle>
+<circle cx="551.7" cy="63.0" r="6" fill="#E15759" opacity="0.85"><title>vitest/it</title></circle>
+<circle cx="557.0" cy="62.4" r="6" fill="#E15759" opacity="0.85"><title>vitest/expect</title></circle>
+<circle cx="562.4" cy="61.8" r="6" fill="#E15759" opacity="0.85"><title>vitest/vi</title></circle>
+<circle cx="567.7" cy="61.3" r="6" fill="#E15759" opacity="0.85"><title>vitest/beforeEach</title></circle>
+<circle cx="573.1" cy="60.9" r="6" fill="#E15759" opacity="0.85"><title>viem/ContractFunctionZeroDataError</title></circle>
+<circle cx="578.5" cy="60.6" r="6" fill="#E15759" opacity="0.85"><title>./token_metadata/fetchTokenMetaHandler</title></circle>
+<circle cx="583.8" cy="60.3" r="6" fill="#E15759" opacity="0.85"><title>./token_metadata/lookupRegistryDecimalsBatch</title></circle>
+<circle cx="589.2" cy="60.1" r="6" fill="#E15759" opacity="0.85"><title>./token_metadata/resetTokenMetadataCachesForTest</title></circle>
+<circle cx="594.6" cy="60.0" r="6" fill="#E15759" opacity="0.85"><title>./rpc_client/publicClient</title></circle>
+</svg>
