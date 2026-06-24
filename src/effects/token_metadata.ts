@@ -28,6 +28,9 @@ const ROOT =
   import.meta.dirname ??
   path.dirname(fileURLToPath(import.meta.url));
 
+/** Project root (`src/effects` → `../..`). */
+const PROJECT_ROOT = path.resolve(ROOT, "../..");
+
 let db: any = null;
 
 /** Well-known Polygon tokens used by handler tests — avoids RPC when Vitest runs without bun:sqlite. */
@@ -43,7 +46,9 @@ const VITEST_TOKEN_DECIMALS: Record<string, number> = {
 
 async function initDb() {
   if (db !== null) return;
-  const dbPath = path.resolve(ROOT, "../../../token_registry.db");
+  const dbPath =
+    process.env.TOKEN_REGISTRY_DB?.trim() ||
+    path.resolve(PROJECT_ROOT, "token_registry.db");
   let lastError: unknown;
 
   // Bun runtime (scripts, direct handler runs)
@@ -73,12 +78,12 @@ async function initDb() {
   }
 }
 
-const DISCOVERED_DECIMALS_FILE = path.resolve(ROOT, "../../../data/discovered-decimals.json");
-const DISCOVERED_DECIMALS_NDJSON = path.resolve(ROOT, "../../../data/discovered-decimals.ndjson");
-const FAILED_DECIMALS_FILE = path.resolve(ROOT, "../../../data/failed-decimals.json");
-const FAILED_DECIMALS_NDJSON = path.resolve(ROOT, "../../../data/failed-decimals.ndjson");
-const AUTO_EXTRA_TOKENS_FILE = path.resolve(ROOT, "../../../data/auto-extra-tokens.json");
-const AUTO_EXTRA_TOKENS_NDJSON = path.resolve(ROOT, "../../../data/auto-extra-tokens.ndjson");
+const DISCOVERED_DECIMALS_FILE = path.resolve(PROJECT_ROOT, "data/discovered-decimals.json");
+const DISCOVERED_DECIMALS_NDJSON = path.resolve(PROJECT_ROOT, "data/discovered-decimals.ndjson");
+const FAILED_DECIMALS_FILE = path.resolve(PROJECT_ROOT, "data/failed-decimals.json");
+const FAILED_DECIMALS_NDJSON = path.resolve(PROJECT_ROOT, "data/failed-decimals.ndjson");
+const AUTO_EXTRA_TOKENS_FILE = path.resolve(PROJECT_ROOT, "data/auto-extra-tokens.json");
+const AUTO_EXTRA_TOKENS_NDJSON = path.resolve(PROJECT_ROOT, "data/auto-extra-tokens.ndjson");
 const PERSIST_FLUSH_DEBOUNCE_MS = 2000;
 // No TTL — a contract that isn't ERC20 will never become one. Permanent blocklist.
 

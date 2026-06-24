@@ -64,4 +64,25 @@ describe("fetchDodoMetadata", () => {
     expect(isDodoMetadataEmpty(result)).toBe(true);
     expect(ctx.cache).toBe(false);
   });
+
+  it("falls back to latest state when block-pinned reads are empty", async () => {
+    readContract.mockImplementation((args: { functionName: string; blockNumber?: bigint }) => {
+      if (args.blockNumber !== undefined) {
+        return Promise.resolve(0n);
+      }
+      const rate = args.functionName === "_LP_FEE_RATE_" ? 3_000_000_000_000_000n : 1_000_000_000_000_000n;
+      return Promise.resolve(rate);
+    });
+
+    const ctx = { log: undefined, cache: true };
+    const result = await fetchDodoMetadataHandler({
+      input: { pool: "0x35b99823199541e5eb466d32afb4bfef4f3dacf6", blockNumber: 15279604n },
+      context: ctx,
+    });
+
+    expect(isDodoMetadataEmpty(result)).toBe(false);
+    expect(result.fee).toBe(4_000_000_000_000_000n);
+    expect(ctx.cache).toBe(true);
+    expect(readContract).toHaveBeenCalledTimes(4);
+  });
 });

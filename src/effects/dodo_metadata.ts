@@ -74,6 +74,46 @@ const inFlightDodo = new Map<string, Promise<{
   mtFeeRate: bigint;
 }>>();
 
+async function readDodoFeeRates(
+  address: `0x${string}`,
+  blockNumber?: bigint,
+): Promise<{ fee: bigint; lpFeeRate: bigint; mtFeeRate: bigint }> {
+  const blockOpts = blockNumber ? { blockNumber } : {};
+  const settle = (p: Promise<unknown>) =>
+    p
+      .then((result) => ({ status: "success" as const, result }))
+      .catch((error: unknown) => ({ status: "failure" as const, error: error as Error }));
+
+  const [lpResult, mtResult] = await Promise.all([
+    settle(
+      publicClient.readContract({
+        address,
+        abi: DODO_FEE_ABI,
+        functionName: "_LP_FEE_RATE_",
+        ...blockOpts,
+      }),
+    ),
+    settle(
+      publicClient.readContract({
+        address,
+        abi: DODO_FEE_ABI,
+        functionName: "_MT_FEE_RATE_",
+        ...blockOpts,
+      }),
+    ),
+  ]);
+
+  const lp = readFeeBigint(lpResult);
+  const mt = readFeeBigint(mtResult);
+
+  return {
+    ...EMPTY_DODO_RESULT,
+    fee: lp + mt,
+    lpFeeRate: lp,
+    mtFeeRate: mt,
+  };
+}
+
 async function fetchDodoMetadataHandler({
   input,
   context,
@@ -93,42 +133,22 @@ async function fetchDodoMetadataHandler({
   promise = (async () => {
     try {
       const address = input.pool as `0x${string}`;
-      const blockNumber = input.blockNumber;
+      let result = await readDodoFeeRates(address, input.blockNumber);
 
-      const blockOpts = blockNumber ? { blockNumber } : {};
-      const settle = (p: Promise<unknown>) =>
-        p
-          .then((result) => ({ status: "success" as const, result }))
-          .catch((error: unknown) => ({ status: "failure" as const, error: error as Error }));
-
-      const [lpResult, mtResult] = await Promise.all([
-        settle(
-          publicClient.readContract({
-            address,
-            abi: DODO_FEE_ABI,
-            functionName: "_LP_FEE_RATE_",
-            ...blockOpts,
-          }),
-        ),
-        settle(
-          publicClient.readContract({
-            address,
-            abi: DODO_FEE_ABI,
-            functionName: "_MT_FEE_RATE_",
-            ...blockOpts,
-          }),
-        ),
-      ]);
-
-      const lp = readFeeBigint(lpResult);
-      const mt = readFeeBigint(mtResult);
-
-      const result = {
-        ...EMPTY_DODO_RESULT,
-        fee: lp + mt,
-        lpFeeRate: lp,
-        mtFeeRate: mt,
-      };
+      // Creation-block reads often return empty (same-block deploy, archive gaps). Latest state is
+      // sufficient for discovery PoolMeta.fee; the arb bot reads live rates via RPC anyway.
+      if (isDodoMetadataEmpty(result) && input.blockNumber !== undefined) {
+        const latest = await readDodoFeeRates(address);
+        if (!isDodoMetadataEmpty(latest)) {
+          result = latest;
+          if (context.log) {
+            context.log.info("DODO metadata: block-pinned read empty, used latest state", {
+              pool: input.pool,
+              blockNumber: String(input.blockNumber),
+            });
+          }
+        }
+      }
 
       if (isDodoMetadataEmpty(result)) {
         if (context.log) {
