@@ -9,12 +9,15 @@ import { performance } from "node:perf_hooks";
 import { applyHyperSyncPacingEnv } from "../src/utils/pacing.ts";
 
 const ROOT = path.resolve(import.meta.dir, "..");
-const subcommand = process.argv[2] ?? "dev";
+const raw = process.argv.slice(2);
+const subcommand = raw[0]?.startsWith("-") ? "dev" : raw[0] ?? "dev";
+const extraArgs = raw[0]?.startsWith("-") ? raw : raw.slice(1);
 
 const env: Record<string, string | undefined> = { ...process.env };
 applyHyperSyncPacingEnv(env);
 
-const child = spawn("envio", [subcommand], {
+const envioBin = path.resolve(ROOT, "node_modules/.bin/envio");
+const child = spawn(envioBin, [subcommand, ...extraArgs], {
   cwd: ROOT,
   env: env as NodeJS.ProcessEnv,
   stdio: "inherit",

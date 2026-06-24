@@ -9,19 +9,17 @@
     "test": "vitest run",
     "validate-config": "python3 scripts/validate_envio_config.py",
     "validate-data": "python3 scripts/validate_data.py",
-    "validate": "npm run validate-config && npm run validate-data",
+    "validate": "bun run validate-config && bun run validate-data",
     "generate-tokens": "bun scripts/generate-polygon-tokens.ts",
-    "generate-tokens:auto": "bun scripts/generate-polygon-tokens.ts",
     "backup-db": "bash scripts/backup-db.sh"
   },
   "dependencies": {
-    "@envio-dev/hypersync-client": "1.4.0",
     "envio": "3.2.1",
-    "viem": "2.53.1"
+    "viem": "^2.53.1"
   },
   "devDependencies": {
-    "@types/node": "26.0.0",
-    "typescript": "6.0.3",
-    "vitest": "4.1.9"
+    "@types/node": "^26.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }
