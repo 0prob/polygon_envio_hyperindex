@@ -10,6 +10,9 @@ describe("setTokenMetasIfMissing", () => {
     const context = {
       TokenMeta: {
         get: vi.fn(async (id: string) => (id === USDC ? { decimals: 6 } : undefined)),
+        getWhere: vi.fn(async (f: { id: { _in: string[] } }) =>
+          f.id._in.map((id) => ({ id, decimals: 6 })),
+        ),
         set,
       },
     };
@@ -24,6 +27,9 @@ describe("setTokenMetasIfMissing", () => {
     const context = {
       TokenMeta: {
         get: vi.fn(async () => ({ decimals: 18 })),
+        getWhere: vi.fn(async (f: { id: { _in: string[] } }) =>
+          f.id._in.map((id) => ({ id, decimals: 18 })),
+        ),
         set,
       },
     };
@@ -42,6 +48,7 @@ describe("setTokenMetasIfMissing", () => {
     const context = {
       TokenMeta: {
         get: vi.fn(async () => undefined),
+        getWhere: vi.fn(async () => []),
         set,
       },
     };
@@ -59,6 +66,7 @@ describe("setTokenMetasIfMissing", () => {
     const context = {
       TokenMeta: {
         get: vi.fn(async () => undefined),
+        getWhere: vi.fn(async () => []),
         set,
       },
     };

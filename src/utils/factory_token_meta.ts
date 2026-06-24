@@ -11,11 +11,14 @@ export type FactoryTokenMeta = { decimals: number; trusted: boolean };
 
 type TokenMetaEntity = { decimals?: number };
 
+type TokenMetaRow = TokenMetaEntity & { id: string };
+
 type FactoryTokenMetaContext = {
   isPreload?: boolean;
   effect: <I, O>(effect: Effect<I, O>, input: I extends undefined ? undefined : I) => Promise<O>;
   TokenMeta: {
     get: (id: string) => Promise<TokenMetaEntity | undefined>;
+    getWhere: (filter: { id: { _in: string[] } }) => Promise<TokenMetaRow[]>;
   };
 };
 
@@ -143,11 +146,12 @@ export async function resolveTokenMetasBatch(
   const localHits = await lookupRegistryDecimalsBatch(tokens);
 
   // Only read DB for tokens NOT in registry
-  const existing = await Promise.all(
-    normalized.map((addr) =>
-      localHits.has(addr) ? undefined : context.TokenMeta.get(addr),
-    ),
-  );
+  const idsNotInRegistry = normalized.filter((a) => !localHits.has(a));
+  const rows = idsNotInRegistry.length > 0
+    ? await context.TokenMeta.getWhere({ id: { _in: idsNotInRegistry } })
+    : [];
+  const existingMap = new Map(rows.map((r) => [r.id, r]));
+  const existing = normalized.map((addr) => existingMap.get(addr));
 
   if (existingByAddr) {
     for (let i = 0; i < tokens.length; i++) {

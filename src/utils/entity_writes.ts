@@ -10,6 +10,7 @@ import { safeDecimals } from "./safe_decimals";
 export type TokenMetaContext = {
   TokenMeta: {
     get: (id: string) => Promise<{ decimals?: number } | undefined>;
+    getWhere: (filter: { id: { _in: string[] } }) => Promise<{ id: string; decimals?: number }[]>;
     set: (entity: { id: string; address: string; decimals: number }) => void;
   };
 };
@@ -85,7 +86,11 @@ export async function setTokenMetaEntriesIfMissing(
   const addrs = [...seen.keys()];
   const existing = preloadedByAddr
     ? addrs.map((a) => preloadedByAddr.get(a))
-    : await Promise.all(addrs.map((addr) => context.TokenMeta.get(addr)));
+    : await (async () => {
+        const rows = await context.TokenMeta.getWhere({ id: { _in: addrs } });
+        const map = new Map(rows.map((r) => [r.id, r]));
+        return addrs.map((a) => map.get(a));
+      })();
 
   for (let i = 0; i < addrs.length; i++) {
     const entry = seen.get(addrs[i]!)!;

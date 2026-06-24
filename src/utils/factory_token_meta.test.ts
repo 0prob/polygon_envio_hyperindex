@@ -117,6 +117,15 @@ describe("resolveTokenMetasBatch", () => {
           if (id === USDC) return { decimals: 6 };
           return undefined;
         }),
+        getWhere: vi.fn(async (f: { id: { _in: string[] } }) =>
+          f.id._in
+            .map((id) => {
+              if (id === WETH) return { id, decimals: 18 };
+              if (id === USDC) return { id, decimals: 6 };
+              return undefined;
+            })
+            .filter(Boolean),
+        ),
       },
     } as Parameters<typeof resolveTokenMetasBatch>[0];
 

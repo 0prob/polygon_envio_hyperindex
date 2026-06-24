@@ -5,6 +5,7 @@
  */
 import { spawn } from "node:child_process";
 import path from "node:path";
+import { performance } from "node:perf_hooks";
 import { applyHyperSyncPacingEnv } from "../src/utils/pacing.ts";
 
 const ROOT = path.resolve(import.meta.dir, "..");
@@ -20,3 +21,10 @@ const child = spawn("envio", [subcommand], {
 });
 
 child.on("close", (code) => process.exit(code ?? 1));
+
+setInterval(() => {
+  if (performance.getEntriesByType("measure").length > 500_000) {
+    performance.clearMeasures();
+    performance.clearMarks();
+  }
+}, 60_000);
