@@ -1,5 +1,10 @@
 import { indexer } from "envio";
-import { curveFeeToBps, fetchCurveMetadata, isCurveMetadataEmpty } from "../effects/curve_metadata";
+import {
+  curveFeeToPoolMetaInt,
+  fetchCurveMetadata,
+  isCurveMetadataEmpty,
+} from "../effects/curve_metadata";
+import type { CurveDiscoveryPoolType } from "../effects/curve_metadata";
 import { fetchCurveRegistryPage } from "../effects/curve_registry_bootstrap";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
@@ -26,6 +31,19 @@ interface TokenMetaResult {
   trusted: boolean;
 }
 
+interface CurveBootstrapPool {
+  address: string;
+  coins: string[];
+  poolType: CurveDiscoveryPoolType;
+  fee: bigint;
+}
+
+/** Advance registry pagination only when the page produced indexable pools or was fully deduped. */
+export function shouldAdvanceBootstrapPage(newPoolCount: number, readyPoolCount: number): boolean {
+  if (newPoolCount === 0) return true;
+  return readyPoolCount > 0;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function bootstrapRegistryPage(
   context: any,
@@ -46,6 +64,7 @@ async function bootstrapRegistryPage(
   });
 
   const storeProgress = (lastIndex: number, total: number) => {
+    if (context.isPreload) return;
     context.CurveBootstrapProgress.set({
       id: stateId,
       sourceId: source.id,
@@ -74,9 +93,9 @@ async function bootstrapRegistryPage(
     return;
   }
 
-  // Process new pools with bounded concurrency (avoids request spikes)
+  // Phase 1: fetch pool metadata with bounded concurrency (RPC effects only).
   const concurrency = Math.min(3, getMetadataConcurrency());
-  const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+  const readyPools: CurveBootstrapPool[] = [];
 
   await runWithConcurrency(newPools, concurrency, async (row: { address: string }) => {
     const meta = await context.effect(fetchCurveMetadata, {
@@ -93,30 +112,53 @@ async function bootstrapRegistryPage(
       return;
     }
 
-    if (context.isPreload) return;
-
-    const coinMetas = await resolveTokenMetasBatch(context, coins, tokenExisting);
-
-    context.PoolMeta.set(poolMetaEntity({
-      id: row.address,
+    readyPools.push({
       address: row.address,
-      protocol: curveDiscoveryProtocol(meta.poolType),
-      tokens: coins,
-      fee: curveFeeToBps(meta.fee),
-      createdBlock: Number(block.number),
-      updatedAtBlock: Number(block.number),
-      poolId: undefined,
-      poolType: meta.poolType,
-    }));
-
-    await setTokenMetasIfMissing(
-      context,
       coins,
-      coinMetas.map((m: TokenMetaResult) => m.decimals),
-      coinMetas.map((m: TokenMetaResult) => m.trusted),
-      tokenExisting,
-    );
+      poolType: meta.poolType as CurveDiscoveryPoolType,
+      fee: meta.fee,
+    });
   });
+
+  if (readyPools.length === 0) {
+    // Transient RPC failures — do not advance; retry this page on the next stride.
+    return;
+  }
+
+  // Phase 2: one batched token-meta pass for all coins on the page (not N× per pool).
+  const uniqueCoins = [...new Set(readyPools.flatMap((p) => p.coins))];
+  const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+  const tokenMetasPromise = resolveTokenMetasBatch(context, uniqueCoins, tokenExisting);
+
+  if (context.isPreload) {
+    await tokenMetasPromise;
+    return;
+  }
+
+  const tokenMetas = await tokenMetasPromise;
+  const blockNumber = Number(block.number);
+
+  for (const pool of readyPools) {
+    context.PoolMeta.set(poolMetaEntity({
+      id: pool.address,
+      address: pool.address,
+      protocol: curveDiscoveryProtocol(pool.poolType),
+      tokens: pool.coins,
+      fee: curveFeeToPoolMetaInt(pool.fee),
+      createdBlock: blockNumber,
+      updatedAtBlock: blockNumber,
+      poolId: undefined,
+      poolType: pool.poolType,
+    }));
+  }
+
+  await setTokenMetasIfMissing(
+    context,
+    uniqueCoins,
+    tokenMetas.map((m: TokenMetaResult) => m.decimals),
+    tokenMetas.map((m: TokenMetaResult) => m.trusted),
+    tokenExisting,
+  );
 
   const nextIndex = Math.min(page.total, offset + PAGE_SIZE);
   storeProgress(nextIndex, page.total);

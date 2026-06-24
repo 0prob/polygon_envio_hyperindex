@@ -1,0 +1,11 @@
+{
+  "skills": {
+    "disabled": [
+      "writing-skills",
+      "writing-plans",
+      "verification-before-completion",
+      "using-superpowers",
+      "using-git-worktrees"
+    ]
+  }
+}

@@ -131,7 +131,7 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     return;
   }
 
-  const fee = existing?.fee ?? null;
+  const fee = existing?.fee;
   const poolType = existing?.poolType;
 
   if (context.isPreload) return;

@@ -1,5 +1,9 @@
 import { indexer, Effect } from "envio";
-import { curveFeeToBps, fetchCurveMetadata, isCurveMetadataEmpty } from "../effects/curve_metadata";
+import {
+  curveFeeToPoolMetaInt,
+  fetchCurveMetadata,
+  isCurveMetadataEmpty,
+} from "../effects/curve_metadata";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
@@ -32,12 +36,19 @@ interface CurveHandlerContext {
 }
 
 export function nCoinsFromEventParams(params: Record<string, unknown>): number {
-  const raw =
-    params.n_coins ?? params.nCoins ?? (typeof params._1 === "bigint" ? params._1 : undefined);
-  if (raw == null) return DEFAULT_N_COINS;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n < 2) return DEFAULT_N_COINS;
-  return Math.min(Math.floor(n), 8);
+  const named = params.n_coins ?? params.nCoins;
+  if (named != null) {
+    const n = Number(named);
+    if (!Number.isFinite(n) || n < 2) return DEFAULT_N_COINS;
+    return Math.min(Math.floor(n), 8);
+  }
+  // PoolAdded(address,uint256,bool) only — do not treat PoolAdded(address,bytes) _1 as n_coins.
+  if (typeof params._1 === "bigint" && typeof params._2 === "boolean") {
+    const n = Number(params._1);
+    if (!Number.isFinite(n) || n < 2) return DEFAULT_N_COINS;
+    return Math.min(Math.floor(n), 8);
+  }
+  return DEFAULT_N_COINS;
 }
 
 function poolAddressFromEventParams(params: Record<string, unknown>): string | undefined {
@@ -90,7 +101,7 @@ async function handleCurvePoolAdded({
     return;
   }
 
-  const feeBps = curveFeeToBps(meta.fee);
+  const feeBps = curveFeeToPoolMetaInt(meta.fee);
 
   context.PoolMeta.set(poolMetaEntity({
     id: pool,
