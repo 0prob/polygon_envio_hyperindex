@@ -5,31 +5,23 @@ import {
   ContractFunctionZeroDataError,
   parseAbi,
 } from "viem";
-import { publicClient } from "./rpc_client";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { DAI, USDC, USDC_E, USDT, WBTC, WETH, WMATIC } from "../utils/constants";
+import { publicClient, getRpcTransportTuning } from "./rpc_client";
+import {
+  DISCOVERED_DECIMALS_NDJSON,
+  FAILED_DECIMALS_NDJSON,
+  TOKEN_REGISTRY_DB,
+} from "../utils/data_paths";
 import { getTokenMetaEffectRateLimit } from "../utils/pacing";
 import {
-  appendAutoExtraEntry,
   appendDiscoveredDecimals,
   appendFailedTokens,
-  loadAutoExtraEntries,
   loadDiscoveredDecimalsEntries,
   loadFailedTokenEntries,
 } from "../utils/token_disk";
 import { safeDecimals } from "../utils/safe_decimals";
 import { isNetworkError, isQuotaError } from "../utils/rpc_errors";
 import { normalizeTokenAddress } from "../utils/normalize_address";
-
-// Bun: import.meta.dir — Node (Envio/tsx): import.meta.dirname
-const ROOT =
-  import.meta.dir ??
-  import.meta.dirname ??
-  path.dirname(fileURLToPath(import.meta.url));
-
-/** Project root (`src/effects` → `../..`). */
-const PROJECT_ROOT = path.resolve(ROOT, "../..");
+import { DAI, USDC, USDC_E, USDT, WBTC, WETH, WMATIC } from "../utils/constants";
 
 let db: any = null;
 
@@ -46,9 +38,7 @@ const VITEST_TOKEN_DECIMALS: Record<string, number> = {
 
 async function initDb() {
   if (db !== null) return;
-  const dbPath =
-    process.env.TOKEN_REGISTRY_DB?.trim() ||
-    path.resolve(PROJECT_ROOT, "token_registry.db");
+  const dbPath = TOKEN_REGISTRY_DB;
   let lastError: unknown;
 
   // Bun runtime (scripts, direct handler runs)
@@ -78,12 +68,6 @@ async function initDb() {
   }
 }
 
-const DISCOVERED_DECIMALS_FILE = path.resolve(PROJECT_ROOT, "data/discovered-decimals.json");
-const DISCOVERED_DECIMALS_NDJSON = path.resolve(PROJECT_ROOT, "data/discovered-decimals.ndjson");
-const FAILED_DECIMALS_FILE = path.resolve(PROJECT_ROOT, "data/failed-decimals.json");
-const FAILED_DECIMALS_NDJSON = path.resolve(PROJECT_ROOT, "data/failed-decimals.ndjson");
-const AUTO_EXTRA_TOKENS_FILE = path.resolve(PROJECT_ROOT, "data/auto-extra-tokens.json");
-const AUTO_EXTRA_TOKENS_NDJSON = path.resolve(PROJECT_ROOT, "data/auto-extra-tokens.ndjson");
 const PERSIST_FLUSH_DEBOUNCE_MS = 2000;
 // No TTL — a contract that isn't ERC20 will never become one. Permanent blocklist.
 
@@ -137,20 +121,6 @@ function seedVitestRegistry(): void {
   }
 }
 
-const autoExtraKnown = new Set<string>();
-
-async function loadAutoExtraTokens(): Promise<void> {
-  const entries = await loadAutoExtraEntries(AUTO_EXTRA_TOKENS_FILE, AUTO_EXTRA_TOKENS_NDJSON);
-  for (const entry of entries) {
-    let addr = entry.address.toLowerCase();
-    if (addr.startsWith("0x") && addr.length < 42) {
-      addr = "0x" + addr.slice(2).padStart(40, "0");
-    }
-    autoExtraKnown.add(addr);
-    registryCache.set(addr, safeDecimals(entry.decimals));
-  }
-}
-
 let warmUpPromise: Promise<void> | null = null;
 
 async function warmUpCache() {
@@ -174,7 +144,6 @@ async function warmUpCache() {
     for (const [addr, decimals] of Object.entries(discoveredDecimals)) {
       registryCache.set(addr, decimals);
     }
-    await loadAutoExtraTokens();
     if (process.env.VITEST === "true") {
       seedVitestRegistry();
     }
@@ -192,7 +161,7 @@ async function loadDiscoveredDecimals() {
   if (loadDiscoveredPromise) return loadDiscoveredPromise;
 
   loadDiscoveredPromise = (async () => {
-    const data = await loadDiscoveredDecimalsEntries(DISCOVERED_DECIMALS_FILE, DISCOVERED_DECIMALS_NDJSON);
+    const data = await loadDiscoveredDecimalsEntries(null, DISCOVERED_DECIMALS_NDJSON);
     Object.assign(discoveredDecimals, data);
     for (const addr of Object.keys(data)) persistedDiscovered.add(addr);
     discoveredLoaded = true;
@@ -239,20 +208,6 @@ async function flushDiscoveredDecimals(): Promise<void> {
   return discoveredSavePending;
 }
 
-// Best-effort append of newly discovered cold tokens so generate-tokens:auto can promote them on next indexer run.
-async function appendToAutoExtraTokens(address: string, decimals: number) {
-  const addr = address.toLowerCase();
-  if (autoExtraKnown.has(addr)) return;
-  autoExtraKnown.add(addr);
-
-  try {
-    await appendAutoExtraEntry(AUTO_EXTRA_TOKENS_NDJSON, addr, decimals);
-  } catch (e) {
-    autoExtraKnown.delete(addr);
-    console.warn("[token_metadata] Failed to append to auto-extra-tokens:", (e as Error).message);
-  }
-}
-
 // Permanent blocklist of addresses that are not ERC20 (no decimals()).
 // A non-ERC20 contract never becomes one, so no TTL — skip forever.
 const failedTokens: Set<string> = new Set();
@@ -269,7 +224,7 @@ async function loadFailedTokens() {
   if (loadFailedPromise) return loadFailedPromise;
 
   loadFailedPromise = (async () => {
-    const addrs = await loadFailedTokenEntries(FAILED_DECIMALS_FILE, FAILED_DECIMALS_NDJSON);
+    const addrs = await loadFailedTokenEntries(null, FAILED_DECIMALS_NDJSON);
     for (const addr of addrs) {
       failedTokens.add(addr);
       persistedFailed.add(addr);
@@ -319,6 +274,176 @@ async function flushFailedTokens(): Promise<void> {
 const ERC20_ABI = parseAbi(["function decimals() view returns (uint8)"]);
 // Keep in sync with src/core/abis/erc20.ts ERC20_READ_ABI (decimals item).
 
+type DecimalsFetchResult = { address: string; decimals: number; trusted: boolean };
+
+/** Coalesce concurrent cold-token RPC reads into one multicall per tick. */
+type RpcBatchWaiter = { context: any; resolve: (value: DecimalsFetchResult) => void };
+let pendingRpcBatch = new Map<string, RpcBatchWaiter[]>();
+let rpcBatchTimer: ReturnType<typeof setTimeout> | null = null;
+let rpcBatchFlushPromise: Promise<void> | null = null;
+
+function rpcBatchWaitMs(): number {
+  if (process.env.VITEST === "true") return 0;
+  return getRpcTransportTuning().multicallWait;
+}
+
+function scheduleDecimalsRpcBatch(): void {
+  if (rpcBatchTimer !== null) return;
+  rpcBatchTimer = setTimeout(() => {
+    rpcBatchTimer = null;
+    void flushDecimalsRpcBatch();
+  }, rpcBatchWaitMs());
+}
+
+function classifyDecimalsError(err: unknown): {
+  isZeroData: boolean;
+  isReverted: boolean;
+  isMalformedInput: boolean;
+  isQuota: boolean;
+  isNetwork: boolean;
+  isDefinitiveError: boolean;
+} {
+  const errStr = String(err);
+  const cause = err instanceof BaseError ? err.walk() : err;
+  const isZeroData =
+    cause instanceof ContractFunctionZeroDataError ||
+    (err instanceof BaseError &&
+      err.walk((e) => e instanceof ContractFunctionZeroDataError) !== null);
+  const isReverted =
+    cause instanceof ContractFunctionRevertedError ||
+    (err instanceof BaseError &&
+      err.walk((e) => e instanceof ContractFunctionRevertedError) !== null);
+  const isMalformedInput =
+    errStr.includes("Invalid address") ||
+    errStr.includes("odd length") ||
+    errStr.includes("cannot unmarshal");
+  const isQuota = isQuotaError(err);
+  const isNetwork = isNetworkError(err);
+  const isDefinitiveError = isZeroData || isReverted || isMalformedInput;
+  return { isZeroData, isReverted, isMalformedInput, isQuota, isNetwork, isDefinitiveError };
+}
+
+function handleDecimalsFetchFailure(addr: string, err: unknown, context: any): DecimalsFetchResult {
+  const { isDefinitiveError, isQuota, isNetwork } = classifyDecimalsError(err);
+  const errStr = String(err);
+
+  if (isDefinitiveError && !isQuota && !isNetwork) {
+    failedTokens.add(addr);
+    scheduleFailedTokensSave();
+  }
+
+  if (context.log && !failedDecimalsTokens.has(addr)) {
+    failedDecimalsTokens.add(addr);
+    if (isQuota) {
+      context.log.warn(
+        `Alchemy quota / monthly capacity exceeded while fetching decimals. ` +
+          `Add more providers to POLYGON_RPC_URLS (comma-separated) or lower effect rateLimits temporarily. ` +
+          `Defaulting to 18 for this token (will retry in ~5min).`,
+        { token: addr },
+      );
+    } else if (isNetwork) {
+      context.log.warn(`Network error fetching decimals for token — defaulting to 18 (will retry in ~5min)`, {
+        token: addr,
+        error: errStr.split("\n")[0],
+      });
+    } else if (isDefinitiveError) {
+      context.log.warn(
+        `Definitive failure fetching decimals for token — defaulting to 18 (added to permanent blocklist)`,
+        { token: addr, error: errStr.split("\n")[0] },
+      );
+    }
+  }
+
+  context.cache = false;
+  return { address: addr, decimals: 18, trusted: false };
+}
+
+function handleDecimalsFetchSuccess(addr: string, rawDecimals: unknown, context: any): DecimalsFetchResult {
+  const decimals = safeDecimals(Number(rawDecimals));
+  registryCache.set(addr, decimals);
+  discoveredDecimals[addr] = decimals;
+  scheduleDiscoveredDecimalsSave();
+  if (context.log) {
+    context.log.info(`Fetched decimals for new token via RPC (persisted)`, {
+      token: addr,
+      decimals,
+    });
+  }
+  return { address: addr, decimals, trusted: true };
+}
+
+async function flushDecimalsRpcBatch(): Promise<void> {
+  if (rpcBatchFlushPromise) return rpcBatchFlushPromise;
+  if (pendingRpcBatch.size === 0) return;
+
+  const batch = pendingRpcBatch;
+  pendingRpcBatch = new Map();
+  const addrs = [...batch.keys()];
+
+  rpcBatchFlushPromise = (async () => {
+    try {
+      const results = await publicClient.multicall({
+        contracts: addrs.map((address) => ({
+          address: address as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: "decimals",
+        })),
+        allowFailure: true,
+      });
+
+      for (let i = 0; i < addrs.length; i++) {
+        const addr = addrs[i]!;
+        const waiters = batch.get(addr) ?? [];
+        const item = results[i];
+        for (const waiter of waiters) {
+          if (item?.status === "success") {
+            waiter.resolve(handleDecimalsFetchSuccess(addr, item.result, waiter.context));
+          } else {
+            waiter.resolve(handleDecimalsFetchFailure(addr, item?.error ?? new Error("multicall failure"), waiter.context));
+          }
+        }
+        inFlightDecimals.delete(addr);
+      }
+    } catch (err) {
+      for (const [addr, waiters] of batch) {
+        for (const waiter of waiters) {
+          waiter.resolve(handleDecimalsFetchFailure(addr, err, waiter.context));
+        }
+        inFlightDecimals.delete(addr);
+      }
+    }
+  })().finally(() => {
+    rpcBatchFlushPromise = null;
+  });
+
+  return rpcBatchFlushPromise;
+}
+
+function enqueueDecimalsRpc(addr: string, context: any): Promise<DecimalsFetchResult> {
+  const existing = inFlightDecimals.get(addr);
+  if (existing) return existing;
+
+  const promise = new Promise<DecimalsFetchResult>((resolve) => {
+    const waiters = pendingRpcBatch.get(addr) ?? [];
+    waiters.push({ context, resolve });
+    pendingRpcBatch.set(addr, waiters);
+
+    const maxBatch = getRpcTransportTuning().multicallBatchSize;
+    if (pendingRpcBatch.size >= maxBatch) {
+      if (rpcBatchTimer) {
+        clearTimeout(rpcBatchTimer);
+        rpcBatchTimer = null;
+      }
+      void flushDecimalsRpcBatch();
+    } else {
+      scheduleDecimalsRpcBatch();
+    }
+  });
+
+  inFlightDecimals.set(addr, promise);
+  return promise;
+}
+
 /**
  * Fetches token decimals — optimized to avoid RPC as much as possible.
  *
@@ -329,8 +454,8 @@ const ERC20_ABI = parseAbi(["function decimals() view returns (uint8)"]);
  * 1. Large static registry (fastest — 6000+ Polygon tokens, 0 RPC)
  * 2. Batched RPC (last resort)
  *
- * Cold tokens discovered via RPC are automatically appended to
- * `data/auto-extra-tokens.json` so generate-tokens:auto promotes them into the static registry.
+ * Cold tokens discovered via RPC are appended to `data/discovered-decimals.ndjson`
+ * and merged into `data/token_registry.db` on the next `bun run generate-tokens` run.
  *
  * This is the #1 lever for V2Factory.PairCreated performance.
  */
@@ -369,116 +494,12 @@ const fetchTokenMetaHandler = async ({ input, context }: { input: { address: str
       return { address: addr, decimals: 18, trusted: false };
     }
 
-    promise = (async () => {
-      try {
-        const decimals = await publicClient.readContract({
-          address: addr as `0x${string}`,
-          abi: ERC20_ABI,
-          functionName: "decimals",
-        });
-
-        const result = { address: addr, decimals: safeDecimals(Number(decimals)), trusted: true };
-
-        // Persist successful discovery aggressively
-        registryCache.set(addr, result.decimals);
-        discoveredDecimals[addr] = result.decimals;
-        scheduleDiscoveredDecimalsSave();
-        appendToAutoExtraTokens(addr, result.decimals).catch(() => {});
-
-        if (context.log) {
-          context.log.info(`Fetched decimals for new token via RPC (persisted + auto-extra)`, {
-            token: addr,
-            decimals: result.decimals,
-          });
-        }
-
-        return result;
-      } catch (err) {
-        const errStr = String(err);
-
-        // Distinguish between definitive "this is not an ERC20 token" errors
-        // and transient "the network/RPC is having trouble" errors.
-        //
-        // Definitive (contract-level) failures are detected via viem's *typed*
-        // errors, not substring matching — viem's "returned no data" message
-        // always embeds the static line "The address is not a contract.", so
-        // substring matching on it cannot distinguish a genuinely empty return
-        // from any other failure. Zero-data and revert both mean the address
-        // does not expose a usable decimals(); malformed-input errors (bad
-        // address / decode failure) are matched by substring since they are
-        // about our input, not the network.
-        const cause = err instanceof BaseError ? err.walk() : err;
-        const isZeroData =
-          cause instanceof ContractFunctionZeroDataError ||
-          (err instanceof BaseError &&
-            err.walk((e) => e instanceof ContractFunctionZeroDataError) !== null);
-        const isReverted =
-          cause instanceof ContractFunctionRevertedError ||
-          (err instanceof BaseError &&
-            err.walk((e) => e instanceof ContractFunctionRevertedError) !== null);
-        const isMalformedInput =
-          errStr.includes("Invalid address") ||
-          errStr.includes("odd length") ||
-          errStr.includes("cannot unmarshal");
-
-        const isQuota = isQuotaError(err);
-        const isNetwork = isNetworkError(err);
-
-        const isDefinitiveError = isZeroData || isReverted || isMalformedInput;
-
-        // Only add to permanent blocklist for definitive non-token errors.
-        // Network/quota errors are transient and must be retried in a future
-        // run — never let a timeout/5xx whose body happens to contain a
-        // definitive-looking word bake a valid token into the blocklist.
-        if (isDefinitiveError && !isQuota && !isNetwork) {
-          failedTokens.add(addr);
-          scheduleFailedTokensSave();
-        }
-
-        if (context.log && !failedDecimalsTokens.has(addr)) {
-          failedDecimalsTokens.add(addr);
-
-          if (isQuota) {
-            context.log.warn(
-              `Alchemy quota / monthly capacity exceeded while fetching decimals. ` +
-                `Add more providers to POLYGON_RPC_URLS (comma-separated) or lower effect rateLimits temporarily. ` +
-                `Defaulting to 18 for this token (will retry in ~5min).`,
-              { token: addr },
-            );
-          } else if (isNetwork) {
-            context.log.warn(`Network error fetching decimals for token — defaulting to 18 (will retry in ~5min)`, {
-              token: addr,
-              error: errStr.split("\n")[0],
-            });
-          } else if (isDefinitiveError) {
-            context.log.warn(`Definitive failure fetching decimals for token — defaulting to 18 (added to permanent blocklist)`, {
-              token: addr,
-              error: errStr.split("\n")[0], // Keep logs clean
-            });
-          }
-        }
-
-        // Do not cache obviously bad/transient results forever in Envio effect cache.
-        context.cache = false;
-        return { address: addr, decimals: 18, trusted: false };
-      } finally {
-        inFlightDecimals.delete(addr);
-      }
-    })();
-
-    inFlightDecimals.set(addr, promise);
+    promise = enqueueDecimalsRpc(addr, context);
     return promise;
   };
 
-// Note — Preload/Execution Double-Pass Cost:
-// Each handler runs twice per block (preload phase + execution phase). For cold
-// tokens with no cached decimals, context.cache=false is set in the handler, which
-// means Envio re-executes the RPC effect in both phases (2 eth_calls per new token
-// per block). This is correct behavior (preload guarantees deterministic output),
-// but doubles the RPC cost for first-seen tokens. The 2× overhead is a known
-// tradeoff: ~99% of fetchTokenMeta calls resolve from the static registryCache
-// (0 RPC), so only genuinely cold tokens incur the double cost. Budget holders
-// should account for this when sizing RPC endpoint capacity.
+// Preload skips cold-token RPC (returns placeholder 18); execution uses multicall-batched RPC.
+// ~99% of lookups hit registryCache before any effect RPC runs.
 export const fetchTokenMeta = createEffect(
   {
     name: "fetchTokenMeta",
@@ -502,13 +523,16 @@ export function resetTokenMetadataCachesForTest(): void {
   cacheLoaded = false;
   discoveredLoaded = false;
   failedLoaded = false;
+  warmUpPromise = null;
+  loadDiscoveredPromise = null;
+  loadFailedPromise = null;
+  db = null;
   registryCache.clear();
   for (const key of Object.keys(discoveredDecimals)) delete discoveredDecimals[key];
   persistedDiscovered.clear();
   failedTokens.clear();
   persistedFailed.clear();
   failedDecimalsTokens.clear();
-  autoExtraKnown.clear();
   discoveredDirty = false;
   failedDirty = false;
   if (discoveredFlushTimer) {
@@ -519,4 +543,11 @@ export function resetTokenMetadataCachesForTest(): void {
     clearTimeout(failedFlushTimer);
     failedFlushTimer = null;
   }
+  pendingRpcBatch.clear();
+  if (rpcBatchTimer) {
+    clearTimeout(rpcBatchTimer);
+    rpcBatchTimer = null;
+  }
+  rpcBatchFlushPromise = null;
+  inFlightDecimals.clear();
 }

@@ -6,10 +6,10 @@
 # - @config(precision) on all BigInt / [BigInt] for large on-chain numerics (256-bit scale).
 # - Explicit docs + clear camelCase names.
 # - Flat/denormalized design (no @derivedFrom relations) optimized for the bot's
-#   bulk GraphQL loads + in-memory pipeline (see hyperindex_graphql.ts + pass_loop).
+#   bulk GraphQL loads + in-memory pipeline.
 # - ID! on all entities (addresses or natural keys, lowercased for consistency).
 #
-# After edits: codegen is now auto-run by the HyperIndex process wrapper (in bot or via root `bun run dev`) if schema/config mtime > generated types. Explicit: `cd hyperindex && bun run codegen` (or `bunx envio codegen`).
+# After edits: run `bun run codegen` (or `bunx envio codegen`).
 
 """
 Protocol variants for DEX pools indexed by the arbitrage bot.
@@ -64,8 +64,8 @@ type PoolMeta @index(fields: ["protocol", "createdBlock"]) {
 }
 
 """
-ERC20 decimals cache (populated via Effect API + STATIC_TOKEN_DECIMALS registry
-on first-seen tokens during factory events like PairCreated/PoolCreated).
+ERC20 decimals cache (populated via Effect API + data/token_registry.db /
+discovered-decimals.ndjson on first-seen tokens during factory events like PairCreated/PoolCreated).
 Heavily used + indexed for the bot's math and the handlers' preload/effects.
 """
 type TokenMeta {

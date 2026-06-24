@@ -43,23 +43,26 @@ See `.env.example` for all variables. Key ones:
 ```
 HyperSync → onEvent/onBlock handlers → Effect API → Postgres via Hasura
                           ↕                              ↘
-              Static registry (token_registry.db)    Arbitrage bot
-              Discovered decimals (ndjson)            (GraphQL queries)
-              RPC fallback (viem multicall)
+              Static registry (data/token_registry.db)   Arbitrage bot
+              Discovered decimals (ndjson)               (GraphQL queries)
+              RPC fallback (viem multicall batch)
 ```
 
 All pool discovery is via factory/registry `onEvent` handlers and `onBlock` bootstrap handlers. No per-pool `contractRegister` subscriptions — the arb bot owns hot state via direct RPC.
 
-Effects (`createEffect` with preload optimization) resolve token decimals and pool metadata using layered sources: static SQLite registry → discovered-decimals cache → RPC. Token resolution costs ~0 RPC for the 6000+ pre-registered Polygon tokens.
+Effects (`createEffect` with preload optimization) resolve token decimals and pool metadata using layered sources: `data/token_registry.db` → `data/discovered-decimals.ndjson` → batched RPC multicall. Token resolution costs ~0 RPC for the 180k+ pre-registered Polygon tokens.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
-| `bun run dev` | Run indexer with auto-codegen + env loading |
+| `bun run dev` | Run indexer (env alias bridging + batch sizing, then `envio dev`) |
 | `bun run codegen` | Re-generate TypeScript types from config + schema |
-| `bun run generate-tokens` | Build `data/discovered-decimals.json` (~85k tokens) |
-| `bun run generate-tokens:auto` | Incrementally promote RPC-discovered tokens into static registry |
+| `bun run validate-config` | Static analysis: config.yaml vs ABIs, handlers, schema |
+| `bun run validate-data` | Validate local token data files and `data/token_registry.db` |
+| `bun run validate` | Run both validate-config and validate-data |
+| `bun run generate-tokens` | Merge local data into `data/token_registry.db` (no network fetch) |
+| `bun run generate-tokens:auto` | Same rebuild with friendly logging (used by arb bot post-shutdown) |
 | `bun run backup-db` | pg_dump the Hasura database |
 | `bun test` | Vitest suite for effects, handlers, and utilities |
 
@@ -71,11 +74,12 @@ Effects (`createEffect` with preload optimization) resolve token decimals and po
 | `src/effects/` | Envio Effect API implementations (token, curve, balancer, dodo, woofi) |
 | `src/utils/` | Guards, pacing, entity writes, constants, address normalization |
 | `abis/` | JSON ABIs for all indexed contracts |
-| `token_registry.db` | Static SQLite decimals lookup (6000+ tokens, 0 RPC) |
-| `data/discovered-decimals.ndjson` | RPC-discovered tokens persisted across restarts |
-| `data/auto-extra-tokens.ndjson` | Cold tokens queued for registry promotion |
+| `data/token_registry.db` | Static SQLite decimals lookup (~180k tokens, 0 RPC at runtime) |
+| `data/pools.json` | Bot anchor pool token addresses (optional input to `generate-tokens`) |
+| `data/extra-tokens.json` | Manual decimal overrides (optional) |
+| `data/discovered-decimals.ndjson` | Append-only RPC discoveries (runtime overlay + registry rebuild input) |
+| `data/failed-decimals.ndjson` | Permanent non-ERC20 blocklist (append-only, created at runtime) |
 | `doc/MEMORIES.md` | Bug log and development context |
-| `scripts/validate_envio_config.py` | Static analysis: config.yaml vs ABI event signatures, types, anonymous events |
 
 ## Constraints
 

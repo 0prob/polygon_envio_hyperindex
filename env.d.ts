@@ -8,8 +8,8 @@ declare namespace NodeJS {
     ALCHEMY_API_KEY?: string;
     ENVIO_ALCHEMY_API_KEY?: string;
     POLYGON_START_BLOCK?: string;
+    TOKEN_REGISTRY_DB?: string;
     HYPERSYNC_RPM_TARGET?: string;
-    INDEXER_HOT_BIAS?: string;
     VITEST?: string;
   }
 }

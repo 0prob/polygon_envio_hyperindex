@@ -184,7 +184,7 @@ export function bridgeIndexerEnvAliases(env: Record<string, string | undefined>)
     env.POLYGON_START_BLOCK = env.ENVIO_POLYGON_START_BLOCK;
   }
 
-  // RPC URLs — root .env uses POLYGON_RPC_*; hyperindex/.env and config.yaml use ENVIO_POLYGON_RPC_*.
+  // RPC URLs — root .env uses POLYGON_RPC_* aliases; config.yaml uses ENVIO_POLYGON_RPC_*.
   if (env.POLYGON_RPC_URLS && !env.ENVIO_POLYGON_RPC_URLS) {
     env.ENVIO_POLYGON_RPC_URLS = env.POLYGON_RPC_URLS;
   }

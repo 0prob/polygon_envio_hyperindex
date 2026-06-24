@@ -12,10 +12,10 @@ address_format: lowercase
 # Keep reorg support enabled in production for safety.
 # HyperIndex handles rollbacks automatically when enabled.
 rollback_on_reorg: true
-raw_events: true
+raw_events: false
 
 # === HYPERINDEX CONFIG ===
-# Run with root `bun run dev` (preferred wrapper with auto codegen/env) or `cd hyperindex && bun run dev` or `envio start`.
+# Run with `bun run dev` (bridges root .env aliases + batch sizing) or bare `envio dev` if ENVIO_* vars are set.
 #
 # This indexer serves as a lightweight live discovery feed for the arb bot:
 #   → fast startup
@@ -33,7 +33,7 @@ raw_events: true
 #   - Only creation-time metadata writes (factory/registry events + V4 Initialize + DODO factory handlers).
 #   - *PoolState entities are not written at discovery (bot owns hot state via RPC).
 #   - DB Writes → minimal (pool discovery metadata only)
-#   - Loaders → token metadata effects on first-seen pools (dominated by STATIC_TOKEN_DECIMALS hit rate)
+#   - Loaders → token metadata effects on first-seen pools (dominated by data/token_registry.db hit rate)
 #   - Handlers → tiny (mostly contractRegister + PoolMeta/TokenMeta sets on creation)
 #
 # The arb bot tolerates this because:
@@ -145,7 +145,7 @@ chains:
     # and limit to non-wildcard contracts only.
     #
     # rpc:
-    #   - url: ENVIO_POLYGON_RPC_URL   # set in hyperindex/.env (envio scans comments for dollar-brace placeholders)
+    #   - url: ENVIO_POLYGON_RPC_URL   # set in .env (envio scans comments for dollar-brace placeholders)
     #     for: fallback
     #     initial_block_interval: 2000
     #     backoff_multiplicative: 0.8

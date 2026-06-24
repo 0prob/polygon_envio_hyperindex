@@ -2,8 +2,8 @@ node_modules/
 generated/
 .hyperindex/
 backups/
-data/
-token_registry.db
+data/*
+!data/pools.json
 hyperindex.db
 .env
 .envio/cache/

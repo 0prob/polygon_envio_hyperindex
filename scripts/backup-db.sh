@@ -6,7 +6,7 @@
 #   BACKUP_DIR=~/backups bun run backup-db
 #
 # Restore (stop envio dev first):
-#   gunzip -c hyperindex/backups/envio-dev-YYYYMMDD-HHMMSS.sql.gz | \
+#   gunzip -c backups/envio-dev-YYYYMMDD-HHMMSS.sql.gz | \
 #     docker exec -i envio-postgres psql -U postgres -d envio-dev
 
 set -euo pipefail

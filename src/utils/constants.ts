@@ -1,6 +1,6 @@
 /**
  * Centralized constants for the arbitrage bot and indexer.
- * Source of Truth: hyperindex/src/utils/constants.ts
+ * Source of truth for this repo: src/utils/constants.ts
  */
 
 export type Address = `0x${string}`;

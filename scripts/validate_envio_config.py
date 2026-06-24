@@ -22,7 +22,6 @@ Usage:
     python3 scripts/validate_envio_config.py --verbose           # show full details
 """
 
-import hashlib
 import json
 import re
 import sys
@@ -82,26 +81,25 @@ SUPPRESSED_TYPE_WARNINGS: set[tuple[str, str, str]] = {
 }
 
 
-# ── Schema Int → EVM type mapping known from handler code ────────
-# Which schema Int fields receive which EVM types.
-# (schema_type, field_name) → set of evm_types.
-SCHEMA_INT_FIELD_TYPES: dict[tuple[str, str], set[str]] = {
-    ("PoolMeta", "fee"):               {"uint256", "uint24"},
-    ("PoolMeta", "tickSpacing"):        {"int24"},
-    ("PoolMeta", "createdBlock"):       {"uint256"},
-    ("PoolMeta", "updatedAtBlock"):     {"uint256"},
-    ("TokenMeta", "decimals"):          {"uint8"},
-    ("IndexerProgress", "chainId"):     {"uint256"},
-    ("IndexerProgress", "lastProcessedBlock"): {"uint256"},
-    ("IndexerProgress", "updatedAtBlock"):     {"uint256"},
-    ("CurveBootstrapProgress", "lastIndex"):   {"uint256"},
-    ("CurveBootstrapProgress", "total"):       {"uint256"},
+# ── Schema Int fields: EVM types BEFORE handler transformation ─────
+# Handlers convert on-chain values to GraphQL Int before persisting.
+# Do not flag these as overflow — the stored value is already scaled.
+HANDLER_SCALED_INT_FIELDS: dict[tuple[str, str], str] = {
+    ("PoolMeta", "fee"): "basis points (handlers call curveFeeToPoolMetaInt / dodoFeeToBps / etc.)",
+    ("IndexerProgress", "chainId"): "chain id literal (137 on Polygon, not a uint256 event param)",
 }
 
-# Schema Int-typed fields that receive block numbers.
-# May be up to ~86M on Polygon (fits in Int), but could exceed on other chains.
-BLOCK_NUMBER_FIELDS = {"createdBlock", "updatedAtBlock", "lastIndex", "total",
-                       "lastProcessedBlock"}
+# Schema Int fields that receive block numbers (fit Int on Polygon; may overflow on other chains).
+BLOCK_NUMBER_FIELDS = {
+    "createdBlock", "updatedAtBlock", "lastIndex", "total", "lastProcessedBlock",
+}
+
+# Raw EVM types from events/RPC that handlers write WITHOUT transformation.
+# Used only for fields not in HANDLER_SCALED_INT_FIELDS.
+SCHEMA_INT_FIELD_TYPES: dict[tuple[str, str], set[str]] = {
+    ("PoolMeta", "tickSpacing"):        {"int24"},
+    ("TokenMeta", "decimals"):          {"uint8"},
+}
 
 
 # ── Utilities ─────────────────────────────────────────────────────
@@ -145,12 +143,23 @@ def _normalize_sig(s: str) -> str:
     return re.sub(r"\s+", "", s)
 
 
-def keccak256(text: str) -> str:
-    """Compute keccak256 digest of text (used for event topic0)."""
-    return "0x" + hashlib.sha3_256(text.encode()).hexdigest()
+def keccak256(text: str) -> str | None:
+    """Keccak-256 (Ethereum). Returns None if no implementation available."""
+    try:
+        from eth_hash.auto import keccak  # type: ignore[import-untyped]
+        return "0x" + keccak(text.encode()).hex()
+    except ImportError:
+        pass
+    try:
+        from Crypto.Hash import keccak as _keccak  # type: ignore[import-untyped]
+        h = _keccak.new(digest_bits=256)
+        h.update(text.encode())
+        return "0x" + h.hexdigest()
+    except ImportError:
+        return None
 
 
-def event_topic0(event_def: dict) -> str:
+def event_topic0(event_def: dict) -> str | None:
     """Compute the event signature hash (topic0) from an ABI event definition."""
     sig = event_signature(event_def, compact=True)
     return keccak256(sig)
@@ -423,31 +432,41 @@ def check_event_handler_presence(cfg: dict, handler_map: dict[str, set[str]]) ->
 
 def check_schema_int_ranges() -> list[str]:
     """
-    Check that schema GraphQL Int fields can safely accommodate the
-    EVM types they receive. Int in GraphQL = signed 32-bit (max ~2.1e9).
+    Check schema GraphQL Int fields against handler transformations.
+    Int = signed 32-bit (~2.1e9). Block numbers fit on Polygon; fee/chainId are scaled in handlers.
     """
     if not SCHEMA_FILE.exists():
         return []
     issues: list[str] = []
-    text = SCHEMA_FILE.read_text()
+
+    for (entity, field), note in HANDLER_SCALED_INT_FIELDS.items():
+        issues.append(
+            f"  ℹ️  Schema '{entity}.{field}: Int' — {note}."
+        )
 
     for (entity, field), evm_types in SCHEMA_INT_FIELD_TYPES.items():
         for evm_type in evm_types:
             if evm_type in OVERFLOW_AS_INT_TYPES:
-                if field not in BLOCK_NUMBER_FIELDS:
-                    issues.append(
-                        f"  🚨 Schema '{entity}.{field}: Int!' receives EVM '{evm_type}' which\n"
-                        f"      exceeds signed 32-bit Int max (2,147,483,647).\n"
-                        f"      This must be BigInt! with @config(precision) instead."
-                    )
-                else:
-                    # Block-number fields: Polygon max block ~86M (fits in Int),
-                    # but warn if the value could exceed 2B.
-                    issues.append(
-                        f"  ℹ️  Schema '{entity}.{field}: Int!' receives EVM '{evm_type}'.\n"
-                        f"      Currently fits signed 32-bit for Polygon (<86M), but\n"
-                        f"      will overflow if chain exceeds ~2.1B blocks."
-                    )
+                issues.append(
+                    f"  🚨 Schema '{entity}.{field}: Int!' receives EVM '{evm_type}' which\n"
+                    f"      exceeds signed 32-bit Int max (2,147,483,647).\n"
+                    f"      Use BigInt! with @config(precision) or transform in handler."
+                )
+
+    # Block-number Int fields — informational only for Polygon
+    block_entities = [
+        ("PoolMeta", "createdBlock"),
+        ("PoolMeta", "updatedAtBlock"),
+        ("IndexerProgress", "lastProcessedBlock"),
+        ("IndexerProgress", "updatedAtBlock"),
+        ("CurveBootstrapProgress", "lastIndex"),
+        ("CurveBootstrapProgress", "total"),
+    ]
+    for entity, field in block_entities:
+        issues.append(
+            f"  ℹ️  Schema '{entity}.{field}: Int!' stores block numbers (~86M on Polygon, fits Int)."
+        )
+
     return issues
 
 
@@ -471,16 +490,22 @@ def check_event_topic0_alignment(cname: str, event_cfg: dict,
     for variant in matching_variants:
         abi_sig_normalized = _normalize_sig(event_signature(variant))
         if abi_sig_normalized == norm_cfg:
-            abi_topic0 = event_topic0(variant)
-            issues.append(
-                f"  ℹ️  Contract '{cname}': event '{raw}' topic0 = {abi_topic0}\n"
-                f"      (keccak256(\"{norm_cfg}\")) — internal reference, no action needed."
-            )
+            if cfg_topic0 is not None:
+                abi_topic0 = event_topic0(variant)
+                issues.append(
+                    f"  ℹ️  Contract '{cname}': event '{raw}' topic0 = {abi_topic0}\n"
+                    f"      (keccak256(\"{norm_cfg}\")) — signature matches ABI."
+                )
+            else:
+                issues.append(
+                    f"  ℹ️  Contract '{cname}': event '{raw}' — signature matches ABI "
+                    f"(topic0 hash skipped; install eth-hash or pycryptodome for keccak)."
+                )
             break
     else:
+        topic_hint = f" Computed topic0 = {cfg_topic0}." if cfg_topic0 else ""
         issues.append(
-            f"  ❌ Contract '{cname}': event '{raw}' — no ABI variant matches.\n"
-            f"      Computed topic0 = {cfg_topic0}\n"
+            f"  ❌ Contract '{cname}': event '{raw}' — no ABI variant matches.{topic_hint}\n"
             f"      Expected one of: {[event_signature(e) for e in matching_variants]}"
         )
     return issues
