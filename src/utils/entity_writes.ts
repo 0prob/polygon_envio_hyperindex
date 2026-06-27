@@ -6,14 +6,28 @@
 import { normalizeTokenAddress } from "./normalize_address";
 import { safeDecimals } from "./safe_decimals";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TokenMetaContext = {
   TokenMeta: {
     get: (id: string) => Promise<{ decimals?: number } | undefined>;
-    getWhere: (filter: { id: { _in: string[] } }) => Promise<{ id: string; decimals?: number }[]>;
-    set: (entity: { id: string; address: string; decimals: number }) => void;
+    getWhere?: (filter: { id: { _in: string[] } }) => Promise<{ id: string; decimals?: number }[]>;
+    set: (entity: { id: string; decimals: number }) => void;
   };
 };
+
+async function getWhereFallback(
+  tm: TokenMetaContext["TokenMeta"],
+  addrs: string[],
+): Promise<{ id: string; decimals?: number }[]> {
+  if (tm.getWhere) {
+    return tm.getWhere({ id: { _in: addrs } });
+  }
+  const rows: { id: string; decimals?: number }[] = [];
+  for (const addr of addrs) {
+    const row = await tm.get(addr);
+    if (row) rows.push({ id: addr, ...row });
+  }
+  return rows;
+}
 
 export interface TokenMetaWrite {
   address: string;
@@ -45,7 +59,7 @@ export async function setTokenMetaIfMissing(
   const addr = normalizeTokenAddress(address);
   const existing = await context.TokenMeta.get(addr);
   if (!shouldPersistTokenMeta(existing, decimals, trusted)) return;
-  context.TokenMeta.set({ id: addr, address: addr, decimals: safeDecimals(decimals) });
+  context.TokenMeta.set({ id: addr, decimals: safeDecimals(decimals) });
 }
 
 export async function setTokenMetasIfMissing(
@@ -87,7 +101,7 @@ export async function setTokenMetaEntriesIfMissing(
   const existing = preloadedByAddr
     ? addrs.map((a) => preloadedByAddr.get(a))
     : await (async () => {
-        const rows = await context.TokenMeta.getWhere({ id: { _in: addrs } });
+        const rows = await getWhereFallback(context.TokenMeta, addrs);
         const map = new Map(rows.map((r) => [r.id, r]));
         return addrs.map((a) => map.get(a));
       })();
@@ -98,7 +112,6 @@ export async function setTokenMetaEntriesIfMissing(
     if (!shouldPersistTokenMeta(existing[i], entry.decimals, trusted)) continue;
     context.TokenMeta.set({
       id: addrs[i]!,
-      address: addrs[i]!,
       decimals: entry.decimals,
     });
   }

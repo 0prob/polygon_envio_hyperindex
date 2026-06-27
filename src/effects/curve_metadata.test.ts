@@ -1,9 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const readContract = vi.fn();
+const multicall = vi.fn();
 
 vi.mock("./rpc_client", () => ({
-  publicClient: { readContract: (...args: unknown[]) => readContract(...args) },
+  publicClient: { multicall: (...args: unknown[]) => multicall(...args) },
 }));
 
 import {
@@ -19,36 +19,48 @@ import {
 const POOL = "0xabc1234567890123456789012345678901234567";
 const USDC = "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359";
 const USDT = "0xc2132d05d31c914a87c6611c10748aeb04b58e8f";
+const ZERO = "0x0000000000000000000000000000000000000000";
+
+function toMulticallResult(value: unknown) {
+  return { status: "success" as const, result: value };
+}
+
+function toMulticallError() {
+  return { status: "failure" as const, error: new Error("reverted") };
+}
 
 function mockCurveReads(opts: {
   fee?: bigint;
   gamma?: bigint | null;
   version?: string | null;
   nCoins?: bigint | null;
-  coins?: string[];
+  coins?: (string | null)[];
 }) {
-  readContract.mockImplementation((args: { functionName: string; args?: readonly unknown[] }) => {
-    if (args.functionName === "fee") {
-      return Promise.resolve(opts.fee ?? 4_000_000n);
+  multicall.mockImplementation((args: { contracts: { functionName: string; args?: readonly unknown[] }[] }) => {
+    const byName = new Map<string, unknown>();
+    for (const c of args.contracts) {
+      if (c.functionName === "fee") byName.set("fee", toMulticallResult(opts.fee ?? 4_000_000n));
+      else if (c.functionName === "gamma") byName.set("gamma", opts.gamma === null ? toMulticallError() : toMulticallResult(opts.gamma ?? 0n));
+      else if (c.functionName === "version") byName.set("version", opts.version === null ? toMulticallError() : toMulticallResult(opts.version ?? ""));
+      else if (c.functionName === "N_COINS") byName.set("N_COINS", opts.nCoins === null ? toMulticallError() : toMulticallResult(opts.nCoins ?? 0n));
+      else if (c.functionName === "coins") {
+        const i = Number(c.args?.[0] ?? 0);
+        const coin: string | null | undefined = opts.coins?.[i];
+        // null = RPC failure, undefined = not specified (returns ZERO)
+        byName.set(`coins:${i}`, coin === null ? toMulticallError() : toMulticallResult(coin ?? ZERO));
+      }
     }
-    if (args.functionName === "gamma") {
-      if (opts.gamma === null) return Promise.reject(new Error("reverted"));
-      return Promise.resolve(opts.gamma ?? 0n);
-    }
-    if (args.functionName === "version") {
-      if (opts.version === null) return Promise.reject(new Error("reverted"));
-      return Promise.resolve(opts.version ?? "");
-    }
-    if (args.functionName === "N_COINS") {
-      if (opts.nCoins === null) return Promise.reject(new Error("reverted"));
-      return Promise.resolve(opts.nCoins ?? 0n);
-    }
-    if (args.functionName === "coins") {
-      const i = Number(args.args?.[0] ?? 0);
-      const coin = opts.coins?.[i] ?? "0x0000000000000000000000000000000000000000";
-      return Promise.resolve(coin);
-    }
-    return Promise.reject(new Error(`unexpected ${args.functionName}`));
+    return args.contracts.map((c) => {
+      if (c.functionName === "coins") {
+        const i = Number(c.args?.[0] ?? 0);
+        return byName.get(`coins:${i}`) ?? toMulticallResult(ZERO);
+      }
+      if (c.functionName === "gamma" || c.functionName === "version" || c.functionName === "N_COINS") {
+        const v = byName.get(c.functionName);
+        return v ?? toMulticallResult(undefined);
+      }
+      return byName.get(c.functionName) ?? toMulticallResult(0n);
+    });
   });
 }
 
@@ -103,10 +115,10 @@ describe("resolveCurveNCoins", () => {
 
 describe("fetchCurveMetadata", () => {
   beforeEach(() => {
-    readContract.mockReset();
+    multicall.mockReset();
   });
 
-  it("returns discovery fields without balances/rates reads", async () => {
+  it("returns discovery fields via single multicall", async () => {
     mockCurveReads({ fee: 4_000_000n, gamma: null, version: null, nCoins: null, coins: [USDC, USDT] });
 
     const result = await fetchCurveMetadataHandler({
@@ -118,10 +130,15 @@ describe("fetchCurveMetadata", () => {
     expect(result.coins).toEqual([USDC.toLowerCase(), USDT.toLowerCase()]);
     expect(isCurveMetadataEmpty(result)).toBe(false);
 
-    const functionNames = readContract.mock.calls.map((c) => (c[0] as { functionName: string }).functionName);
-    expect(functionNames.slice(0, 4)).toEqual(["fee", "gamma", "version", "N_COINS"]);
-    expect(functionNames).not.toContain("balances");
-    expect(functionNames).not.toContain("rates");
+    // Single multicall call, not individual readContract calls
+    expect(multicall).toHaveBeenCalledTimes(1);
+    const contracts = multicall.mock.calls[0][0].contracts;
+    const fns = contracts.map((c: { functionName: string }) => c.functionName);
+    expect(fns).toContain("fee");
+    expect(fns).toContain("gamma");
+    expect(fns).toContain("version");
+    expect(fns).toContain("N_COINS");
+    expect(fns.filter((f: string) => f === "coins")).toHaveLength(8);
   });
 
   it("classifies NG pools when version() succeeds", async () => {
@@ -136,7 +153,7 @@ describe("fetchCurveMetadata", () => {
   });
 
   it("does not cache when every read fails", async () => {
-    readContract.mockRejectedValue(new Error("timeout"));
+    multicall.mockRejectedValue(new Error("timeout"));
 
     const ctx = { log: undefined, cache: true };
     const result = await fetchCurveMetadataHandler({
@@ -145,6 +162,21 @@ describe("fetchCurveMetadata", () => {
     });
 
     expect(isCurveMetadataEmpty(result)).toBe(true);
+    expect(ctx.cache).toBe(false);
+  });
+
+  it("does not cache when coin reads partially fail", async () => {
+    mockCurveReads({ fee: 4_000_000n, gamma: 0n, version: null, nCoins: 2n, coins: [USDC, null] });
+
+    const ctx = { log: undefined, cache: true };
+    const result = await fetchCurveMetadataHandler({
+      input: { pool: POOL, nCoins: 2 },
+      context: ctx,
+    });
+
+    // fee succeeded but coin[1] read failed → don't cache
+    expect(result.fee).toBe(4_000_000n);
+    expect(result.coins).toEqual([USDC.toLowerCase()]);
     expect(ctx.cache).toBe(false);
   });
 });

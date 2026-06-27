@@ -67,7 +67,6 @@ async function bootstrapRegistryPage(
     if (context.isPreload) return;
     context.CurveBootstrapProgress.set({
       id: stateId,
-      sourceId: source.id,
       lastIndex,
       total,
       completed: lastIndex >= total || total === 0,

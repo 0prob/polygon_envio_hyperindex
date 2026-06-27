@@ -211,24 +211,22 @@ export const ALGEBRA_FACTORY_START_BLOCKS: Record<string, number> = {
   [QUICKSWAP_V3_FACTORY]: 34_502_463,
 };
 
-export const DEFAULT_V2_FACTORY_PROTOCOL = { protocol: "UNKNOWN_V2", feeBps: 30 } as const;
-export const DEFAULT_V3_FACTORY_PROTOCOL = "UNKNOWN_V3";
-export const DEFAULT_ALGEBRA_FACTORY_PROTOCOL = "UNKNOWN_V3";
-
-export function lookupV2FactoryProtocol(factoryAddr: string): { protocol: string; feeBps: number } {
-  return V2_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()] ?? DEFAULT_V2_FACTORY_PROTOCOL;
+export function lookupV2FactoryProtocol(
+  factoryAddr: string,
+): { protocol: string; feeBps: number } | undefined {
+  return V2_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()];
 }
 
 export function lookupV2FactoryStartBlock(factoryAddr: string): number | undefined {
   return V2_FACTORY_START_BLOCKS[factoryAddr.toLowerCase()];
 }
 
-export function lookupV3FactoryProtocol(factoryAddr: string): string {
-  return V3_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()] ?? DEFAULT_V3_FACTORY_PROTOCOL;
+export function lookupV3FactoryProtocol(factoryAddr: string): string | undefined {
+  return V3_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()];
 }
 
-export function lookupAlgebraFactoryProtocol(factoryAddr: string): string {
-  return ALGEBRA_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()] ?? DEFAULT_ALGEBRA_FACTORY_PROTOCOL;
+export function lookupAlgebraFactoryProtocol(factoryAddr: string): string | undefined {
+  return ALGEBRA_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()];
 }
 
 export function lookupV3FactoryStartBlock(factoryAddr: string): number | undefined {

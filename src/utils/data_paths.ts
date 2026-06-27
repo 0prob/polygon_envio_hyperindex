@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 /** Repo root (`src/utils` → `../..`). */
 export const PROJECT_ROOT = path.resolve(
-  import.meta.dir ?? import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url)),
+  import.meta.dir ?? path.dirname(fileURLToPath(import.meta.url)),
   "../..",
 );
 

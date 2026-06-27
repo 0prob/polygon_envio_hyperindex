@@ -28,6 +28,11 @@ export function isCurveMetadataEmpty(meta: { fee: bigint; coins: string[] }): bo
   return meta.fee === 0n && meta.coins.length === 0;
 }
 
+/** Non-optional read failed (sharable marker). */
+export function isCoinReadFailure(hadFailure: boolean, meta: { fee: bigint; coins: string[] }): boolean {
+  return hadFailure && !isCurveMetadataEmpty(meta);
+}
+
 /**
  * Curve on-chain fee is 1e-10 fraction; convert to basis points for PoolMeta.fee.
  * Uses Number division so sub-bps fees (e.g. 500_000 → 0.5 bps) are not truncated to 0.
@@ -83,7 +88,7 @@ export async function fetchCurveMetadataHandler({
   context: any;
 }) {
   const poolAddr = input.pool.toLowerCase();
-  const blockKey = input.blockNumber ? String(input.blockNumber) : "";
+  const blockKey = input.blockNumber != null ? String(input.blockNumber) : "";
   const key = `${poolAddr}-${blockKey}-${input.nCoins}`;
 
   let promise = inFlightCurve.get(key);
@@ -96,43 +101,63 @@ export async function fetchCurveMetadataHandler({
       const pool = input.pool as `0x${string}`;
       const opts = input.blockNumber ? { blockNumber: input.blockNumber } : undefined;
 
-      const [fee, gamma, version, nCoinsOnChain] = await Promise.all([
-        publicClient.readContract({ address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "fee", ...opts }).catch(() => 0n),
-        publicClient.readContract({ address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "gamma", ...opts }).catch(() => null),
-        publicClient
-          .readContract({ address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "version", ...opts })
-          .catch(() => null),
-        publicClient
-          .readContract({ address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "N_COINS", ...opts })
-          .catch(() => null),
-      ]);
+      const contracts = [
+        { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "fee" as const },
+        { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "gamma" as const },
+        { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "version" as const },
+        { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "N_COINS" as const },
+        ...Array.from({ length: MAX_CURVE_COINS }, (_, i) => ({
+          address: pool,
+          abi: CURVE_DISCOVERY_ABI,
+          functionName: "coins" as const,
+          args: [BigInt(i)] as const,
+        })),
+      ];
 
-      const nCoins = resolveCurveNCoins(input.nCoins, nCoinsOnChain as bigint | null);
-      const coinResults = await Promise.all(
-        Array.from({ length: nCoins }, (_, i) =>
-          publicClient
-            .readContract({
-              address: pool,
-              abi: CURVE_DISCOVERY_ABI,
-              functionName: "coins",
-              args: [BigInt(i)],
-              ...opts,
-            })
-            .catch(() => ZERO_ADDRESS),
-        ),
-      );
+      let results;
+      try {
+        results = await publicClient.multicall({ contracts, allowFailure: true, ...opts });
+      } catch {
+        if (!opts) throw new Error("multicall failed");
+        results = await publicClient.multicall({ contracts, allowFailure: true });
+      }
 
-      const coins = coinResults
-        .map((c) => (c as string).toLowerCase())
-        .filter((c) => c && c !== ZERO_ADDRESS);
+      const feeResult = results[0]!;
+      const gammaResult = results[1]!;
+      const versionResult = results[2]!;
+      const nCoinsResult = results[3]!;
+      const coinRawResults = results.slice(4, 4 + MAX_CURVE_COINS);
+
+      const fee = feeResult.status === "success" ? BigInt(feeResult.result as bigint) : 0n;
+      const gamma = gammaResult.status === "success" ? (gammaResult.result as bigint) : null;
+      const version = versionResult.status === "success" ? (versionResult.result as string) : null;
+      const nCoinsOnChain = nCoinsResult.status === "success" ? (nCoinsResult.result as bigint) : null;
+
+      const nCoins = resolveCurveNCoins(input.nCoins, nCoinsOnChain);
+      let anyCoinFailed = false;
+      const coins: string[] = [];
+      for (let i = 0; i < nCoins && i < coinRawResults.length; i++) {
+        const r = coinRawResults[i]!;
+        if (r.status === "success") {
+          const addr = (r.result as string).toLowerCase();
+          if (addr && addr !== ZERO_ADDRESS) coins.push(addr);
+        } else {
+          anyCoinFailed = true;
+        }
+      }
 
       const isNg = typeof version === "string" && version.length > 0;
-      const poolType = curveDiscoveryPoolType(gamma as bigint | null, isNg);
-      const result = { fee: fee as bigint, coins, poolType };
+      const poolType = curveDiscoveryPoolType(gamma, isNg);
+      const result = { fee, coins, poolType };
 
       if (isCurveMetadataEmpty(result)) {
         if (context.log) {
           context.log.warn("Curve metadata reads returned empty — not caching", { pool: input.pool });
+        }
+        context.cache = false;
+      } else if (anyCoinFailed) {
+        if (context.log) {
+          context.log.warn("Curve metadata coin reads partially failed — not caching", { pool: input.pool });
         }
         context.cache = false;
       } else if (context.log) {

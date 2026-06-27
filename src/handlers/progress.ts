@@ -65,7 +65,6 @@ const updateIndexerProgress = async ({ block, context }: any) => {
   const bn = Number(block.number);
   context.IndexerProgress.set({
     id: String(chainId),
-    chainId,
     lastProcessedBlock: bn,
     updatedAtBlock: bn,
   });

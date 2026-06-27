@@ -17,9 +17,7 @@ export type IndexerProtocol =
   | "BALANCER_V2"
   | "DODO_V2"
   | "UNISWAP_V4"
-  | "WOOFI"
-  | "UNKNOWN_V2"
-  | "UNKNOWN_V3";
+  | "WOOFI";
 
 /** Shape accepted by Envio PoolMeta.set — optional GraphQL fields are required keys. */
 export type PoolMetaWritePayload = {

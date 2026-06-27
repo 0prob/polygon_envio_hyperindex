@@ -540,6 +540,61 @@ def check_indexed_param_usage(cname: str, event_cfg: dict,
 
 # ── Main validation pipeline ──────────────────────────────────────
 
+def check_duplicate_chain_contract_names(config: dict) -> list[str]:
+    """Envio uses one ChainContract entry per name; duplicate names overwrite earlier addresses."""
+    issues: list[str] = []
+    for chain in config.get("chains", []):
+        chain_id = chain.get("id", "?")
+        seen: dict[str, int] = {}
+        for pc in chain.get("contracts", []):
+            cname = pc.get("name")
+            if not cname:
+                continue
+            seen[cname] = seen.get(cname, 0) + 1
+        for cname, count in sorted(seen.items()):
+            if count > 1:
+                issues.append(
+                    f"  ❌ Chain {chain_id}: contract name '{cname}' appears {count} times — "
+                    "merge into one entry with an address list (only the last entry is indexed)."
+                )
+    return issues
+
+
+_ENV_START_BLOCK_DEFAULT_RE = re.compile(r"^\$\{ENVIO_POLYGON_START_BLOCK:-(\d+)\}$")
+
+
+def _env_start_block_default(value: object) -> int | None:
+    """Resolve ${ENVIO_POLYGON_START_BLOCK:-N} default when env var is unset."""
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        m = _ENV_START_BLOCK_DEFAULT_RE.match(value.strip())
+        if m:
+            return int(m.group(1))
+    return None
+
+
+def check_contract_start_before_chain(config: dict) -> list[str]:
+    """Envio rejects contract start_block lower than the chain start_block."""
+    issues: list[str] = []
+    for chain in config.get("chains", []):
+        chain_id = chain.get("id", "?")
+        chain_start = _env_start_block_default(chain.get("start_block"))
+        if chain_start is None:
+            continue
+        for pc in chain.get("contracts", []):
+            contract_start = _env_start_block_default(pc.get("start_block"))
+            if contract_start is None:
+                continue
+            if contract_start < chain_start:
+                issues.append(
+                    f"  ❌ Chain {chain_id} contract '{pc.get('name')}': start_block default "
+                    f"{contract_start} < chain start_block default {chain_start} — "
+                    "Envio rejects this; lower the chain start_block or raise the contract start_block."
+                )
+    return issues
+
+
 def validate_single_run(config_path: Path, verbose: bool = False) -> list[str]:
     if not config_path.exists():
         return [f"❌ Config file not found: {config_path}"]
@@ -610,6 +665,8 @@ def validate_single_run(config_path: Path, verbose: bool = False) -> list[str]:
     all_issues.extend(check_schema_int_ranges())
 
     # ── Structural: per-chain addresses ────────────────────────
+    all_issues.extend(check_duplicate_chain_contract_names(config))
+    all_issues.extend(check_contract_start_before_chain(config))
     for chain in config.get("chains", []):
         chain_id = chain.get("id", "?")
         per_chain = chain.get("contracts", [])

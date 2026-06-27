@@ -161,7 +161,7 @@ async function loadDiscoveredDecimals() {
   if (loadDiscoveredPromise) return loadDiscoveredPromise;
 
   loadDiscoveredPromise = (async () => {
-    const data = await loadDiscoveredDecimalsEntries(null, DISCOVERED_DECIMALS_NDJSON);
+    const data = await loadDiscoveredDecimalsEntries(DISCOVERED_DECIMALS_NDJSON);
     Object.assign(discoveredDecimals, data);
     for (const addr of Object.keys(data)) persistedDiscovered.add(addr);
     discoveredLoaded = true;
@@ -224,7 +224,7 @@ async function loadFailedTokens() {
   if (loadFailedPromise) return loadFailedPromise;
 
   loadFailedPromise = (async () => {
-    const addrs = await loadFailedTokenEntries(null, FAILED_DECIMALS_NDJSON);
+    const addrs = await loadFailedTokenEntries(FAILED_DECIMALS_NDJSON);
     for (const addr of addrs) {
       failedTokens.add(addr);
       persistedFailed.add(addr);

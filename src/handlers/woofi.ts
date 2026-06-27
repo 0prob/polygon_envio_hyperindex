@@ -4,27 +4,7 @@ import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 import { WOOFI_PP_V2, WOOFI_PP_V2_DEPLOY_BLOCK } from "../utils/constants";
-
-type Protocol =
-  | "UNISWAP_V2"
-  | "SUSHISWAP_V2"
-  | "QUICKSWAP_V2"
-  | "DFYN_V2"
-  | "APESWAP_V2"
-  | "MESHSWAP_V2"
-  | "JETSWAP_V2"
-  | "COMETHSWAP_V2"
-  | "UNISWAP_V3"
-  | "SUSHISWAP_V3"
-  | "QUICKSWAP_V3"
-  | "KYBERSWAP_ELASTIC"
-  | "CURVE"
-  | "BALANCER_V2"
-  | "DODO_V2"
-  | "UNISWAP_V4"
-  | "WOOFI"
-  | "UNKNOWN_V2"
-  | "UNKNOWN_V3";
+import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 /** Typical WOOFi pool fee in 1e5 units (25 = 0.025%). swapFee event param is wei paid, not the rate. */

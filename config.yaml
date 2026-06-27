@@ -123,13 +123,10 @@ contracts:
 # === Chains ===
 chains:
   - id: 137
-    # OPTIMIZATION (Point 1): Exact start_block per chain/contract.
-    # Avoid start_block: 0 when deployment blocks are known — it wastes processing on irrelevant history.
-    # Global default here is conservative (env override or ~Quickswap-era 5.48M). Per-contract overrides
-    # below are precise to each protocol's deployment and take precedence.
-    # Recommended: set ENVIO_POLYGON_START_BLOCK in .env to a realistic recent value if doing partial re-syncs.
-    # LIVE-DEBUG DEFAULT: recent block for fast tail on free/low-tier tokens. Override in .env for full history (paid token recommended).
-    start_block: ${ENVIO_POLYGON_START_BLOCK:-5024576}
+    # Chain start_block must be <= every contract start_block (Envio rejects contract < chain).
+    # Default = earliest indexed deployment (QuickSwap V2 factory, block 4931780).
+    # Override ENVIO_POLYGON_START_BLOCK in .env for live-tail / partial re-sync.
+    start_block: ${ENVIO_POLYGON_START_BLOCK:-4931780}
     # RPC configuration: DISABLED (HyperSync-only mode)
     #
     # RPC fallback is intentionally removed because:
@@ -175,47 +172,28 @@ chains:
       url: ${ENVIO_POLYGON_HYPERSYNC_URL:-https://polygon.hypersync.xyz}
       # api_token can also be set here, but ENVIO_API_TOKEN env var is the standard approach.
     contracts:
-      # V2 Factories — per-address start_block (Polygonscan deployment blocks in constants.ts).
-      # ENVIO_POLYGON_START_BLOCK overrides all entries for live-tail / partial re-sync.
+      # V2 Factories — one entry per contract name; address list (Envio overwrites duplicate names).
+      # Inherits chain start_block (QuickSwap deploy); later factories have no events until deploy.
       - name: V2Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-4931780}
-        address: "0x5757371414417b8c6caad45baef941abc7d3ab32" # Quickswap
-      - name: V2Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-11333218}
-        address: "0xc35dadb65012ec5796536bd9864ed8773abc74c4" # Sushi
-      - name: V2Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-49948178}
-        address: "0x9e5a52f57b3038f1b8eee45f28b3c1967e22799c" # Uniswap
-      - name: V2Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-5436831}
-        address: "0xe7fb3e833efe5f9c441105eb65ef8b261266423b" # Dfyn
-      - name: V2Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-15298801}
-        address: "0xcf083be4164828f00cae704ec15a36d711491284" # Apeswap
-      - name: V2Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-27827673}
-        address: "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d" # Meshswap
-      - name: V2Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-16569374}
-        address: "0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7" # Jetswap
-      - name: V2Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-11633169}
-        address: "0x800b052609c355ca8103e06f022aa30647ead60a" # Cometh
+        address:
+          - "0x5757371414417b8c6caad45baef941abc7d3ab32" # Quickswap
+          - "0xc35dadb65012ec5796536bd9864ed8773abc74c4" # Sushi
+          - "0x9e5a52f57b3038f1b8eee45f28b3c1967e22799c" # Uniswap
+          - "0xe7fb3e833efe5f9c441105eb65ef8b261266423b" # Dfyn
+          - "0xcf083be4164828f00cae704ec15a36d711491284" # Apeswap
+          - "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d" # Meshswap
+          - "0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7" # Jetswap
+          - "0x800b052609c355ca8103e06f022aa30647ead60a" # Cometh
 
-      # V3 Factories — per-address start_block (Polygonscan deployment / first PoolCreated).
-      # ENVIO_POLYGON_START_BLOCK overrides all entries for live-tail / partial re-sync.
+      # V3 Factories — one entry per contract name; address list (Uniswap-style PoolCreated).
+      # start_block = earliest deployment (Uniswap V3 on Polygon).
       - name: V3Factory
         start_block: ${ENVIO_POLYGON_START_BLOCK:-22757547}
-        address: "0x1f98431c8ad98523631ae4a59f267346ea31f984" # Uniswap
-      - name: V3Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-44059924}
-        address: "0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e2" # Sushi
-      - name: V3Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-29350287}
-        address: "0x5f1dddbf348ac2fbe22a163e30f99f9ece3dd50a" # Kyber Elastic
-      - name: V3Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-82177772}
-        address: "0x2bef16a0081565e72100d73cbe19b1bd2d802380" # Ramses V3 CL
+        address:
+          - "0x1f98431c8ad98523631ae4a59f267346ea31f984" # Uniswap
+          - "0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e2" # Sushi
+          - "0x5f1dddbf348ac2fbe22a163e30f99f9ece3dd50a" # Kyber Elastic
+          - "0x2bef16a0081565e72100d73cbe19b1bd2d802380" # Ramses V3 CL
 
       # Algebra (QuickSwap V3)
       - name: AlgebraFactory

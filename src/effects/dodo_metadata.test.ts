@@ -1,9 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const readContract = vi.fn();
+const multicall = vi.fn();
 
 vi.mock("./rpc_client", () => ({
-  publicClient: { readContract: (...args: unknown[]) => readContract(...args) },
+  publicClient: { multicall: (...args: unknown[]) => multicall(...args) },
 }));
 
 import {
@@ -12,12 +12,14 @@ import {
   isDodoMetadataEmpty,
 } from "./dodo_metadata";
 
-// Resolve/reject per call based on the requested functionName so the test mirrors
-// viem's real `readContract` (singular) API rather than the wagmi `readContracts` action.
 function mockFeeReads(lp: { result?: bigint; error?: Error }, mt: { result?: bigint; error?: Error }) {
-  readContract.mockImplementation((args: { functionName: string }) => {
-    const spec = args.functionName === "_LP_FEE_RATE_" ? lp : mt;
-    return spec.error ? Promise.reject(spec.error) : Promise.resolve(spec.result);
+  multicall.mockImplementation((args: { contracts: { functionName: string }[] }) => {
+    return args.contracts.map((c: { functionName: string }) => {
+      const spec = c.functionName === "_LP_FEE_RATE_" ? lp : mt;
+      return spec.error
+        ? { status: "failure" as const, error: spec.error }
+        : { status: "success" as const, result: spec.result };
+    });
   });
 }
 
@@ -35,7 +37,7 @@ describe("dodoFeeToBps", () => {
 
 describe("fetchDodoMetadata", () => {
   beforeEach(() => {
-    readContract.mockReset();
+    multicall.mockReset();
   });
 
   it("indexes pools when _MT_FEE_RATE_ reverts at creation block", async () => {
@@ -66,12 +68,19 @@ describe("fetchDodoMetadata", () => {
   });
 
   it("falls back to latest state when block-pinned reads are empty", async () => {
-    readContract.mockImplementation((args: { functionName: string; blockNumber?: bigint }) => {
-      if (args.blockNumber !== undefined) {
-        return Promise.resolve(0n);
-      }
-      const rate = args.functionName === "_LP_FEE_RATE_" ? 3_000_000_000_000_000n : 1_000_000_000_000_000n;
-      return Promise.resolve(rate);
+    let callCount = 0;
+    multicall.mockImplementation((args: { contracts: { functionName: string }[]; blockNumber?: bigint }) => {
+      callCount++;
+      const withBlock = args.blockNumber !== undefined;
+      return args.contracts.map((c: { functionName: string }) => {
+        if (withBlock) {
+          // Block-pinned reads return empty (0)
+          return { status: "success" as const, result: 0n };
+        }
+        // Latest-state reads return actual fees
+        const rate = c.functionName === "_LP_FEE_RATE_" ? 3_000_000_000_000_000n : 1_000_000_000_000_000n;
+        return { status: "success" as const, result: rate };
+      });
     });
 
     const ctx = { log: undefined, cache: true };
@@ -83,6 +92,7 @@ describe("fetchDodoMetadata", () => {
     expect(isDodoMetadataEmpty(result)).toBe(false);
     expect(result.fee).toBe(4_000_000_000_000_000n);
     expect(ctx.cache).toBe(true);
-    expect(readContract).toHaveBeenCalledTimes(4);
+    // First call: block-pinned (2 contracts in multicall). Second call: latest (2 contracts). Total: 2 multicall calls.
+    expect(multicall).toHaveBeenCalledTimes(2);
   });
 });

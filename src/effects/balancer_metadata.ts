@@ -73,12 +73,12 @@ export async function fetchBalancerMetadataHandler({
   input,
   context,
 }: {
-  input: { pool: string; poolId?: string; blockNumber?: bigint };
+  input: {   pool: string; poolId?: string; blockNumber?: bigint };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: any;
 }) {
     const poolAddr = input.pool.toLowerCase();
-    const blockKey = input.blockNumber ? String(input.blockNumber) : "";
+    const blockKey = input.blockNumber != null ? String(input.blockNumber) : "";
     const key = `${poolAddr}-${blockKey}`;
 
     let promise = inFlightBalancer.get(key);
@@ -107,40 +107,30 @@ export async function fetchBalancerMetadataHandler({
         return { poolId: "", tokens: [], balances: [], lastChangeBlock: 0n, swapFee: 0n };
       }
 
+      let anyReadFailed = false;
+      const readSafe = async <T>(fn: () => Promise<T>, onFail: T): Promise<T> => {
+        try { return await fn(); }
+        catch { anyReadFailed = true; return onFail; }
+      };
+
       const [poolTokensResult, swapFee, weights, ampResult, scalingFactors] = await Promise.all([
         readVaultPoolTokens(poolId, opts),
-        publicClient
-          .readContract({
-            address: pool,
-            abi: BALANCER_ABI,
-            functionName: "getSwapFeePercentage",
-            ...opts,
-          })
-          .catch(() => 0n),
-        publicClient
-          .readContract({
-            address: pool,
-            abi: BALANCER_ABI,
-            functionName: "getNormalizedWeights",
-            ...opts,
-          })
-          .catch(() => undefined),
-        publicClient
-          .readContract({
-            address: pool,
-            abi: BALANCER_ABI,
-            functionName: "getAmplificationParameter",
-            ...opts,
-          })
-          .catch(() => undefined),
-        publicClient
-          .readContract({
-            address: pool,
-            abi: BALANCER_ABI,
-            functionName: "getScalingFactors",
-            ...opts,
-          })
-          .catch(() => undefined),
+        readSafe(
+          () => publicClient.readContract({ address: pool, abi: BALANCER_ABI, functionName: "getSwapFeePercentage", ...opts }),
+          0n,
+        ),
+        readSafe(
+          () => publicClient.readContract({ address: pool, abi: BALANCER_ABI, functionName: "getNormalizedWeights", ...opts }),
+          undefined,
+        ),
+        readSafe(
+          () => publicClient.readContract({ address: pool, abi: BALANCER_ABI, functionName: "getAmplificationParameter", ...opts }),
+          undefined,
+        ),
+        readSafe(
+          () => publicClient.readContract({ address: pool, abi: BALANCER_ABI, functionName: "getScalingFactors", ...opts }),
+          undefined,
+        ),
       ]);
 
       if (!poolTokensResult) {
@@ -156,7 +146,14 @@ export async function fetchBalancerMetadataHandler({
 
       const [tokens, balances, lastChangeBlock] = poolTokensResult;
 
-      context.log?.info?.("Fetched Balancer pool metadata", { pool: input.pool });
+      if (anyReadFailed) {
+        if (context.log) {
+          context.log.warn("Balancer metadata reads partially failed — not caching", { pool: input.pool, poolId });
+        }
+        context.cache = false;
+      } else {
+        context.log?.info?.("Fetched Balancer pool metadata", { pool: input.pool });
+      }
 
       return {
         poolId: poolId as string,

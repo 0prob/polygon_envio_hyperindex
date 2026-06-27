@@ -38,7 +38,6 @@ describe("setTokenMetasIfMissing", () => {
 
     expect(set).toHaveBeenCalledWith({
       id: USDC,
-      address: USDC,
       decimals: 6,
     });
   });

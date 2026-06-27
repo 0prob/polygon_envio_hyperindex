@@ -11,8 +11,7 @@ const DODO_FEE_ABI = parseAbi([
 
 /**
  * DODO V2 pool metadata. Indexer only needs LP/MT fee rates for PoolMeta.fee.
- * Two parallel reads (LP + MT fee rate) per pool at the creation block; viem
- * auto-batches them into a multicall when the chain/block supports it.
+ * Uses single multicall for both reads.
  */
 export const fetchDodoMetadata = createEffect(
   {
@@ -61,13 +60,6 @@ const EMPTY_DODO_RESULT = {
   mtFeeRate: 0n,
 };
 
-function readFeeBigint(
-  result: { status: "success"; result: unknown } | { status: "failure"; error: Error },
-): bigint {
-  if (result.status !== "success") return 0n;
-  return BigInt(result.result as bigint | number | string);
-}
-
 const inFlightDodo = new Map<string, Promise<{
   fee: bigint;
   lpFeeRate: bigint;
@@ -77,40 +69,30 @@ const inFlightDodo = new Map<string, Promise<{
 async function readDodoFeeRates(
   address: `0x${string}`,
   blockNumber?: bigint,
-): Promise<{ fee: bigint; lpFeeRate: bigint; mtFeeRate: bigint }> {
-  const blockOpts = blockNumber ? { blockNumber } : {};
-  const settle = (p: Promise<unknown>) =>
-    p
-      .then((result) => ({ status: "success" as const, result }))
-      .catch((error: unknown) => ({ status: "failure" as const, error: error as Error }));
+): Promise<{ fee: bigint; lpFeeRate: bigint; mtFeeRate: bigint; anyFailed: boolean }> {
+  const opts = blockNumber ? { blockNumber } : undefined;
+  let results;
+  try {
+    results = await publicClient.multicall({
+      contracts: [
+        { address, abi: DODO_FEE_ABI, functionName: "_LP_FEE_RATE_" as const },
+        { address, abi: DODO_FEE_ABI, functionName: "_MT_FEE_RATE_" as const },
+      ],
+      allowFailure: true,
+      ...opts,
+    });
+  } catch {
+    return { fee: 0n, lpFeeRate: 0n, mtFeeRate: 0n, anyFailed: true };
+  }
 
-  const [lpResult, mtResult] = await Promise.all([
-    settle(
-      publicClient.readContract({
-        address,
-        abi: DODO_FEE_ABI,
-        functionName: "_LP_FEE_RATE_",
-        ...blockOpts,
-      }),
-    ),
-    settle(
-      publicClient.readContract({
-        address,
-        abi: DODO_FEE_ABI,
-        functionName: "_MT_FEE_RATE_",
-        ...blockOpts,
-      }),
-    ),
-  ]);
-
-  const lp = readFeeBigint(lpResult);
-  const mt = readFeeBigint(mtResult);
+  const lp = results[0]!.status === "success" ? BigInt(results[0]!.result as bigint) : 0n;
+  const mt = results[1]!.status === "success" ? BigInt(results[1]!.result as bigint) : 0n;
 
   return {
-    ...EMPTY_DODO_RESULT,
     fee: lp + mt,
     lpFeeRate: lp,
     mtFeeRate: mt,
+    anyFailed: results[0]!.status !== "success" || results[1]!.status !== "success",
   };
 }
 
@@ -122,7 +104,7 @@ async function fetchDodoMetadataHandler({
   context: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }) {
   const poolAddr = input.pool.toLowerCase();
-  const blockKey = input.blockNumber ? String(input.blockNumber) : "";
+  const blockKey = input.blockNumber != null ? String(input.blockNumber) : "";
   const key = `${poolAddr}-${blockKey}`;
 
   let promise = inFlightDodo.get(key);
@@ -133,13 +115,14 @@ async function fetchDodoMetadataHandler({
   promise = (async () => {
     try {
       const address = input.pool as `0x${string}`;
-      let result = await readDodoFeeRates(address, input.blockNumber);
+      let { anyFailed, ...result } = await readDodoFeeRates(address, input.blockNumber);
 
       // Creation-block reads often return empty (same-block deploy, archive gaps). Latest state is
       // sufficient for discovery PoolMeta.fee; the arb bot reads live rates via RPC anyway.
       if (isDodoMetadataEmpty(result) && input.blockNumber !== undefined) {
         const latest = await readDodoFeeRates(address);
         if (!isDodoMetadataEmpty(latest)) {
+          anyFailed = latest.anyFailed;
           result = latest;
           if (context.log) {
             context.log.info("DODO metadata: block-pinned read empty, used latest state", {
@@ -153,6 +136,11 @@ async function fetchDodoMetadataHandler({
       if (isDodoMetadataEmpty(result)) {
         if (context.log) {
           context.log.warn("DODO metadata reads returned empty — not caching", { pool: input.pool });
+        }
+        context.cache = false;
+      } else if (anyFailed) {
+        if (context.log) {
+          context.log.warn("DODO metadata read partially failed — not caching", { pool: input.pool });
         }
         context.cache = false;
       } else if (context.log) {

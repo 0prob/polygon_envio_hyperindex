@@ -1,28 +1,9 @@
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
-/** Load discovered decimals from an optional JSON snapshot and/or NDJSON append log. */
-export async function loadDiscoveredDecimalsEntries(
-  jsonPath: string | null,
-  ndjsonPath: string,
-): Promise<Record<string, number>> {
+/** Load discovered decimals from NDJSON append log. */
+export async function loadDiscoveredDecimalsEntries(ndjsonPath: string): Promise<Record<string, number>> {
   const byAddr: Record<string, number> = {};
-
-  if (jsonPath) {
-    try {
-      const raw = await readFile(jsonPath, "utf8");
-      const data = JSON.parse(raw);
-      if (data && typeof data === "object" && !Array.isArray(data)) {
-        for (const [addr, dec] of Object.entries(data)) {
-          if (typeof addr === "string" && typeof dec === "number") {
-            byAddr[addr.toLowerCase()] = dec;
-          }
-        }
-      }
-    } catch {
-      // Snapshot may not exist
-    }
-  }
 
   try {
     const raw = await readFile(ndjsonPath, "utf8");
@@ -58,29 +39,9 @@ export async function appendDiscoveredDecimals(
   await appendFile(ndjsonPath, payload, "utf8");
 }
 
-/** Load permanently failed token addresses from optional JSON and NDJSON append log. */
-export async function loadFailedTokenEntries(jsonPath: string | null, ndjsonPath: string): Promise<string[]> {
+/** Load permanently failed token addresses from NDJSON append log. */
+export async function loadFailedTokenEntries(ndjsonPath: string): Promise<string[]> {
   const addrs = new Set<string>();
-
-  if (jsonPath) {
-    try {
-      const raw = await readFile(jsonPath, "utf8");
-      const data = JSON.parse(raw);
-      if (Array.isArray(data)) {
-        for (const addr of data) {
-          if (typeof addr === "string" && addr.startsWith("0x")) {
-            addrs.add(addr.toLowerCase());
-          }
-        }
-      } else if (data && typeof data === "object") {
-        for (const addr of Object.keys(data)) {
-          if (addr.startsWith("0x")) addrs.add(addr.toLowerCase());
-        }
-      }
-    } catch {
-      // File may not exist yet
-    }
-  }
 
   try {
     const raw = await readFile(ndjsonPath, "utf8");

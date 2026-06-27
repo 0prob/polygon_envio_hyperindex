@@ -18,7 +18,7 @@ type FactoryTokenMetaContext = {
   effect: <I, O>(effect: Effect<I, O>, input: I extends undefined ? undefined : I) => Promise<O>;
   TokenMeta: {
     get: (id: string) => Promise<TokenMetaEntity | undefined>;
-    getWhere: (filter: { id: { _in: string[] } }) => Promise<TokenMetaRow[]>;
+    getWhere?: (filter: { id: { _in: string[] } }) => Promise<TokenMetaRow[]>;
   };
 };
 
@@ -148,7 +148,9 @@ export async function resolveTokenMetasBatch(
   // Only read DB for tokens NOT in registry
   const idsNotInRegistry = normalized.filter((a) => !localHits.has(a));
   const rows = idsNotInRegistry.length > 0
-    ? await context.TokenMeta.getWhere({ id: { _in: idsNotInRegistry } })
+    ? context.TokenMeta.getWhere
+      ? await context.TokenMeta.getWhere({ id: { _in: idsNotInRegistry } })
+      : (await Promise.all(idsNotInRegistry.map((a) => context.TokenMeta.get(a).then((r) => r && { id: a, ...r })))).filter(Boolean) as TokenMetaRow[]
     : [];
   const existingMap = new Map(rows.map((r) => [r.id, r]));
   const existing = normalized.map((addr) => existingMap.get(addr));

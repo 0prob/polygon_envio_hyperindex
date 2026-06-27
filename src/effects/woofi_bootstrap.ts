@@ -10,6 +10,8 @@ const WOOFI_ABI = parseAbi([
 ]);
 // Keep in sync with src/core/abis/woofi_pool.ts WOOFI_POOL_STATE_ABI (quoteToken + tokenInfos).
 
+const inFlightWooFi = new Map<string, Promise<{ quoteToken: string; activeTokens: string[] }>>();
+
 /**
  * Bootstraps the WOOFi token list by:
  *   1. Calling quoteToken() to learn which token is the stable side.
@@ -19,7 +21,7 @@ const WOOFI_ABI = parseAbi([
  *
  * WOOFi V2 exposes no factory event and no token enumeration function, so this is the
  * only way to get the full active token set without waiting for WooSwap events.
- * viem multicall batches the N + 1 reads into a single eth_call.
+ * Uses single multicall for all reads.
  */
 export async function fetchWooFiTokensHandler({
   input,
@@ -29,65 +31,71 @@ export async function fetchWooFiTokensHandler({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: any;
 }) {
-  const poolAddr = input.pool as `0x${string}`;
+  const poolAddr = input.pool.toLowerCase();
   const EMPTY = { quoteToken: "", activeTokens: [] as string[] };
 
-  try {
-    const rawQuote = (await publicClient.readContract({
-      address: poolAddr,
-      abi: WOOFI_ABI,
-      functionName: "quoteToken",
-    })) as string;
-    const quoteToken = rawQuote.toLowerCase();
+  let promise = inFlightWooFi.get(poolAddr);
+  if (promise) return promise;
 
-    const candidates = [...MAJOR_TOKENS];
-
-    // Fire all tokenInfos reads concurrently; viem multicall bundles them.
-    // Unsupported tokens silently return (0, 0) — no revert risk.
-    const settled = await Promise.allSettled(
-      candidates.map((t) =>
-        publicClient.readContract({
-          address: poolAddr,
+  promise = (async () => {
+    try {
+      const tokenList = [...MAJOR_TOKENS];
+      const contracts = [
+        { address: poolAddr as `0x${string}`, abi: WOOFI_ABI, functionName: "quoteToken" as const },
+        ...tokenList.map((t) => ({
+          address: poolAddr as `0x${string}`,
           abi: WOOFI_ABI,
-          functionName: "tokenInfos",
-          args: [t as `0x${string}`],
-        }),
-      ),
-    );
+          functionName: "tokenInfos" as const,
+          args: [t as `0x${string}`] as const,
+        })),
+      ];
 
-    // quoteToken is always included regardless of reserve (it may be probed separately).
-    const activeTokens: string[] = [quoteToken];
+      const results = await publicClient.multicall({ contracts, allowFailure: true });
 
-    for (let i = 0; i < candidates.length; i++) {
-      const r = settled[i];
-      if (r.status !== "fulfilled") continue;
-      const rVal = r.value as { reserve: bigint; feeRate: number } | [bigint, number];
-      const reserve = Array.isArray(rVal) ? rVal[0] : rVal.reserve;
-      const addr = candidates[i]!.toLowerCase();
-      if (reserve > 0n && !activeTokens.includes(addr)) {
-        activeTokens.push(addr);
+      const quoteResult = results[0]!;
+      if (quoteResult.status !== "success") {
+        context.cache = false;
+        return EMPTY;
       }
-    }
+      const quoteToken = (quoteResult.result as string).toLowerCase();
 
-    if (activeTokens.length < 2) {
+      const activeTokens: string[] = [quoteToken];
+      for (let i = 0; i < tokenList.length; i++) {
+        const r = results[1 + i]!;
+        if (r.status !== "success") continue;
+        const rVal = r.result as { reserve: bigint; feeRate: number } | [bigint, number];
+        const reserve = Array.isArray(rVal) ? rVal[0] : rVal.reserve;
+        const addr = tokenList[i]!.toLowerCase();
+        if (reserve > 0n && !activeTokens.includes(addr)) {
+          activeTokens.push(addr);
+        }
+      }
+
+      if (activeTokens.length < 2) {
+        if (context.log) {
+          context.log.warn("fetchWooFiTokens: no active base tokens found — pool may be empty", {
+            pool: input.pool,
+            quoteToken,
+          });
+        }
+        context.cache = false;
+        return EMPTY;
+      }
+
+      return { quoteToken, activeTokens };
+    } catch (err) {
       if (context.log) {
-        context.log.warn("fetchWooFiTokens: no active base tokens found — pool may be empty", {
-          pool: input.pool,
-          quoteToken,
-        });
+        context.log.warn("fetchWooFiTokens failed", { pool: input.pool, error: String(err) });
       }
       context.cache = false;
       return EMPTY;
+    } finally {
+      inFlightWooFi.delete(poolAddr);
     }
+  })();
 
-    return { quoteToken, activeTokens };
-  } catch (err) {
-    if (context.log) {
-      context.log.warn("fetchWooFiTokens failed", { pool: input.pool, error: String(err) });
-    }
-    context.cache = false;
-    return EMPTY;
-  }
+  inFlightWooFi.set(poolAddr, promise);
+  return promise;
 }
 
 export const fetchWooFiTokens = createEffect(

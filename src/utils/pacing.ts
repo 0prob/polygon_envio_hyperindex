@@ -9,18 +9,7 @@
  * when the bot launches us, or 200 if someone runs `envio dev` directly).
  */
 
-/** Apply HyperSync pacing knobs to a child-process env (batch size + rpm aliases). */
-export function applyHyperSyncPacingEnv(env: Record<string, string | undefined>): void {
-  bridgeIndexerEnvAliases(env);
-  const rpm = getRpmTargetFromEnv(env);
-  env.ENVIO_HYPERSYNC_RPM_TARGET = String(rpm);
-  env.HYPERSYNC_RPM_TARGET = env.HYPERSYNC_RPM_TARGET ?? String(rpm);
-  if (!env.ENVIO_FULL_BATCH_SIZE) {
-    env.ENVIO_FULL_BATCH_SIZE = String(getRecommendedFullBatchSizeForRpm(rpm));
-  }
-}
-
-function parseRpmTarget(raw: string | undefined): number | undefined {
+export function parseRpmTarget(raw: string | undefined): number | undefined {
   if (!raw) return undefined;
   const n = Number(raw);
   if (Number.isFinite(n) && n > 0) return Math.floor(n);
@@ -36,12 +25,19 @@ function rpmFromEnv(env: Record<string, string | undefined>): number {
   );
 }
 
-function getRpmTargetFromEnv(env: Record<string, string | undefined>): number {
-  return rpmFromEnv(env);
+/** Apply HyperSync pacing knobs to a child-process env (batch size + rpm aliases). */
+export function applyHyperSyncPacingEnv(env: Record<string, string | undefined>): void {
+  bridgeIndexerEnvAliases(env);
+  const rpm = rpmFromEnv(env);
+  env.ENVIO_HYPERSYNC_RPM_TARGET = String(rpm);
+  env.HYPERSYNC_RPM_TARGET = env.HYPERSYNC_RPM_TARGET ?? String(rpm);
+  if (!env.ENVIO_FULL_BATCH_SIZE) {
+    env.ENVIO_FULL_BATCH_SIZE = String(getRecommendedFullBatchSizeForRpm(rpm));
+  }
 }
 
 function getRecommendedFullBatchSizeForRpm(rpm: number): number {
-  if (rpm >= 180) return 4500;
+  if (rpm >= 180) return 6000;
   if (rpm >= 150) return 2800;
   if (rpm >= 120) return 1800;
   return 1000;

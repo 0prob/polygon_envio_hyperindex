@@ -28,7 +28,7 @@ describe("getRecommendedFullBatchSize", () => {
     const prev = process.env.HYPERSYNC_RPM_TARGET;
     try {
       process.env.HYPERSYNC_RPM_TARGET = "200";
-      expect(getRecommendedFullBatchSize()).toBe(4500);
+      expect(getRecommendedFullBatchSize()).toBe(6000);
 
       process.env.HYPERSYNC_RPM_TARGET = "100";
       expect(getRecommendedFullBatchSize()).toBe(1000);

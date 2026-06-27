@@ -2,7 +2,7 @@
 
 Envio HyperIndex pipeline that indexes DEX pool creation events on Polygon. Feeds pool discovery metadata to an arbitrage bot via Hasura GraphQL.
 
-**Protocols:** Uniswap V2/V3/V4, SushiSwap V2/V3, QuickSwap V2/V3, Kyber Elastic, Ramses V3, Curve, Balancer V2, DODO V2, WOOFi, and unknown-V2/V3 catch-all.
+**Protocols:** Uniswap V2/V3/V4, SushiSwap V2/V3, QuickSwap V2/V3, Dfyn, ApeSwap, MeshSwap, JetSwap, Cometh, Kyber Elastic, Ramses V3, Curve, Balancer V2, DODO V2, WOOFi.
 
 ## Quick Start
 

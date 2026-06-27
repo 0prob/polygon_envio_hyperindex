@@ -31,7 +31,7 @@ interface CurveHandlerContext {
   };
   TokenMeta: {
     get(id: string): Promise<{ decimals?: number } | undefined>;
-    set(entity: { id: string; address: string; decimals: number }): void;
+    set(entity: { id: string; decimals: number }): void;
   };
 }
 

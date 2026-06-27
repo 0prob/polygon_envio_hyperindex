@@ -36,8 +36,6 @@ enum Protocol {
   DODO_V2
   UNISWAP_V4
   WOOFI
-  UNKNOWN_V2
-  UNKNOWN_V3
 }
 
 """
@@ -70,7 +68,6 @@ Heavily used + indexed for the bot's math and the handlers' preload/effects.
 """
 type TokenMeta {
   id: ID!
-  address: String! @index
   decimals: Int
 }
 
@@ -83,7 +80,6 @@ Complements log-scraped progress from the Envio process + used by bot for lag mo
 """
 type IndexerProgress {
   id: ID! # chain id as string (e.g. "137")
-  chainId: Int!
   lastProcessedBlock: Int!
   updatedAtBlock: Int!
 }
@@ -96,7 +92,6 @@ Written during execution phase (after isPreload guard) in curve_bootstrap.ts.
 """
 type CurveBootstrapProgress {
   id: ID! # "${chainId}-${sourceId}" e.g. "137-legacy"
-  sourceId: String! @index
   lastIndex: Int!
   total: Int!
   completed: Boolean!

@@ -2,26 +2,7 @@ import { indexer } from "envio";
 import { lookupAlgebraFactoryProtocol } from "../utils/constants";
 import { shouldSkipFactoryPool } from "../utils/guards";
 import { persistFactoryPoolMeta } from "../utils/factory_pool_handler";
-
-type Protocol =
-  | "UNISWAP_V2"
-  | "SUSHISWAP_V2"
-  | "QUICKSWAP_V2"
-  | "DFYN_V2"
-  | "APESWAP_V2"
-  | "MESHSWAP_V2"
-  | "JETSWAP_V2"
-  | "COMETHSWAP_V2"
-  | "UNISWAP_V3"
-  | "SUSHISWAP_V3"
-  | "QUICKSWAP_V3"
-  | "KYBERSWAP_ELASTIC"
-  | "CURVE"
-  | "BALANCER_V2"
-  | "DODO_V2"
-  | "UNISWAP_V4"
-  | "UNKNOWN_V2"
-  | "UNKNOWN_V3";
+import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
 
 // QuickSwap V3 uses AlgebraFactory, which emits `Pool(token0, token1, pool)` — not Uniswap V3
 // `PoolCreated`. Indexing it under V3Factory/PoolCreated silently dropped every QuickSwap V3 pool.
@@ -40,6 +21,7 @@ indexer.onEvent(
     }
 
     const protocol = lookupAlgebraFactoryProtocol(factoryAddr);
+    if (!protocol) return;
 
     await persistFactoryPoolMeta(context, {
       poolAddr: event.params.pool,
