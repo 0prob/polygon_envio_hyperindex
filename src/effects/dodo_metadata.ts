@@ -37,17 +37,15 @@ export function isDodoMetadataEmpty(meta: { lpFeeRate: bigint; mtFeeRate: bigint
   return meta.lpFeeRate === 0n && meta.mtFeeRate === 0n;
 }
 
-/** Default PoolMeta.fee when block-pinned RPC metadata is unavailable. */
-export const DEFAULT_DODO_FEE_BPS = 0;
-
 /**
  * DODO LP/MT fee rates are 1e18 fractions (see dodo.ts mulFloor). PoolMeta.fee stores
  * combined LP+MT in basis points for routing weights; simulation still reads raw rates from RPC.
+ * Non-zero fees that truncate to <1 bps round up to 1 (e.g. 0.5 bps → 1).
  */
 export function dodoFeeToBps(totalFeeRate: bigint): number {
-  if (totalFeeRate <= 0n) return DEFAULT_DODO_FEE_BPS;
+  if (totalFeeRate <= 0n) return 0;
   const bps = Number(totalFeeRate / 10n ** 14n);
-  return bps > 0 ? Math.max(1, bps) : DEFAULT_DODO_FEE_BPS;
+  return Math.max(1, bps);
 }
 
 const EMPTY_DODO_RESULT = {

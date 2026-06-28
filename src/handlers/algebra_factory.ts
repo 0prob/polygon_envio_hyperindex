@@ -1,4 +1,5 @@
 import { indexer } from "envio";
+import { fetchAlgebraPoolFee } from "../effects/algebra_pool_metadata";
 import { shouldSkipFactoryPool } from "../utils/guards";
 import { persistFactoryPoolMeta } from "../utils/factory_pool_handler";
 import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
@@ -22,13 +23,24 @@ indexer.onEvent(
       return;
     }
 
+    // globalState().fee is in hundredths of a basis point (same format as Uniswap V3
+    // PoolCreated event fee), stored as-is.
+    const blockNumber = Number(event.block.number);
+    const feeP = context.effect(fetchAlgebraPoolFee, {
+      pool: event.params.pool,
+      blockNumber: BigInt(blockNumber),
+    });
+
+    const feeResult = await feeP;
+    const fee = feeResult.fee > 0n ? Number(feeResult.fee) : undefined;
+
     await persistFactoryPoolMeta(context, {
       poolAddr: event.params.pool,
       protocol: ALGEBRA_PROTOCOL,
       token0: t0,
       token1: t1,
-      blockNumber: Number(event.block.number),
-      fee: undefined,
+      blockNumber,
+      fee,
       tickSpacing: undefined,
     });
   },

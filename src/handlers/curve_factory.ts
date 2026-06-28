@@ -86,6 +86,15 @@ async function handleCurvePoolAdded({
     return;
   }
 
+  // Partial RPC failure: coins resolved but fee read failed. Don't write
+  // PoolMeta with fee=0 — the arb bot needs real fee data. Retry on re-index.
+  if (meta.fee === 0n) {
+    if (context.log) {
+      context.log.warn("Curve metadata fee read failed — skipping PoolAdded (will retry)", { pool });
+    }
+    return;
+  }
+
   const tokenExisting = new Map<string, { decimals?: number } | undefined>();
   const coinMetas = await resolveTokenMetasBatch(context, coins, tokenExisting);
 
