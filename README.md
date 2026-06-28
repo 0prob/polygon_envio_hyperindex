@@ -62,7 +62,6 @@ Effects (`createEffect` with preload optimization) resolve token decimals and po
 | `bun run validate-data` | Validate local token data files and `data/token_registry.db` |
 | `bun run validate` | Run both validate-config and validate-data |
 | `bun run generate-tokens` | Merge local data into `data/token_registry.db` (no network fetch) |
-| `bun run generate-tokens:auto` | Same rebuild with friendly logging (used by arb bot post-shutdown) |
 | `bun run backup-db` | pg_dump the Hasura database |
 | `bun test` | Vitest suite for effects, handlers, and utilities |
 
@@ -76,10 +75,9 @@ Effects (`createEffect` with preload optimization) resolve token decimals and po
 | `abis/` | JSON ABIs for all indexed contracts |
 | `data/token_registry.db` | Static SQLite decimals lookup (~180k tokens, 0 RPC at runtime) |
 | `data/pools.json` | Bot anchor pool token addresses (optional input to `generate-tokens`) |
-| `data/extra-tokens.json` | Manual decimal overrides (optional) |
 | `data/discovered-decimals.ndjson` | Append-only RPC discoveries (runtime overlay + registry rebuild input) |
 | `data/failed-decimals.ndjson` | Permanent non-ERC20 blocklist (append-only, created at runtime) |
-| `doc/MEMORIES.md` | Bug log and development context |
+
 
 ## Constraints
 
