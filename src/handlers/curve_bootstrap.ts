@@ -174,6 +174,14 @@ async function bootstrapRegistryPage(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function bootstrapCurvePools({ block, context }: any) {
+  // ponytail: early return during preload — the bootstrap fires every 250 blocks and
+  // the preload phase would redundantly run the full page logic (entity reads, effect
+  // scheduling) for every qualifying block in the preload batch. Effects are cached
+  // by input but entity reads and the sequential getWhere/get/metadata fetch still
+  // add overhead. PoolMeta writes and progress are already gated inside the page
+  // handler, so skipping the entire entry point during preload is safe.
+  if (context.isPreload) return;
+
   for (const source of CURVE_REGISTRY_SOURCES) {
     await bootstrapRegistryPage(context, block, source);
   }
