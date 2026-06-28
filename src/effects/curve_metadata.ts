@@ -33,17 +33,16 @@ export function isCurveMetadataEmpty(meta: { fee: bigint; coins: string[] }): bo
  * Uses Number division so sub-bps fees (e.g. 500_000 → 0.5 bps) are not truncated to 0.
  */
 export function curveFeeToBps(fee: bigint): number {
-  if (fee <= 0n) return 4;
+  if (fee <= 0n) return 0;
   const bps = Number(fee) / 1_000_000;
-  if (!Number.isFinite(bps) || bps <= 0) return 4;
+  if (!Number.isFinite(bps) || bps <= 0) return 0;
   return bps;
 }
 
 /** Coerce fractional bps to GraphQL Int for PoolMeta.fee (round; sub-bps → 1). */
 export function curveFeeToPoolMetaInt(fee: bigint): number {
   const bps = curveFeeToBps(fee);
-  if (bps <= 0) return 4;
-  return bps < 1 ? 1 : Math.round(bps);
+  return bps <= 0 ? 0 : bps < 1 ? 1 : Math.round(bps);
 }
 
 export function curvePoolTypeFromGamma(gamma: bigint | null): "stable" | "crypto" {

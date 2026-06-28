@@ -7,8 +7,6 @@ import { WOOFI_PP_V2, WOOFI_PP_V2_DEPLOY_BLOCK, ZERO_ADDRESS, POLYGON_CHAIN_ID }
 import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
 
 const ZERO = ZERO_ADDRESS;
-/** WOOFi fee rate in 1e5 units: 25 = 0.025% = 2.5 bps → rounded to 3 for PoolMeta.fee. */
-const DEFAULT_WOOFI_FEE_BPS = 3;
 
 function mergeTokensDiff(
   existing: readonly string[] | undefined,
@@ -60,7 +58,7 @@ indexer.onBlock(
       return;
     }
 
-    const { quoteToken, activeTokens } = await context.effect(fetchWooFiTokens, { pool: WOOFI_PP_V2 });
+    const { quoteToken, activeTokens, feeBps } = await context.effect(fetchWooFiTokens, { pool: WOOFI_PP_V2 });
 
     if (activeTokens.length < 2) return;
 
@@ -76,7 +74,7 @@ indexer.onBlock(
       address: WOOFI_PP_V2,
       protocol: "WOOFI" as Protocol,
       tokens: activeTokens,
-      fee: existing?.fee && existing.fee > 0 ? existing.fee : DEFAULT_WOOFI_FEE_BPS,
+      fee: feeBps > 0 ? feeBps : (existing?.fee ?? 3),
       tickSpacing: undefined,
       createdBlock: existing?.createdBlock ?? Number(block.number),
       updatedAtBlock: Number(block.number),
@@ -142,7 +140,7 @@ indexer.onEvent(
       address: poolAddr,
       protocol: "WOOFI" as Protocol,
       tokens: mergedTokens,
-      fee: meta?.fee && meta.fee > 0 ? meta.fee : DEFAULT_WOOFI_FEE_BPS,
+      fee: meta?.fee && meta.fee > 0 ? meta.fee : 3,
       tickSpacing: undefined,
       createdBlock: meta?.createdBlock ?? blockNumber,
       updatedAtBlock: blockNumber,

@@ -9,14 +9,22 @@ const WOOFI_ABI = parseAbi([
   "function tokenInfos(address token) external view returns (uint192 reserve, uint16 feeRate)",
 ]);
 
-const inFlightWooFi = new Map<string, Promise<{ quoteToken: string; activeTokens: string[] }>>();
+/**
+ * WOOFi V2 feeRate is uint16 in 1e5 units (25 = 0.025% = 2.5 bps).
+ * PoolMeta.fee is a GraphQL Int, so round to nearest bps.
+ */
+function woofiFeeRateToBps(feeRate: number): number {
+  return Math.round(feeRate / 10);
+}
+
+const inFlightWooFi = new Map<string, Promise<{ quoteToken: string; activeTokens: string[]; feeBps: number }>>();
 
 /**
  * Bootstraps the WOOFi token list by:
  *   1. Calling quoteToken() to learn which token is the stable side.
  *   2. Probing tokenInfos(t) for every major token — returns (0, 0) for unsupported
  *      tokens without reverting, so this is safe to run for all candidates.
- *   3. Returning the subset that has reserve > 0.
+ *   3. Returning the subset that has reserve > 0, along with the on-chain fee rate.
  *
  * WOOFi V2 exposes no factory event and no token enumeration function, so this is the
  * only way to get the full active token set without waiting for WooSwap events.
@@ -31,7 +39,7 @@ export async function fetchWooFiTokensHandler({
   context: any;
 }) {
   const poolAddr = input.pool.toLowerCase();
-  const EMPTY = { quoteToken: "", activeTokens: [] as string[] };
+  const EMPTY = { quoteToken: "", activeTokens: [] as string[], feeBps: 0 };
 
   let promise = inFlightWooFi.get(poolAddr);
   if (promise) return promise;
@@ -59,14 +67,17 @@ export async function fetchWooFiTokensHandler({
       const quoteToken = (quoteResult.result as string).toLowerCase();
 
       const activeTokens: string[] = [quoteToken];
+      const feeRates: number[] = [];
       for (let i = 0; i < tokenList.length; i++) {
         const r = results[1 + i]!;
         if (r.status !== "success") continue;
         const rVal = r.result as { reserve: bigint; feeRate: number } | [bigint, number];
         const reserve = Array.isArray(rVal) ? rVal[0] : rVal.reserve;
+        const feeRate = Array.isArray(rVal) ? rVal[1] : rVal.feeRate;
         const addr = tokenList[i]!;
         if (reserve > 0n && !activeTokens.includes(addr)) {
           activeTokens.push(addr);
+          feeRates.push(feeRate);
         }
       }
 
@@ -81,7 +92,11 @@ export async function fetchWooFiTokensHandler({
         return EMPTY;
       }
 
-      return { quoteToken, activeTokens };
+      const poolFeeBps = feeRates.length > 0
+        ? woofiFeeRateToBps(feeRates.reduce((a, b) => a + b, 0) / feeRates.length)
+        : 0;
+
+      return { quoteToken, activeTokens, feeBps: poolFeeBps };
     } catch (err) {
       if (context.log) {
         context.log.warn("fetchWooFiTokens failed", { pool: input.pool, error: String(err) });
@@ -104,6 +119,7 @@ export const fetchWooFiTokens = createEffect(
     output: {
       quoteToken: S.string,
       activeTokens: S.array(S.string),
+      feeBps: S.number,
     },
     rateLimit: getHistoricalMetaEffectRateLimit(),
     cache: true,

@@ -28,6 +28,19 @@ function isRetryableRpcError(err: unknown): boolean {
   );
 }
 
+async function readContractRetry<T>(fn: () => Promise<T>): Promise<T | undefined> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (!isRetryableRpcError(err)) return undefined;
+    try {
+      return await fn();
+    } catch {
+      return undefined;
+    }
+  }
+}
+
 /** One retry on transient network errors — getPoolTokens is required for token discovery. */
 async function readVaultPoolTokens(
   poolId: `0x${string}`,
@@ -91,16 +104,16 @@ export async function fetchBalancerMetadataHandler({
       const pool = input.pool as `0x${string}`;
       const opts = input.blockNumber ? { blockNumber: input.blockNumber } : undefined;
 
-      const poolId =
+      let poolId =
         (input.poolId as `0x${string}`) ||
-        ((await publicClient
-          .readContract({
+        ((await readContractRetry(
+          () => publicClient.readContract({
             address: pool,
             abi: BALANCER_ABI,
             functionName: "getPoolId",
             ...opts,
-          })
-          .catch(() => undefined)) as `0x${string}` | undefined);
+          }) as Promise<`0x${string}`>,
+        )) || undefined);
 
       if (!poolId) {
         context.cache = false;

@@ -9,7 +9,7 @@ describe("nCoinsFromEventParams", () => {
 
   it("reads _1 only for the uint256+bool overload", () => {
     expect(nCoinsFromEventParams({ _0: "0xabc", _1: 3n, _2: true })).toBe(3);
-    expect(nCoinsFromEventParams({ _0: "0xabc", _1: 0n, _2: false })).toBe(4);
+    expect(nCoinsFromEventParams({ _0: "0xabc", _1: 0n, _2: false })).toBe(2);
   });
 
   it("ignores bytes _1 from PoolAdded(address,bytes)", () => {
@@ -18,12 +18,12 @@ describe("nCoinsFromEventParams", () => {
         _0: "0xabc",
         _1: "0x1234567890abcdef",
       }),
-    ).toBe(4);
+    ).toBe(2);
   });
 
   it("defaults when coin count is missing or invalid", () => {
-    expect(nCoinsFromEventParams({ pool: "0xabc" })).toBe(4);
-    expect(nCoinsFromEventParams({ pool: "0xabc", n_coins: 0n })).toBe(4);
+    expect(nCoinsFromEventParams({ pool: "0xabc" })).toBe(2);
+    expect(nCoinsFromEventParams({ pool: "0xabc", n_coins: 0n })).toBe(2);
     expect(nCoinsFromEventParams({ pool: "0xabc", n_coins: 99n })).toBe(8);
   });
 });

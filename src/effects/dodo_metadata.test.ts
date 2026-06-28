@@ -27,7 +27,7 @@ describe("dodoFeeToBps", () => {
   it("converts 1e18 fee fractions to basis points using LP+MT total", () => {
     expect(dodoFeeToBps(3_000_000_000_000_000n)).toBe(30);
     expect(dodoFeeToBps(3_000_000_000_000_000n + 1_000_000_000_000_000n)).toBe(40);
-    expect(dodoFeeToBps(0n)).toBe(10);
+    expect(dodoFeeToBps(0n)).toBe(0);
   });
 
   it("uses MT fee alone when LP read reverts", () => {

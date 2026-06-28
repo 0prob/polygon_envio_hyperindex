@@ -104,7 +104,7 @@ export const CHAINLINK_MATIC_USD: Address = "0xab594600376ec9fd91f8e885dadf0ce03
 
 // Multicall3
 export const POLYGON_CHAIN_ID = 137;
-export const DEFAULT_CURVE_N_COINS = 4;
+export const DEFAULT_CURVE_N_COINS = 2;
 export const MULTICALL3: Address = "0xca11bde05977b3631167028862be2a173976ca11";
 
 /**

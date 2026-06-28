@@ -67,7 +67,7 @@ function mockCurveReads(opts: {
 describe("curveFeeToBps", () => {
   it("converts 1e-10 fee units to basis points", () => {
     expect(curveFeeToBps(4_000_000n)).toBe(4);
-    expect(curveFeeToBps(0n)).toBe(4);
+    expect(curveFeeToBps(0n)).toBe(0);
   });
 
   it("handles sub-bps fees without truncating to default", () => {

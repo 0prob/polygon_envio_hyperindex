@@ -49,10 +49,13 @@ async function handleDodoPool(
   }
 
   const metadataUnavailable = isDodoMetadataEmpty(meta);
-  if (metadataUnavailable && context.log) {
-    context.log.warn("DODO metadata RPC unavailable — indexing from factory event with default fee", {
-      pool,
-    });
+  if (metadataUnavailable) {
+    if (context.log) {
+      context.log.warn("DODO metadata RPC unavailable — skipping pool, will retry on re-index", {
+        pool,
+      });
+    }
+    return; // Don't persist with fabricated fee; replayed event or bootstrap catches on restart.
   }
 
   const feeBps = dodoFeeToBps(meta.fee);

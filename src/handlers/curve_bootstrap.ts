@@ -89,6 +89,7 @@ async function bootstrapRegistryPage(
   // Phase 1: fetch pool metadata with bounded concurrency (RPC effects only).
   const concurrency = Math.min(3, getMetadataConcurrency());
   const readyPools: CurveBootstrapPool[] = [];
+  let allNonCurve = true;
 
   await runWithConcurrency(newPools, concurrency, async (row: { address: string }) => {
     const meta = await context.effect(fetchCurveMetadata, {
@@ -99,12 +100,20 @@ async function bootstrapRegistryPage(
 
     const coins = meta.coins.filter((c: string) => c && c !== ZERO);
     if (coins.length < 2) {
-      if (isCurveMetadataEmpty(meta) && context.log) {
-        context.log.warn("Curve bootstrap metadata unavailable — skipping pool", { pool: row.address });
+      if (!isCurveMetadataEmpty(meta)) {
+        // Some reads succeeded — not a non-Curve contract, just an RPC / coin count issue.
+        allNonCurve = false;
+      }
+      if (context.log) {
+        const reason = isCurveMetadataEmpty(meta)
+          ? "all multicall reads reverted (likely non-Curve contract)"
+          : "metadata partially unavailable";
+        context.log.warn(`Curve bootstrap: ${reason} — skipping pool`, { pool: row.address });
       }
       return;
     }
 
+    allNonCurve = false;
     readyPools.push({
       address: row.address,
       coins,
@@ -114,7 +123,13 @@ async function bootstrapRegistryPage(
   });
 
   if (readyPools.length === 0) {
-    // Transient RPC failures — do not advance; retry this page on the next stride.
+    if (allNonCurve && newPools.length > 0) {
+      // Every new pool on this page had all reads revert — they are non-Curve/garbage.
+      // Advance past them so we don't retry forever.
+      const nextIndex = Math.min(page.total, offset + PAGE_SIZE);
+      storeProgress(nextIndex, page.total);
+    }
+    // Otherwise: transient RPC failures — do not advance; retry this page on the next stride.
     return;
   }
 

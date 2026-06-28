@@ -40,6 +40,7 @@ describe("fetchWooFiTokens", () => {
     expect(result.activeTokens).toContain(USDC.toLowerCase());
     expect(result.activeTokens).toContain(WMATIC.toLowerCase());
     expect(result.activeTokens.length).toBeGreaterThanOrEqual(2);
+    expect(result.feeBps).toBe(3); // feeRate 25 → 2.5 bps → round to 3
     // Single multicall for quoteToken + all tokenInfos
     expect(multicall).toHaveBeenCalledTimes(1);
     const contracts = multicall.mock.calls[0][0].contracts;
@@ -65,7 +66,7 @@ describe("fetchWooFiTokens", () => {
       context: ctx,
     });
 
-    expect(result).toEqual({ quoteToken: "", activeTokens: [] });
+    expect(result).toEqual({ quoteToken: "", activeTokens: [], feeBps: 0 });
     expect(ctx.cache).toBe(false);
   });
 });
