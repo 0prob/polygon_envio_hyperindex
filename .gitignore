@@ -1,9 +1,34 @@
+# Dependencies
 node_modules/
+
+# Build output
 generated/
+
+# Envio runtime data
 .hyperindex/
 backups/
+hyperindex.db
+
+# Data (keep pools.json)
 data/*
 !data/pools.json
-hyperindex.db
+
+# Secrets
 .env
-.envio/cache/
+
+# Envio codegen (ephemeral)
+.envio/
+
+# AI/agent tool configs
+.claude/
+.gemini/
+.superpowers/
+
+# Graph visualization output
+graphify-rs-out/
+
+# Safety net: other AI/IDE tool configs
+.cursor/
+.github/copilot-instructions.md
+.continue/
+.roocode/
