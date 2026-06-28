@@ -190,7 +190,6 @@ export function buildPublicClient(): PublicClient {
     transport,
     batch: {
       multicall: {
-        batchSize: tuning.multicallBatchSize,
         wait: tuning.multicallWait,
       },
     },
