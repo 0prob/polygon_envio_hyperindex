@@ -188,12 +188,6 @@ export function bridgeIndexerEnvAliases(env: Record<string, string | undefined>)
   if (env.POLYGON_RPC && !env.POLYGON_RPC_URL && !env.POLYGON_RPC_URLS) {
     env.POLYGON_RPC_URL = env.POLYGON_RPC;
   }
-  if (env.ALCHEMY_API_KEY && !env.ENVIO_ALCHEMY_API_KEY) {
-    env.ENVIO_ALCHEMY_API_KEY = env.ALCHEMY_API_KEY;
-  }
-  if (env.ENVIO_ALCHEMY_API_KEY && !env.ALCHEMY_API_KEY) {
-    env.ALCHEMY_API_KEY = env.ENVIO_ALCHEMY_API_KEY;
-  }
 
   if (env.HYPER_SYNC_URL && !env.ENVIO_POLYGON_HYPERSYNC_URL) {
     env.ENVIO_POLYGON_HYPERSYNC_URL = env.HYPER_SYNC_URL;

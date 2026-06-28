@@ -342,7 +342,7 @@ function handleDecimalsFetchFailure(addr: string, err: unknown, context: any): D
     failedDecimalsTokens.add(addr);
     if (isQuota) {
       context.log.warn(
-        `Alchemy quota / monthly capacity exceeded while fetching decimals. ` +
+        `RPC quota / monthly capacity exceeded while fetching decimals. ` +
           `Add more providers to POLYGON_RPC_URLS (comma-separated) or lower effect rateLimits temporarily. ` +
           `Defaulting to 18 for this token (will retry in ~5min).`,
         { token: addr },

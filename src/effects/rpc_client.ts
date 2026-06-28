@@ -6,17 +6,10 @@ import { getRpmTarget } from "../utils/pacing";
  * Centralized RPC client for all effects (token decimals, Curve/Balancer/DODO metadata, etc.).
  *
  * Supports comma-separated POLYGON_RPC_URLS (preferred) or POLYGON_RPC_URL from .env.
- * .env endpoints (after archival probe filtering upstream) are used with viem fallback().
- * Only falls back to public RPCs (no embedded keys) when nothing usable was provided.
+ * .env endpoints are used with viem fallback(). Public fallbacks are appended as
+ * secondary endpoints when the user provides fewer than 3 endpoints.
  *
- * The effect rateLimits (in the metadata effects) are now raised for pay-as-you-go
- * Alchemy. The batch + multicall settings here keep the actual HTTP request rate
- * much lower than the effect invocation rate.
- *
- * Recommended:
- *   1. Alchemy pay-as-you-go (best for historical eth_call volume + multicall)
- *   2. Other paid archival providers
- *   3. Free public as last resort only
+ * Recommended: paid archival providers for historical eth_call volume + multicall.
  */
 
 /** Public fallbacks — only when no configured RPC URLs exist. Rate-limited and often non-archival. */
@@ -69,17 +62,21 @@ export function redactRpcUrl(url: string): string {
   }
 }
 
-function getAlchemyApiKey(): string | undefined {
-  const key = (process.env.ENVIO_ALCHEMY_API_KEY || process.env.ALCHEMY_API_KEY || "").trim();
-  return key.length > 0 ? key : undefined;
-}
+
 
 export function getRpcUrls(): string[] {
   for (const key of RPC_ENV_KEYS) {
     const raw = process.env[key];
     if (!raw) continue;
     const list = parseRpcUrlList(raw);
-    if (list.length > 0) return list;
+    if (list.length > 0) {
+      // ponytail: append public fallbacks when user has < 3 endpoints — a single
+      // paid endpoint still hits quota under heavy archival eth_call volume
+      // (Balancer/DODO/Curve/WooFi bootstrapping). viem fallback() ranks the
+      // user's endpoints first, so fallbacks only serve during rate-limit bursts.
+      const fallbacks = PUBLIC_FALLBACK_RPC_URLS.filter((u) => !list.includes(u));
+      return [...list, ...fallbacks];
+    }
   }
   return [...PUBLIC_FALLBACK_RPC_URLS];
 }
@@ -139,12 +136,6 @@ function buildHttpTransport(url: string, tuning: RpcTransportTuning): HttpTransp
   // metadata, token decimals) timed out under node. Bun's fetch silently ignores
   // them, which is why this only broke in the live indexer and not in tests/scripts.
   // HTTP keep-alive is already handled automatically by undici's connection pool.
-  const headers: Record<string, string> = {};
-  const alchemyKey = getAlchemyApiKey();
-  if (alchemyKey && url.includes("alchemy")) {
-    headers["X-Alchemy-Token"] = alchemyKey;
-  }
-
   return http(url, {
     batch: {
       batchSize: tuning.httpBatchSize,
@@ -153,7 +144,6 @@ function buildHttpTransport(url: string, tuning: RpcTransportTuning): HttpTransp
     timeout: tuning.timeoutMs,
     retryCount: tuning.retryCount,
     retryDelay: tuning.retryDelayMs,
-    ...(Object.keys(headers).length > 0 ? { fetchOptions: { headers } } : {}),
   });
 }
 

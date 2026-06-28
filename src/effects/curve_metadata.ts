@@ -166,7 +166,7 @@ export async function fetchCurveMetadataHandler({
       if (context.log) {
         if (isQuotaError(err)) {
           context.log.warn(
-            "Alchemy quota / monthly capacity exceeded while fetching Curve metadata. Add more RPC providers to POLYGON_RPC_URLS.",
+            "RPC quota / monthly capacity exceeded while fetching Curve metadata. Add more RPC providers to POLYGON_RPC_URLS.",
           );
         } else {
           context.log.warn("Failed to fetch Curve metadata", {

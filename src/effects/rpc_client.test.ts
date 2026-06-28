@@ -54,9 +54,9 @@ describe("parseRpcUrlList", () => {
 });
 
 describe("redactRpcUrl", () => {
-  it("redacts Alchemy-style path keys", () => {
-    expect(redactRpcUrl("https://polygon-mainnet.g.alchemy.com/v2/secret-key-12345")).toBe(
-      "https://polygon-mainnet.g.alchemy.com/v2/***",
+  it("redacts path-based API keys", () => {
+    expect(redactRpcUrl("https://rpc.example.com/v2/secret-key-12345")).toBe(
+      "https://rpc.example.com/v2/***",
     );
   });
 
@@ -83,12 +83,12 @@ describe("getRpcUrls", () => {
   it("prefers ENVIO_POLYGON_RPC_URLS over POLYGON_RPC_URLS", () => {
     process.env.POLYGON_RPC_URLS = "https://polygon.example/a";
     process.env.ENVIO_POLYGON_RPC_URLS = "https://envio.example/b";
-    expect(getRpcUrls()).toEqual(["https://envio.example/b"]);
+    expect(getRpcUrls()).toEqual(["https://envio.example/b", ...PUBLIC_FALLBACK_RPC_URLS]);
   });
 
   it("accepts POLYGON_RPC alias", () => {
     process.env.POLYGON_RPC = "https://alias.example/rpc";
-    expect(getRpcUrls()).toEqual(["https://alias.example/rpc"]);
+    expect(getRpcUrls()).toEqual(["https://alias.example/rpc", ...PUBLIC_FALLBACK_RPC_URLS]);
   });
 
   it("falls back to public endpoints when unset", () => {
@@ -113,7 +113,7 @@ describe("buildPublicClient", () => {
     resetPublicClientForTest();
     for (const key of RPC_ENV_KEYS) delete process.env[key];
     process.env.VITEST = "true";
-    process.env.POLYGON_RPC_URL = "https://polygon-mainnet.g.alchemy.com/v2/test-key";
+    process.env.POLYGON_RPC_URL = "https://rpc.example.com/v2/test-key";
   });
 
   afterEach(() => {

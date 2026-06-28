@@ -5,8 +5,6 @@ declare namespace NodeJS {
     POLYGON_RPC?: string;
     ENVIO_POLYGON_RPC_URLS?: string;
     ENVIO_POLYGON_RPC_URL?: string;
-    ALCHEMY_API_KEY?: string;
-    ENVIO_ALCHEMY_API_KEY?: string;
     POLYGON_START_BLOCK?: string;
     ENVIO_POLYGON_START_BLOCK?: string;
     TOKEN_REGISTRY_DB?: string;

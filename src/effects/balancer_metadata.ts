@@ -56,7 +56,7 @@ async function readVaultPoolTokens(
 
 /**
  * Balancer pool metadata via batched RPC.
- * Tuned for pay-as-you-go Alchemy (multiple reads per pool at historical blocks).
+ * Tuned for paid archival providers (multiple reads per pool at historical blocks).
  */
 const inFlightBalancer = new Map<string, Promise<{
   poolId: string;
@@ -171,7 +171,7 @@ export async function fetchBalancerMetadataHandler({
       if (context.log) {
         if (isQuotaError(err)) {
           context.log.warn(
-            `Alchemy quota / monthly capacity exceeded while fetching Balancer metadata. ` +
+            `RPC quota / monthly capacity exceeded while fetching Balancer metadata. ` +
               `Add more providers to POLYGON_RPC_URLS or reduce effect rateLimits.`,
           );
         } else {
