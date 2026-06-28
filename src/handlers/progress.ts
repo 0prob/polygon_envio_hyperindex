@@ -1,5 +1,6 @@
 import { indexer } from "envio";
 import { getProgressOnBlockStride } from "../utils/pacing";
+import { POLYGON_CHAIN_ID } from "../utils/constants";
 
 /**
  * Block handler that maintains the IndexerProgress entity.
@@ -21,7 +22,6 @@ import { getProgressOnBlockStride } from "../utils/pacing";
 // -----------------------------------------------------------------------------
 // Configuration (override via environment variables)
 // -----------------------------------------------------------------------------
-const POLYGON_CHAIN_ID = 137;
 
 /** When chain start is >= this threshold, treat as live-debug high-start mode. */
 const LIVE_DEBUG_START_THRESHOLD = 80_000_000;

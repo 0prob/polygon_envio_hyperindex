@@ -38,13 +38,28 @@ type ResolveSlot = { slot: number; addr: string; normalized: string };
 async function resolveTokenMetaSlots(
   context: FactoryTokenMetaContext,
   slots: ResolveSlot[],
+  preResolved?: Map<string, FactoryTokenMeta>,
 ): Promise<Map<number, FactoryTokenMeta>> {
   const resolved = new Map<number, FactoryTokenMeta>();
   if (slots.length === 0) return resolved;
 
-  const localHits = await lookupRegistryDecimalsBatch(slots.map((s) => s.addr));
+  // ponytail: re-check registry only for slots not already resolved by the caller
+  const unchecked = preResolved
+    ? slots.filter((s) => !preResolved.has(s.normalized))
+    : slots;
+  const localHits = unchecked.length > 0
+    ? await lookupRegistryDecimalsBatch(unchecked.map((s) => s.addr))
+    : new Map<string, FactoryTokenMeta>();
+
+  if (preResolved) {
+    for (const slot of slots) {
+      const hit = preResolved.get(slot.normalized);
+      if (hit) resolved.set(slot.slot, hit);
+    }
+  }
+
   const needsEffect: ResolveSlot[] = [];
-  for (const slot of slots) {
+  for (const slot of unchecked) {
     const hit = localHits.get(slot.normalized);
     if (hit) {
       resolved.set(slot.slot, hit);
@@ -118,7 +133,7 @@ export async function resolveFactoryPairTokenMetas(
     pending.push({ slot: 1, addr: token1, normalized: n1 });
   }
 
-  const fetched = await resolveTokenMetaSlots(context, pending);
+  const fetched = await resolveTokenMetaSlots(context, pending, localHits as Map<string, FactoryTokenMeta>);
   return [
     t0Cached ?? fetched.get(0) ?? preloadTokenDecimalsDefault(),
     t1Cached ?? fetched.get(1) ?? preloadTokenDecimalsDefault(),

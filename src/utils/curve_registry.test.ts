@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { curveDiscoveryProtocol } from "./curve_registry";
+import { curveDiscoveryProtocol } from "./constants";
 
 describe("curveDiscoveryProtocol", () => {
   it("returns CURVE for HyperIndex Protocol enum regardless of poolType", () => {

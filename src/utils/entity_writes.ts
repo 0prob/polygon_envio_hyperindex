@@ -4,7 +4,7 @@
  */
 
 import { normalizeTokenAddress } from "./normalize_address";
-import { safeDecimals } from "./safe_decimals";
+import { safeDecimals } from "./constants";
 
 export type TokenMetaContext = {
   TokenMeta: {
@@ -48,18 +48,6 @@ function shouldPersistTokenMeta(
   }
   if (dec !== 18) return true;
   return trusted;
-}
-
-export async function setTokenMetaIfMissing(
-  context: TokenMetaContext,
-  address: string,
-  decimals: number,
-  trusted = false,
-): Promise<void> {
-  const addr = normalizeTokenAddress(address);
-  const existing = await context.TokenMeta.get(addr);
-  if (!shouldPersistTokenMeta(existing, decimals, trusted)) return;
-  context.TokenMeta.set({ id: addr, decimals: safeDecimals(decimals) });
 }
 
 export async function setTokenMetasIfMissing(

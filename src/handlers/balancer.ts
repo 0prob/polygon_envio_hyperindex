@@ -50,7 +50,6 @@ indexer.onEvent(
     // Legitimate Balancer swap fees are always ≥ 0.0001 bps (swapFee ≥ 10^12), so
     // only broken RPC returns or trivial pools hit the truncation path.
     const fee = meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
-    const tokens = [...meta.tokens];
     const poolType = meta.amp != null && meta.amp > 0n ? "stable" : meta.weights?.length ? "weighted" : undefined;
 
     // Write to both entity (durable, auto-rolled back on reorg) and in-memory cache
@@ -66,7 +65,7 @@ indexer.onEvent(
       id: pool,
       address: pool,
       protocol: "BALANCER_V2",
-      tokens,
+      tokens: meta.tokens,
       fee: fee > 0 ? fee : undefined,
       tickSpacing: undefined,
       createdBlock: blockNumber,
@@ -77,7 +76,7 @@ indexer.onEvent(
 
     await setTokenMetasIfMissing(
       context,
-      tokens,
+      meta.tokens,
       tokenMetas.map((m) => m.decimals),
       tokenMetas.map((m) => m.trusted),
       tokenExisting,
@@ -87,12 +86,11 @@ indexer.onEvent(
 
 indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async ({ event, context }) => {
   const rawTokens = event.params.tokens;
-  const tokens = [...rawTokens];
   const blockNumber = Number(event.block.number);
 
   // Schedule token resolution early so effects register in the preload batch.
   const tokenExisting = new Map<string, { decimals?: number } | undefined>();
-  const tokenMetasPromise = resolveTokenMetasBatch(context, tokens, tokenExisting);
+  const tokenMetasPromise = resolveTokenMetasBatch(context, rawTokens, tokenExisting);
 
   const poolId = event.params.poolId;
 
@@ -138,15 +136,15 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
 
   const tokensUnchanged =
     existing?.tokens &&
-    existing.tokens.length === tokens.length &&
-    tokens.every((t, i) => t === existing.tokens![i]);
+    existing.tokens.length === rawTokens.length &&
+    rawTokens.every((t, i) => t === existing.tokens![i]);
   if (tokensUnchanged) return;
 
   context.PoolMeta.set(poolMetaEntity({
     id: poolAddr,
     address: poolAddr,
     protocol: "BALANCER_V2",
-    tokens: tokens,
+    tokens: rawTokens,
     fee,
     tickSpacing: undefined,
     createdBlock: existing.createdBlock,
@@ -157,7 +155,7 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
 
   await setTokenMetasIfMissing(
     context,
-    tokens,
+    rawTokens,
     tokenMetas.map((m) => m.decimals),
     tokenMetas.map((m) => m.trusted),
     tokenExisting,

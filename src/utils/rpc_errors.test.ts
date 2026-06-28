@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isNetworkError, isQuotaError } from "./rpc_errors";
+import { isNetworkError, isQuotaError } from "../effects/rpc_client";
 
 describe("rpc_errors", () => {
   it("isQuotaError avoids bare 'rate' substring false positives", () => {

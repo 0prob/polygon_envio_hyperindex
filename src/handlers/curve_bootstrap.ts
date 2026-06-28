@@ -8,14 +8,13 @@ import type { CurveDiscoveryPoolType } from "../effects/curve_metadata";
 import { fetchCurveRegistryPage } from "../effects/curve_registry_bootstrap";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
-import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
+import { resolveTokenMetasBatch, type FactoryTokenMeta } from "../utils/factory_token_meta";
 import { runWithConcurrency, getMetadataConcurrency } from "../utils/pacing";
-import { CURVE_REGISTRY_SOURCES, curveDiscoveryProtocol } from "../utils/curve_registry";
+import { CURVE_REGISTRY_SOURCES, curveDiscoveryProtocol, ZERO_ADDRESS, POLYGON_CHAIN_ID, DEFAULT_CURVE_N_COINS } from "../utils/constants";
 
-const POLYGON_CHAIN_ID = 137;
 const PAGE_SIZE = 40;
-const ZERO = "0x0000000000000000000000000000000000000000";
-const DEFAULT_N_COINS = 4;
+const ZERO = ZERO_ADDRESS;
+const DEFAULT_N_COINS = DEFAULT_CURVE_N_COINS;
 
 const chainStart = (() => {
   const v = process.env.POLYGON_START_BLOCK || process.env.ENVIO_POLYGON_START_BLOCK;
@@ -25,11 +24,6 @@ const chainStart = (() => {
 
 const earliestCurveDeployBlock = Math.min(...CURVE_REGISTRY_SOURCES.map((s) => s.deployBlock));
 const bootstrapStartBlock = Math.max(earliestCurveDeployBlock + 1, chainStart);
-
-interface TokenMetaResult {
-  decimals: number;
-  trusted: boolean;
-}
 
 interface CurveBootstrapPool {
   address: string;
@@ -154,8 +148,8 @@ async function bootstrapRegistryPage(
   await setTokenMetasIfMissing(
     context,
     uniqueCoins,
-    tokenMetas.map((m: TokenMetaResult) => m.decimals),
-    tokenMetas.map((m: TokenMetaResult) => m.trusted),
+    tokenMetas.map((m: FactoryTokenMeta) => m.decimals),
+    tokenMetas.map((m: FactoryTokenMeta) => m.trusted),
     tokenExisting,
   );
 

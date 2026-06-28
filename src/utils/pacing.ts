@@ -56,14 +56,6 @@ export function isVeryLowQuota(): boolean {
 }
 
 /**
- * Recommended full_batch_size for config.yaml (or manual override).
- * Bigger batches amortize HyperSync roundtrips but create spikier request patterns.
- */
-export function getRecommendedFullBatchSize(): number {
-  return getRecommendedFullBatchSizeForRpm(getRpmTarget());
-}
-
-/**
  * Max concurrent metadata effect calls (token + curve/balancer/dodo) per handler.
  * Raw Promise.all on a burst of PairCreated events is the easiest way to create
  * request spikes that interact badly with a tight HyperSync budget.

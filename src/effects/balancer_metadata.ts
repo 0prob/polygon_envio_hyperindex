@@ -1,6 +1,6 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
-import { publicClient } from "./rpc_client";
+import { publicClient, isQuotaError } from "./rpc_client";
 import { BALANCER_VAULT } from "../utils/constants";
 import { getHistoricalMetaEffectRateLimit } from "../utils/pacing";
 
@@ -73,23 +73,23 @@ export async function fetchBalancerMetadataHandler({
   input,
   context,
 }: {
-  input: {   pool: string; poolId?: string; blockNumber?: bigint };
+  input: { pool: string; poolId?: string; blockNumber?: bigint };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: any;
 }) {
-    const poolAddr = input.pool.toLowerCase();
-    const blockKey = input.blockNumber != null ? String(input.blockNumber) : "";
-    const key = `${poolAddr}-${blockKey}`;
+  const poolAddr = input.pool.toLowerCase();
+  const blockKey = input.blockNumber != null ? String(input.blockNumber) : "";
+  const key = `${poolAddr}-${blockKey}`;
 
-    let promise = inFlightBalancer.get(key);
-    if (promise) {
-      return promise;
-    }
+  let promise = inFlightBalancer.get(key);
+  if (promise) {
+    return promise;
+  }
 
-    promise = (async () => {
-      try {
-        const pool = input.pool as `0x${string}`;
-        const opts = input.blockNumber ? { blockNumber: input.blockNumber } : undefined;
+  promise = (async () => {
+    try {
+      const pool = input.pool as `0x${string}`;
+      const opts = input.blockNumber ? { blockNumber: input.blockNumber } : undefined;
 
       const poolId =
         (input.poolId as `0x${string}`) ||
@@ -147,8 +147,8 @@ export async function fetchBalancerMetadataHandler({
       const [tokens, balances, lastChangeBlock] = poolTokensResult;
 
       if (anyReadFailed) {
-        if (context.log) {
-          context.log.warn("Balancer metadata reads partially failed — not caching", { pool: input.pool, poolId });
+        if (context.log?.debug) {
+          context.log.debug("Balancer metadata reads partially failed — not caching", { pool: input.pool, poolId });
         }
         context.cache = false;
       } else {
@@ -167,14 +167,9 @@ export async function fetchBalancerMetadataHandler({
       };
     } catch (err) {
       const errStr = String(err);
-      const isQuota =
-        errStr.includes("Monthly") ||
-        errStr.includes("capacity") ||
-        errStr.includes("quota") ||
-        errStr.includes("rate");
 
       if (context.log) {
-        if (isQuota) {
+        if (isQuotaError(err)) {
           context.log.warn(
             `Alchemy quota / monthly capacity exceeded while fetching Balancer metadata. ` +
               `Add more providers to POLYGON_RPC_URLS or reduce effect rateLimits.`,

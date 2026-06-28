@@ -80,17 +80,17 @@ async function handleDodoPool(
 }
 
 const DODO_POOL_EVENTS = [
-  { event: "NewDVM" as const, poolField: "dvm" as const, label: "DVM" },
-  { event: "NewDPP" as const, poolField: "dpp" as const, label: "DPP" },
-  { event: "NewDSP" as const, poolField: "dsp" as const, label: "DSP" },
+  { event: "NewDVM" as const, poolField: "dvm" as const },
+  { event: "NewDPP" as const, poolField: "dpp" as const },
+  { event: "NewDSP" as const, poolField: "dsp" as const },
 ];
 
 function registerDodoEvent(cfg: (typeof DODO_POOL_EVENTS)[number]): void {
   // NOTE: The contractRegister that called `context.chain.DodoPool.add(...)` was removed.
   // DodoPool.Sync is no longer indexed (handler was a no-op; the arb bot owns hot pool state via
   // RPC). Discovery is served by the factory onEvent below (→ PoolMeta).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   indexer.onEvent({ contract: "DodoFactory", event: cfg.event }, async ({ event: ev, context }: any) => {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
     const base = ev.params.baseToken;
     const quote = ev.params.quoteToken;
     if (shouldSkipFactoryPool(base, quote, ev.srcAddress)) {

@@ -1,7 +1,8 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
-import { publicClient } from "./rpc_client";
+import { publicClient, isQuotaError } from "./rpc_client";
 import { getCurveMetaEffectRateLimit } from "../utils/pacing";
+import { ZERO_ADDRESS } from "../utils/constants";
 
 /** Discovery-only reads — PoolMeta needs coins, fee, crypto vs stable (gamma), and NG subtype. */
 const CURVE_DISCOVERY_ABI = parseAbi([
@@ -12,7 +13,6 @@ const CURVE_DISCOVERY_ABI = parseAbi([
   "function N_COINS() view returns (uint256)",
 ]);
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const MAX_CURVE_COINS = 8;
 
 export type CurveDiscoveryPoolType = "stable" | "crypto" | "stable_ng" | "crypto_ng";
@@ -26,11 +26,6 @@ export const EMPTY_CURVE_RESULT = {
 /** Both fee + all coin reads failed — do not cache for preload replay. */
 export function isCurveMetadataEmpty(meta: { fee: bigint; coins: string[] }): boolean {
   return meta.fee === 0n && meta.coins.length === 0;
-}
-
-/** Non-optional read failed (sharable marker). */
-export function isCoinReadFailure(hadFailure: boolean, meta: { fee: bigint; coins: string[] }): boolean {
-  return hadFailure && !isCurveMetadataEmpty(meta);
 }
 
 /**
@@ -157,7 +152,7 @@ export async function fetchCurveMetadataHandler({
         context.cache = false;
       } else if (anyCoinFailed) {
         if (context.log) {
-          context.log.warn("Curve metadata coin reads partially failed — not caching", { pool: input.pool });
+          context.log.info("Curve metadata coin reads partially failed — not caching", { pool: input.pool });
         }
         context.cache = false;
       } else if (context.log) {
@@ -167,14 +162,9 @@ export async function fetchCurveMetadataHandler({
       return result;
     } catch (err) {
       const errStr = String(err);
-      const isQuota =
-        errStr.includes("Monthly") ||
-        errStr.includes("capacity") ||
-        errStr.includes("quota") ||
-        errStr.includes("rate");
 
       if (context.log) {
-        if (isQuota) {
+        if (isQuotaError(err)) {
           context.log.warn(
             "Alchemy quota / monthly capacity exceeded while fetching Curve metadata. Add more RPC providers to POLYGON_RPC_URLS.",
           );

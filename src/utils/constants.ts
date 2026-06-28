@@ -20,6 +20,14 @@ export function bootstrapMaticRatePerUnit(wholeTokenMaticWei: bigint, decimals: 
   return (wholeTokenMaticWei * RATE_PRECISION) / scale;
 }
 
+/** Clamp ERC-20 decimals to uint8 range; default 18 when unknown/invalid. */
+export function safeDecimals(value: unknown, fallback = 18): number {
+  if (value == null) return fallback;
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n) || n < 0 || n > 255) return fallback;
+  return Math.trunc(n);
+}
+
 export const ZERO_ADDRESS: Address = "0x0000000000000000000000000000000000000000";
 
 /** Polygon native MATIC sentinel used by some oracles/indexers (not an ERC-20). */
@@ -65,23 +73,17 @@ export const QUICKSWAP_V3_FACTORY: Address = "0x411b0facc3489691f28ad58c47006af5
 export const KYBERSWAP_ELASTIC_FACTORY: Address = "0x5f1dddbf348ac2fbe22a163e30f99f9ece3dd50a";
 /** Ramses V3 CL factory on Polygon (PoolCreated matches Uniswap V3 layout). */
 export const RAMSES_V3_FACTORY: Address = "0x2bef16a0081565e72100d73cbe19b1bd2d802380";
-/** Factory Initialize tx on Polygon (~2026-01-27). */
-export const RAMSES_V3_FACTORY_START_BLOCK = 82_177_772;
 
 /** Uniswap V4 PoolManager on Polygon (canonical deployment). */
 export const UNISWAP_V4_POOL_MANAGER: Address = "0x67366782805870060151383f4bbff9dab53e5cd6";
-/** First Initialize event on Polygon (~67082470). */
-export const UNISWAP_V4_POOL_MANAGER_START_BLOCK = 67_082_470;
 
 // Balancer
 export const BALANCER_VAULT: Address = "0xba12222222228d8ba445958a75a0704d566bf2c8";
-export const BALANCER_VAULT_START_BLOCK = 15_832_990;
 
 // DODO V2 (Polygon factory addresses from https://docs.dodoex.io/en/developer/contracts/dodo-v1-v2/contracts-address/polygon)
 export const DODO_DVM_FACTORY: Address = "0x79887f65f83bdf15bcc8736b5e5bcdb48fb8fe13";
 export const DODO_DPP_FACTORY: Address = "0xd24153244066f0afa9415563bfc7ba248bfb7a51";
 export const DODO_DSP_FACTORY: Address = "0x43c49f8dd240e1545f147211ec9f917376ac1e87";
-export const DODO_FACTORY_START_BLOCK = 14_722_979;
 
 // WOOFi V2 (Polygon) — https://learn.woo.org/woofi-docs/woofi-dev-docs/references/readme/polygon-pos
 export const WOOFI_PP_V2: Address = "0x5520385bfcf07ec87c4c53a7d8d65595dff69fa4";
@@ -101,6 +103,8 @@ export const AAVE_V3_POOL_ADDRESSES_PROVIDER: Address = "0xa97684ead0e402dc232d5
 export const CHAINLINK_MATIC_USD: Address = "0xab594600376ec9fd91f8e885dadf0ce036862de0";
 
 // Multicall3
+export const POLYGON_CHAIN_ID = 137;
+export const DEFAULT_CURVE_N_COINS = 4;
 export const MULTICALL3: Address = "0xca11bde05977b3631167028862be2a173976ca11";
 
 /**
@@ -173,18 +177,6 @@ export const V2_FACTORY_PROTOCOLS: Record<string, { protocol: string; feeBps: nu
   [COMETHSWAP_V2_FACTORY]: { protocol: "COMETHSWAP_V2", feeBps: 30 },
 };
 
-/** Polygon deployment blocks (Polygonscan contract-creation txs). Used by config.yaml start_block defaults. */
-export const V2_FACTORY_START_BLOCKS: Record<string, number> = {
-  [QUICKSWAP_V2_FACTORY]: 4_931_780,
-  [SUSHISWAP_V2_FACTORY]: 11_333_218,
-  [UNISWAP_V2_FACTORY]: 49_948_178,
-  [DFYN_V2_FACTORY]: 5_436_831,
-  [APESWAP_V2_FACTORY]: 15_298_801,
-  [MESHSWAP_V2_FACTORY]: 27_827_673,
-  [JETSWAP_V2_FACTORY]: 16_569_374,
-  [COMETHSWAP_V2_FACTORY]: 11_633_169,
-};
-
 /** V3 factory address → protocol label. Keys are lowercase. */
 export const V3_FACTORY_PROTOCOLS: Record<string, string> = {
   [UNISWAP_V3_FACTORY]: "UNISWAP_V3",
@@ -193,64 +185,25 @@ export const V3_FACTORY_PROTOCOLS: Record<string, string> = {
   [RAMSES_V3_FACTORY]: "RAMSES_V3",
 };
 
-/** Algebra factory address → protocol label (QuickSwap V3 on Polygon). Keys are lowercase. */
-export const ALGEBRA_FACTORY_PROTOCOLS: Record<string, string> = {
-  [QUICKSWAP_V3_FACTORY]: "QUICKSWAP_V3",
-};
-
-/** Polygon deployment blocks for Uniswap-style V3 PoolCreated factories (Polygonscan). */
-export const V3_FACTORY_START_BLOCKS: Record<string, number> = {
-  [UNISWAP_V3_FACTORY]: 22_757_547,
-  [SUSHISWAP_V3_FACTORY]: 44_059_924,
-  [KYBERSWAP_ELASTIC_FACTORY]: 29_350_287,
-  [RAMSES_V3_FACTORY]: RAMSES_V3_FACTORY_START_BLOCK,
-};
-
-/** Polygon deployment blocks for Algebra Pool factories (Polygonscan). */
-export const ALGEBRA_FACTORY_START_BLOCKS: Record<string, number> = {
-  [QUICKSWAP_V3_FACTORY]: 34_502_463,
-};
-
 export function lookupV2FactoryProtocol(
   factoryAddr: string,
 ): { protocol: string; feeBps: number } | undefined {
   return V2_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()];
 }
 
-export function lookupV2FactoryStartBlock(factoryAddr: string): number | undefined {
-  return V2_FACTORY_START_BLOCKS[factoryAddr.toLowerCase()];
-}
-
 export function lookupV3FactoryProtocol(factoryAddr: string): string | undefined {
   return V3_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()];
 }
 
-export function lookupAlgebraFactoryProtocol(factoryAddr: string): string | undefined {
-  return ALGEBRA_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()];
-}
+// ── Curve registry bootstrap ────────────────────────────────────────────
 
-export function lookupV3FactoryStartBlock(factoryAddr: string): number | undefined {
-  return V3_FACTORY_START_BLOCKS[factoryAddr.toLowerCase()];
-}
+export const CURVE_BOOTSTRAP_LEGACY_ID = "137-legacy";
 
-export function lookupAlgebraFactoryStartBlock(factoryAddr: string): number | undefined {
-  return ALGEBRA_FACTORY_START_BLOCKS[factoryAddr.toLowerCase()];
-}
+export const CURVE_REGISTRY_SOURCES = [
+  { id: CURVE_BOOTSTRAP_LEGACY_ID, address: CURVE_REGISTRY_LEGACY, deployBlock: CURVE_REGISTRY_DEPLOY_BLOCK },
+] as const;
 
-/** All indexed contract addresses → deployment start block (lowercase keys). */
-export const INDEXED_CONTRACT_START_BLOCKS: Record<string, number> = {
-  ...V2_FACTORY_START_BLOCKS,
-  ...V3_FACTORY_START_BLOCKS,
-  ...ALGEBRA_FACTORY_START_BLOCKS,
-  [UNISWAP_V4_POOL_MANAGER]: UNISWAP_V4_POOL_MANAGER_START_BLOCK,
-  [CURVE_REGISTRY_LEGACY]: CURVE_REGISTRY_DEPLOY_BLOCK,
-  [BALANCER_VAULT]: BALANCER_VAULT_START_BLOCK,
-  [DODO_DVM_FACTORY]: DODO_FACTORY_START_BLOCK,
-  [DODO_DPP_FACTORY]: DODO_FACTORY_START_BLOCK,
-  [DODO_DSP_FACTORY]: DODO_FACTORY_START_BLOCK,
-  [WOOFI_PP_V2]: WOOFI_PP_V2_DEPLOY_BLOCK,
-};
-
-export function lookupIndexedContractStartBlock(address: string): number | undefined {
-  return INDEXED_CONTRACT_START_BLOCKS[address.toLowerCase()];
+/** HyperIndex Protocol enum value for Curve pools (subtype lives in poolType). */
+export function curveDiscoveryProtocol(_poolType: string | undefined): "CURVE" {
+  return "CURVE";
 }

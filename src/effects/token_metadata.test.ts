@@ -5,25 +5,19 @@ import {
   lookupRegistryDecimalsBatch,
   resetTokenMetadataCachesForTest,
 } from './token_metadata';
-import { publicClient } from './rpc_client';
 
 const multicallMock = vi.fn();
 
-vi.mock('./rpc_client', () => ({
-  publicClient: {
-    readContract: vi.fn(),
-    multicall: (...args: unknown[]) => multicallMock(...args),
-  },
-  getRpcTransportTuning: () => ({
-    httpBatchSize: 8,
-    httpBatchWait: 0,
-    multicallBatchSize: 64,
-    multicallWait: 0,
-    timeoutMs: 12_000,
-    retryCount: 2,
-    retryDelayMs: 400,
-  }),
-}));
+vi.mock('./rpc_client', async () => {
+  const actual = await vi.importActual<typeof import('./rpc_client')>('./rpc_client');
+  return {
+    ...actual,
+    publicClient: {
+      readContract: vi.fn(),
+      multicall: (...args: unknown[]) => multicallMock(...args),
+    },
+  };
+});
 
 // Mock bun:sqlite — must be a constructable class (vitest + dynamic import)
 vi.mock("bun:sqlite", () => {

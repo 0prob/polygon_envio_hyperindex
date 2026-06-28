@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   getMetadataConcurrency,
-  getRecommendedFullBatchSize,
   getTokenMetaEffectRateLimit,
   isLowQuota,
 } from "./pacing";
@@ -16,22 +15,6 @@ describe("getMetadataConcurrency", () => {
       process.env.HYPERSYNC_RPM_TARGET = "110";
       expect(getMetadataConcurrency()).toBe(1);
       expect(isLowQuota()).toBe(true);
-    } finally {
-      if (prev === undefined) delete process.env.HYPERSYNC_RPM_TARGET;
-      else process.env.HYPERSYNC_RPM_TARGET = prev;
-    }
-  });
-});
-
-describe("getRecommendedFullBatchSize", () => {
-  it("scales batch size with rpm target", () => {
-    const prev = process.env.HYPERSYNC_RPM_TARGET;
-    try {
-      process.env.HYPERSYNC_RPM_TARGET = "200";
-      expect(getRecommendedFullBatchSize()).toBe(6000);
-
-      process.env.HYPERSYNC_RPM_TARGET = "100";
-      expect(getRecommendedFullBatchSize()).toBe(1000);
     } finally {
       if (prev === undefined) delete process.env.HYPERSYNC_RPM_TARGET;
       else process.env.HYPERSYNC_RPM_TARGET = prev;

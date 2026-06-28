@@ -28,8 +28,8 @@ const CORE_TOKENS: Record<string, number> = {
   "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270": 18, // WMATIC
   "0x0000000000000000000000000000000000001010": 18, // MATIC
   "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619": 18, // WETH
-  "0x2791bca1f2de4661ed88a30c99a7a9449aa84174": 6, // USDC
-  "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359": 6, // USDC.e
+  "0x2791bca1f2de4661ed88a30c99a7a9449aa84174": 6, // USDC.e (bridged)
+  "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359": 6, // USDC (native)
   "0xc2132d05d31c914a87c6611c10748aeb04b58e8f": 6, // USDT
   "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063": 18, // DAI
   "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6": 8, // WBTC
@@ -106,7 +106,7 @@ async function loadFromPoolsFile(): Promise<TokenEntry[]> {
 }
 
 async function loadDiscoveredNdjson(): Promise<TokenEntry[]> {
-  const data = await loadDiscoveredDecimalsEntries(null, DISCOVERED_DECIMALS_NDJSON);
+  const data = await loadDiscoveredDecimalsEntries(DISCOVERED_DECIMALS_NDJSON);
   return Object.entries(data).map(([address, decimals]) => ({
     address: address.toLowerCase(),
     decimals: Number(decimals),

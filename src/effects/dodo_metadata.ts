@@ -1,6 +1,6 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
-import { publicClient } from "./rpc_client";
+import { publicClient, isQuotaError } from "./rpc_client";
 import { getHistoricalMetaEffectRateLimit } from "../utils/pacing";
 
 /** Fee fields only — reserves/i/k are unused by PoolMeta discovery handlers. */
@@ -123,7 +123,8 @@ async function fetchDodoMetadataHandler({
         const latest = await readDodoFeeRates(address);
         if (!isDodoMetadataEmpty(latest)) {
           anyFailed = latest.anyFailed;
-          result = latest;
+          const { anyFailed: _, ...clean } = latest;
+          result = clean;
           if (context.log) {
             context.log.info("DODO metadata: block-pinned read empty, used latest state", {
               pool: input.pool,
@@ -139,8 +140,8 @@ async function fetchDodoMetadataHandler({
         }
         context.cache = false;
       } else if (anyFailed) {
-        if (context.log) {
-          context.log.warn("DODO metadata read partially failed — not caching", { pool: input.pool });
+        if (context.log?.debug) {
+          context.log.debug("DODO metadata read partially failed — not caching", { pool: input.pool });
         }
         context.cache = false;
       } else if (context.log) {
@@ -150,14 +151,9 @@ async function fetchDodoMetadataHandler({
       return result;
     } catch (err) {
       const errStr = String(err);
-      const isQuota =
-        errStr.includes("Monthly") ||
-        errStr.includes("capacity") ||
-        errStr.includes("quota") ||
-        errStr.includes("rate");
 
       if (context.log) {
-        if (isQuota) {
+        if (isQuotaError(err)) {
           context.log.warn(
             "Alchemy quota / monthly capacity exceeded while fetching DODO metadata. Add more RPC providers to POLYGON_RPC_URLS.",
           );

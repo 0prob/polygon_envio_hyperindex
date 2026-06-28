@@ -18,10 +18,9 @@ import {
   loadDiscoveredDecimalsEntries,
   loadFailedTokenEntries,
 } from "../utils/token_disk";
-import { safeDecimals } from "../utils/safe_decimals";
-import { isNetworkError, isQuotaError } from "../utils/rpc_errors";
+import { safeDecimals, DAI, USDC, USDC_E, USDT, WBTC, WETH, WMATIC } from "../utils/constants";
+import { isNetworkError, isQuotaError } from "./rpc_client";
 import { normalizeTokenAddress } from "../utils/normalize_address";
-import { DAI, USDC, USDC_E, USDT, WBTC, WETH, WMATIC } from "../utils/constants";
 
 let db: any = null;
 
@@ -128,27 +127,32 @@ async function warmUpCache() {
   if (warmUpPromise) return warmUpPromise;
 
   warmUpPromise = (async () => {
-    await initDb();
-    if (db) {
-      const stmt = db.prepare("SELECT address, decimals FROM token_decimals");
-      const rows = stmt.all() as { address: string; decimals: number }[];
-      for (const row of rows) {
-        let addr = row.address.toLowerCase();
-        if (addr.startsWith("0x") && addr.length < 42) {
-          addr = "0x" + addr.slice(2).padStart(40, "0");
+    // ponytail: reset promise on failure so next caller retries instead of
+    // getting a stale rejection that deadlocks all future token lookups.
+    try {
+      await initDb();
+      if (db) {
+        const stmt = db.prepare("SELECT address, decimals FROM token_decimals");
+        const rows = stmt.all() as { address: string; decimals: number }[];
+        for (const row of rows) {
+          let addr = row.address.toLowerCase();
+          if (addr.startsWith("0x") && addr.length < 42) {
+            addr = "0x" + addr.slice(2).padStart(40, "0");
+          }
+          registryCache.set(addr, row.decimals);
         }
-        registryCache.set(addr, row.decimals);
       }
+      await loadDiscoveredDecimals();
+      for (const [addr, decimals] of Object.entries(discoveredDecimals)) {
+        registryCache.set(addr, decimals);
+      }
+      if (process.env.VITEST === "true") {
+        seedVitestRegistry();
+      }
+      cacheLoaded = true;
+    } finally {
+      warmUpPromise = null;
     }
-    await loadDiscoveredDecimals();
-    for (const [addr, decimals] of Object.entries(discoveredDecimals)) {
-      registryCache.set(addr, decimals);
-    }
-    if (process.env.VITEST === "true") {
-      seedVitestRegistry();
-    }
-    cacheLoaded = true;
-    warmUpPromise = null;
   })();
 
   return warmUpPromise;
@@ -272,7 +276,9 @@ async function flushFailedTokens(): Promise<void> {
 }
 
 const ERC20_ABI = parseAbi(["function decimals() view returns (uint8)"]);
-// Keep in sync with src/core/abis/erc20.ts ERC20_READ_ABI (decimals item).
+
+// Dedup warnings for broken/malformed tokens (e.g. factory address emitted as a token).
+const failedDecimalsTokens = new Set<string>();
 
 type DecimalsFetchResult = { address: string; decimals: number; trusted: boolean };
 
@@ -459,44 +465,40 @@ function enqueueDecimalsRpc(addr: string, context: any): Promise<DecimalsFetchRe
  *
  * This is the #1 lever for V2Factory.PairCreated performance.
  */
-// Used to deduplicate warnings when we repeatedly fail to fetch decimals for
-// the same broken/malformed token (e.g. factory address emitted as a token).
-const failedDecimalsTokens = new Set<string>();
-
 const fetchTokenMetaHandler = async ({ input, context }: { input: { address: string }, context: any }) => {
-    await warmUpCache();
+  await warmUpCache();
 
-    const addr = normalizeTokenAddress(input.address);
+  const addr = normalizeTokenAddress(input.address);
 
-    const cached = registryCache.get(addr);
-    if (cached !== undefined) {
-      return { address: addr, decimals: cached, trusted: true };
-    }
+  const cached = registryCache.get(addr);
+  if (cached !== undefined) {
+    return { address: addr, decimals: cached, trusted: true };
+  }
 
-    // Check if there is already an in-flight request for this token
-    let promise = inFlightDecimals.get(addr);
-    if (promise) {
-      return promise;
-    }
-
-    // Preload phase: skip cold RPC for unknown tokens — execution phase will fetch real decimals.
-    if (context?.isPreload) {
-      context.cache = false;
-      return { address: addr, decimals: 18, trusted: false };
-    }
-
-    // Layer 3: Permanent blocklist — non-ERC20 contracts never become valid
-    if (!failedLoaded) {
-      await loadFailedTokens();
-    }
-    const isFailed = failedTokens.has(addr);
-    if (isFailed) {
-      return { address: addr, decimals: 18, trusted: false };
-    }
-
-    promise = enqueueDecimalsRpc(addr, context);
+  // Check if there is already an in-flight request for this token
+  let promise = inFlightDecimals.get(addr);
+  if (promise) {
     return promise;
-  };
+  }
+
+  // Preload phase: skip cold RPC for unknown tokens — execution phase will fetch real decimals.
+  if (context?.isPreload) {
+    context.cache = false;
+    return { address: addr, decimals: 18, trusted: false };
+  }
+
+  // Layer 3: Permanent blocklist — non-ERC20 contracts never become valid
+  if (!failedLoaded) {
+    await loadFailedTokens();
+  }
+  const isFailed = failedTokens.has(addr);
+  if (isFailed) {
+    return { address: addr, decimals: 18, trusted: false };
+  }
+
+  promise = enqueueDecimalsRpc(addr, context);
+  return promise;
+};
 
 // Preload skips cold-token RPC (returns placeholder 18); execution uses multicall-batched RPC.
 // ~99% of lookups hit registryCache before any effect RPC runs.

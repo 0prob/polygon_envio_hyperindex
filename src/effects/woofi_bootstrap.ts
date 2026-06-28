@@ -8,7 +8,6 @@ const WOOFI_ABI = parseAbi([
   "function quoteToken() external view returns (address)",
   "function tokenInfos(address token) external view returns (uint192 reserve, uint16 feeRate)",
 ]);
-// Keep in sync with src/core/abis/woofi_pool.ts WOOFI_POOL_STATE_ABI (quoteToken + tokenInfos).
 
 const inFlightWooFi = new Map<string, Promise<{ quoteToken: string; activeTokens: string[] }>>();
 
@@ -65,7 +64,7 @@ export async function fetchWooFiTokensHandler({
         if (r.status !== "success") continue;
         const rVal = r.result as { reserve: bigint; feeRate: number } | [bigint, number];
         const reserve = Array.isArray(rVal) ? rVal[0] : rVal.reserve;
-        const addr = tokenList[i]!.toLowerCase();
+        const addr = tokenList[i]!;
         if (reserve > 0n && !activeTokens.includes(addr)) {
           activeTokens.push(addr);
         }

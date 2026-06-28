@@ -4,13 +4,11 @@ import { resolveFactoryPairTokenMetas } from "./factory_token_meta";
 import { ZERO_ADDRESS } from "./constants";
 import type { IndexerProtocol, PoolMetaWritePayload } from "./indexer_protocol";
 
-export type { IndexerProtocol, PoolMetaWritePayload } from "./indexer_protocol";
-
 // Reusable scratch Map — avoids per-call allocation for the 2-token factory hot path.
 // Safe because Envio processes events sequentially within a block.
 const _sharedExisting = new Map<string, { decimals?: number } | undefined>();
 
-export type FactoryPoolMetaContext = {
+type FactoryPoolMetaContext = {
   isPreload: boolean;
   PoolMeta: {
     get(id: string): Promise<{ id?: string } | undefined>;
@@ -23,7 +21,7 @@ export type FactoryPoolMetaContext = {
   effect: Parameters<typeof resolveFactoryPairTokenMetas>[0]["effect"];
 };
 
-export type FactoryPoolMetaInput = {
+type FactoryPoolMetaInput = {
   poolAddr: string;
   protocol: IndexerProtocol;
   token0: string;

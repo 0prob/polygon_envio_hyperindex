@@ -3,15 +3,15 @@ import { fetchWooFiTokens } from "../effects/woofi_bootstrap";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
-import { WOOFI_PP_V2, WOOFI_PP_V2_DEPLOY_BLOCK } from "../utils/constants";
+import { WOOFI_PP_V2, WOOFI_PP_V2_DEPLOY_BLOCK, ZERO_ADDRESS, POLYGON_CHAIN_ID } from "../utils/constants";
 import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
 
-const ZERO = "0x0000000000000000000000000000000000000000";
-/** Typical WOOFi pool fee in 1e5 units (25 = 0.025%). swapFee event param is wei paid, not the rate. */
-const DEFAULT_WOOFI_FEE = 25;
+const ZERO = ZERO_ADDRESS;
+/** WOOFi fee rate in 1e5 units: 25 = 0.025% = 2.5 bps → rounded to 3 for PoolMeta.fee. */
+const DEFAULT_WOOFI_FEE_BPS = 3;
 
 function mergeTokensDiff(
-  existing: string[] | undefined,
+  existing: readonly string[] | undefined,
   ...add: string[]
 ): { merged: string[]; added: string[] } {
   const existingSet = new Set(existing ?? []);
@@ -26,7 +26,6 @@ function mergeTokensDiff(
   return { merged, added };
 }
 
-const POLYGON_CHAIN_ID = 137;
 /** Minimum token count that signals a completed bootstrap (quoteToken + ≥2 base tokens). */
 const BOOTSTRAP_MIN_TOKENS = 3;
 /** Re-check interval in blocks; returns immediately once bootstrapped. */
@@ -77,7 +76,7 @@ indexer.onBlock(
       address: WOOFI_PP_V2,
       protocol: "WOOFI" as Protocol,
       tokens: activeTokens,
-      fee: existing?.fee && existing.fee > 0 ? existing.fee : DEFAULT_WOOFI_FEE,
+      fee: existing?.fee && existing.fee > 0 ? existing.fee : DEFAULT_WOOFI_FEE_BPS,
       tickSpacing: undefined,
       createdBlock: existing?.createdBlock ?? Number(block.number),
       updatedAtBlock: Number(block.number),
@@ -123,7 +122,7 @@ indexer.onEvent(
 
     const meta = await context.PoolMeta.get(poolAddr);
     const { merged: mergedTokens, added: newTokens } = mergeTokensDiff(
-      meta?.tokens ? [...meta.tokens] : undefined, t0, t1,
+      meta?.tokens, t0, t1,
     );
     if (mergedTokens.length < 2) return;
 
@@ -143,7 +142,7 @@ indexer.onEvent(
       address: poolAddr,
       protocol: "WOOFI" as Protocol,
       tokens: mergedTokens,
-      fee: meta?.fee && meta.fee > 0 ? meta.fee : DEFAULT_WOOFI_FEE,
+      fee: meta?.fee && meta.fee > 0 ? meta.fee : DEFAULT_WOOFI_FEE_BPS,
       tickSpacing: undefined,
       createdBlock: meta?.createdBlock ?? blockNumber,
       updatedAtBlock: blockNumber,

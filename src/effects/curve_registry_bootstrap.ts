@@ -1,7 +1,7 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
-import { CURVE_REGISTRY_LEGACY } from "../utils/constants";
+import { CURVE_REGISTRY_LEGACY, ZERO_ADDRESS } from "../utils/constants";
 import { getHistoricalMetaEffectRateLimit } from "../utils/pacing";
 
 const REGISTRY_ABI = parseAbi([
@@ -28,7 +28,7 @@ export async function fetchCurveRegistryPageHandler({
   const offset = Math.max(0, input.offset);
   const limit = Math.min(Math.max(1, input.limit), 100);
   const registry = (input.registryAddress ?? CURVE_REGISTRY_LEGACY).toLowerCase() as `0x${string}`;
-  const ZERO = "0x0000000000000000000000000000000000000000";
+  const ZERO = ZERO_ADDRESS;
 
   try {
     const total = Number(await publicClient.readContract({
