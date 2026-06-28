@@ -7,7 +7,7 @@ import {
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch, type FactoryTokenMeta } from "../utils/factory_token_meta";
-import { curveDiscoveryProtocol, ZERO_ADDRESS, DEFAULT_CURVE_N_COINS } from "../utils/constants";
+import { ZERO_ADDRESS, DEFAULT_CURVE_N_COINS } from "../utils/constants";
 
 const ZERO = ZERO_ADDRESS;
 /** Polygon Curve pools are 2–4 coins; cap RPC coin reads accordingly. */
@@ -98,7 +98,7 @@ async function handleCurvePoolAdded({
   context.PoolMeta.set(poolMetaEntity({
     id: pool,
     address: pool,
-    protocol: curveDiscoveryProtocol(meta.poolType),
+    protocol: "CURVE",
     tokens: coins,
     fee: feeBps,
     tickSpacing: undefined,
@@ -117,8 +117,4 @@ async function handleCurvePoolAdded({
   );
 }
 
-// NOTE: The contractRegister that called `context.chain.CurvePool.add(...)` was removed.
-// Curve pool swap/liquidity events are no longer indexed (handlers were no-ops; the arb bot owns
-// hot pool state via RPC). Discovery is served by the PoolAdded onEvent below (→ PoolMeta).
-// Envio resolves all overloaded PoolAdded variants from the ABI to a single "PoolAdded" handler.
 indexer.onEvent({ contract: "CurveRegistry", event: "PoolAdded" }, handleCurvePoolAdded as never);

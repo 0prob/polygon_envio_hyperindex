@@ -4,7 +4,6 @@ import {
   buildPublicClient,
   getRpcTransportTuning,
   getRpcUrls,
-  parseRpcUrlList,
   redactRpcUrl,
   resetPublicClientForTest,
 } from "./rpc_client";
@@ -35,23 +34,6 @@ const RPC_ENV_KEYS = [
   "ENVIO_HYPERSYNC_RPM_TARGET",
   "VITEST",
 ] as const;
-
-describe("parseRpcUrlList", () => {
-  it("splits comma-separated URLs and trims whitespace", () => {
-    expect(parseRpcUrlList("https://a.com, https://b.com ; https://c.com")).toEqual([
-      "https://a.com",
-      "https://b.com",
-      "https://c.com",
-    ]);
-  });
-
-  it("deduplicates URLs preserving first occurrence order", () => {
-    expect(parseRpcUrlList("https://a.com,https://a.com,https://b.com")).toEqual([
-      "https://a.com",
-      "https://b.com",
-    ]);
-  });
-});
 
 describe("redactRpcUrl", () => {
   it("redacts path-based API keys", () => {

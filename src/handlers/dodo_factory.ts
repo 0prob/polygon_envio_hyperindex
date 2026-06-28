@@ -4,7 +4,7 @@ import {
   fetchDodoMetadata,
   isDodoMetadataEmpty,
 } from "../effects/dodo_metadata";
-import { resolveFactoryPairTokenMetas } from "../utils/factory_token_meta";
+import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { shouldSkipFactoryPool } from "../utils/guards";
@@ -41,8 +41,10 @@ async function handleDodoPool(
   // We start the DODO meta effect + the (possibly limited) token effects concurrently.
   const tokenExisting = new Map<string, { decimals?: number } | undefined>();
   const dodoP = context.effect(fetchDodoMetadata, { pool, blockNumber: BigInt(blockNumber) });
-  const tokensP = resolveFactoryPairTokenMetas(context, base, quote, tokenExisting);
-  const [meta, [baseMeta, quoteMeta]] = await Promise.all([dodoP, tokensP]);
+  const tokensP = resolveTokenMetasBatch(context, [base, quote], tokenExisting);
+  const [meta, results] = await Promise.all([dodoP, tokensP]);
+  const baseMeta = results[0]!;
+  const quoteMeta = results[1]!;
 
   if (context.isPreload) {
     return; // Aggressive preload exit: effects done (batched), skip writes (ignored anyway) and any future work.
@@ -89,9 +91,6 @@ const DODO_POOL_EVENTS = [
 ];
 
 function registerDodoEvent(cfg: (typeof DODO_POOL_EVENTS)[number]): void {
-  // NOTE: The contractRegister that called `context.chain.DodoPool.add(...)` was removed.
-  // DodoPool.Sync is no longer indexed (handler was a no-op; the arb bot owns hot pool state via
-  // RPC). Discovery is served by the factory onEvent below (→ PoolMeta).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   indexer.onEvent({ contract: "DodoFactory", event: cfg.event }, async ({ event: ev, context }: any) => {
     const base = ev.params.baseToken;

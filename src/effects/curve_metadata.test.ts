@@ -8,7 +8,6 @@ vi.mock("./rpc_client", () => ({
 
 import {
   curveDiscoveryPoolType,
-  curveFeeToBps,
   curveFeeToPoolMetaInt,
   curvePoolTypeFromGamma,
   fetchCurveMetadataHandler,
@@ -63,24 +62,6 @@ function mockCurveReads(opts: {
     });
   });
 }
-
-describe("curveFeeToBps", () => {
-  it("converts 1e-10 fee units to basis points", () => {
-    expect(curveFeeToBps(4_000_000n)).toBe(4);
-    expect(curveFeeToBps(0n)).toBe(0);
-  });
-
-  it("handles sub-bps fees without truncating to default", () => {
-    expect(curveFeeToBps(500_000n)).toBe(0.5);
-    expect(curveFeeToBps(100_000n)).toBe(0.1);
-    expect(curveFeeToBps(1_000_000n)).toBe(1);
-  });
-
-  it("preserves multi-bps precision", () => {
-    expect(curveFeeToBps(10_000_000n)).toBe(10);
-    expect(curveFeeToBps(999_999n)).toBe(0.999999);
-  });
-});
 
 describe("curveFeeToPoolMetaInt", () => {
   it("rounds fractional bps to GraphQL Int with minimum 1", () => {

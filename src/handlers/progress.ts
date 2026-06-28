@@ -1,6 +1,6 @@
 import { indexer } from "envio";
 import { getProgressOnBlockStride } from "../utils/pacing";
-import { POLYGON_CHAIN_ID } from "../utils/constants";
+import { POLYGON_CHAIN_ID, chainStart } from "../utils/constants";
 
 /**
  * Block handler that maintains the IndexerProgress entity.
@@ -29,13 +29,7 @@ const LIVE_DEBUG_START_THRESHOLD = 80_000_000;
 /** Default realtime cutoff for progress tracking during historical backfill. */
 const DEFAULT_REALTIME_START = 65_000_000;
 
-const chainStart = (() => {
-  // Read both POLYGON_START_BLOCK (set by bot process manager) and ENVIO_POLYGON_START_BLOCK
-  // (set by standalone envio dev runs via env var). POLYGON_START_BLOCK takes priority.
-  const v = process.env.POLYGON_START_BLOCK || process.env.ENVIO_POLYGON_START_BLOCK;
-  const n = v ? Number(v) : 0;
-  return Number.isFinite(n) && n > 0 ? n : 0;
-})();
+// ponytail: shared chainStart from constants.ts (was duplicated in progress.ts and curve_bootstrap.ts)
 
 const realtimeStart = (() => {
   // Also accept ENVIO_INDEXER_PROGRESS_REALTIME_START as an alias (set by bot process manager).

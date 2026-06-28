@@ -4,9 +4,6 @@ import { shouldSkipFactoryPool } from "../utils/guards";
 import { persistFactoryPoolMeta } from "../utils/factory_pool_handler";
 import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
 
-// NOTE: The contractRegister that called `context.chain.UniswapV2Pool.add(...)` was removed.
-// We no longer index per-pool Sync events (the handler was a no-op; the arb bot owns hot pool
-// state via RPC). Pool discovery is fully served by the PairCreated onEvent below (→ PoolMeta).
 indexer.onEvent(
   {
     contract: "V2Factory",

@@ -88,59 +88,6 @@ async function resolveTokenMetaSlots(
 }
 
 /**
- * Resolve decimals for factory pool tokens with layered local-first batching:
- * 1. Hasura TokenMeta rows
- * 2. Static registry + discovered-decimals (single warmUpCache, 0 effects)
- * 3. fetchTokenMeta effects only for cold tokens in execution phase
- *
- * @param existingByAddr - Optional output map populated with pre-loaded TokenMeta entities,
- *   keyed by normalized address. Callers pass this to setTokenMetasIfMissing to skip
- *   redundant second loads.
- */
-export async function resolveFactoryPairTokenMetas(
-  context: FactoryTokenMetaContext,
-  token0: string,
-  token1: string,
-  existingByAddr?: Map<string, { decimals?: number } | undefined>,
-): Promise<[FactoryTokenMeta, FactoryTokenMeta]> {
-  const n0 = normalizeTokenAddress(token0);
-  const n1 = normalizeTokenAddress(token1);
-
-  // Check static registry FIRST (in-memory, 0 I/O) — saves 2 DB reads for registry-known tokens
-  const localHits = await lookupRegistryDecimalsBatch([token0, token1]);
-  const t0InRegistry: FactoryTokenMeta | undefined = localHits.get(n0);
-  const t1InRegistry: FactoryTokenMeta | undefined = localHits.get(n1);
-
-  // Only read DB for tokens NOT in registry
-  const [existingT0, existingT1] = await Promise.all([
-    t0InRegistry ? undefined : context.TokenMeta.get(n0),
-    t1InRegistry ? undefined : context.TokenMeta.get(n1),
-  ]);
-
-  if (existingByAddr) {
-    existingByAddr.set(n0, existingT0);
-    existingByAddr.set(n1, existingT1);
-  }
-
-  // Compose from registry first, then DB, then RPC fallback
-  const t0Cached = t0InRegistry ?? cachedTokenMeta(existingT0);
-  const t1Cached = t1InRegistry ?? cachedTokenMeta(existingT1);
-  const pending: ResolveSlot[] = [];
-  if (!t0Cached) {
-    pending.push({ slot: 0, addr: token0, normalized: n0 });
-  }
-  if (!t1Cached) {
-    pending.push({ slot: 1, addr: token1, normalized: n1 });
-  }
-
-  const fetched = await resolveTokenMetaSlots(context, pending, localHits as Map<string, FactoryTokenMeta>);
-  return [
-    t0Cached ?? fetched.get(0) ?? preloadTokenDecimalsDefault(),
-    t1Cached ?? fetched.get(1) ?? preloadTokenDecimalsDefault(),
-  ];
-}
-
-/**
  * Resolve decimals for N factory/bootstrap tokens (Curve, Balancer, WOOFi, etc.).
  * Same local-first batching as pair resolution — one registry warm-up per call.
  *

@@ -162,7 +162,4 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
   );
 });
 
-// NOTE: BalancerVault.Swap / PoolBalanceChanged were removed — they were no-ops (hot Balancer
-// state comes from the arb bot RPC). BalancerVault is a single high-traffic contract, so indexing
-// its Swap events was a large fetch-budget drain. Only PoolRegistered/TokensRegistered (discovery)
-// remain.
+

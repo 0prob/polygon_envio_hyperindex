@@ -34,5 +34,3 @@ indexer.onEvent(
   },
 );
 
-// NOTE: PoolManager.Swap was removed — it was a no-op (hot V4 state comes from the arb bot RPC).
-// Only Initialize (pool discovery) is indexed now.

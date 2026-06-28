@@ -10,27 +10,14 @@ import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch, type FactoryTokenMeta } from "../utils/factory_token_meta";
 import { runWithConcurrency, getMetadataConcurrency } from "../utils/pacing";
-import { CURVE_REGISTRY_SOURCES, curveDiscoveryProtocol, ZERO_ADDRESS, POLYGON_CHAIN_ID, DEFAULT_CURVE_N_COINS } from "../utils/constants";
+import { CURVE_REGISTRY_SOURCES, ZERO_ADDRESS, POLYGON_CHAIN_ID, DEFAULT_CURVE_N_COINS, chainStart } from "../utils/constants";
 
 const PAGE_SIZE = 40;
 const ZERO = ZERO_ADDRESS;
 const DEFAULT_N_COINS = DEFAULT_CURVE_N_COINS;
 
-const chainStart = (() => {
-  const v = process.env.POLYGON_START_BLOCK || process.env.ENVIO_POLYGON_START_BLOCK;
-  const n = v ? Number(v) : 0;
-  return Number.isFinite(n) && n > 0 ? n : 0;
-})();
-
 const earliestCurveDeployBlock = Math.min(...CURVE_REGISTRY_SOURCES.map((s) => s.deployBlock));
 const bootstrapStartBlock = Math.max(earliestCurveDeployBlock + 1, chainStart);
-
-interface CurveBootstrapPool {
-  address: string;
-  coins: string[];
-  poolType: CurveDiscoveryPoolType;
-  fee: bigint;
-}
 
 /** Advance registry pagination only when the page produced indexable pools or was fully deduped. */
 export function shouldAdvanceBootstrapPage(newPoolCount: number, readyPoolCount: number): boolean {
@@ -88,7 +75,7 @@ async function bootstrapRegistryPage(
 
   // Phase 1: fetch pool metadata with bounded concurrency (RPC effects only).
   const concurrency = Math.min(3, getMetadataConcurrency());
-  const readyPools: CurveBootstrapPool[] = [];
+  const readyPools: { address: string; coins: string[]; poolType: CurveDiscoveryPoolType; fee: bigint }[] = [];
   let allNonCurve = true;
 
   await runWithConcurrency(newPools, concurrency, async (row: { address: string }) => {
@@ -150,7 +137,7 @@ async function bootstrapRegistryPage(
     context.PoolMeta.set(poolMetaEntity({
       id: pool.address,
       address: pool.address,
-      protocol: curveDiscoveryProtocol(pool.poolType),
+      protocol: "CURVE",
       tokens: pool.coins,
       fee: curveFeeToPoolMetaInt(pool.fee),
       createdBlock: blockNumber,

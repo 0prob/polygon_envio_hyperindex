@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { resolveFactoryPairTokenMetas, resolveTokenMetasBatch } from "./factory_token_meta";
+import { resolveTokenMetasBatch } from "./factory_token_meta";
 
 const WETH = "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619";
 const USDC = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174";
@@ -15,6 +15,8 @@ vi.mock("../effects/token_metadata", async (importOriginal) => {
       lookupRegistryDecimalsBatchMock(addresses),
   };
 });
+
+type TestContext = Parameters<typeof resolveTokenMetasBatch>[0];
 
 describe("resolveFactoryPairTokenMetas", () => {
   beforeEach(() => {
@@ -33,9 +35,9 @@ describe("resolveFactoryPairTokenMetas", () => {
           return undefined;
         }),
       },
-    } as Parameters<typeof resolveFactoryPairTokenMetas>[0];
+    } as TestContext;
 
-    const [t0, t1] = await resolveFactoryPairTokenMetas(context, WETH, USDC);
+    const [t0, t1] = await resolveTokenMetasBatch(context, [WETH, USDC]);
 
     expect(t0).toEqual({ decimals: 18, trusted: true });
     expect(t1).toEqual({ decimals: 6, trusted: true });
@@ -53,9 +55,9 @@ describe("resolveFactoryPairTokenMetas", () => {
       TokenMeta: {
         get: vi.fn(async (id: string) => (id === USDC ? { decimals: 6 } : undefined)),
       },
-    } as Parameters<typeof resolveFactoryPairTokenMetas>[0];
+    } as TestContext;
 
-    const [t0, t1] = await resolveFactoryPairTokenMetas(context, COLD, USDC);
+    const [t0, t1] = await resolveTokenMetasBatch(context, [COLD, USDC]);
 
     expect(t0).toEqual({ decimals: 9, trusted: true });
     expect(t1).toEqual({ decimals: 6, trusted: true });
@@ -74,9 +76,9 @@ describe("resolveFactoryPairTokenMetas", () => {
       TokenMeta: {
         get: vi.fn(async (id: string) => (id === USDC ? { decimals: 6 } : undefined)),
       },
-    } as Parameters<typeof resolveFactoryPairTokenMetas>[0];
+    } as TestContext;
 
-    const [t0, t1] = await resolveFactoryPairTokenMetas(context, COLD, USDC);
+    const [t0, t1] = await resolveTokenMetasBatch(context, [COLD, USDC]);
 
     expect(t0).toMatchObject({ decimals: 9, trusted: true });
     expect(t1).toEqual({ decimals: 6, trusted: true });
@@ -90,9 +92,9 @@ describe("resolveFactoryPairTokenMetas", () => {
       isPreload: true,
       effect,
       TokenMeta: { get: vi.fn(async () => undefined) },
-    } as Parameters<typeof resolveFactoryPairTokenMetas>[0];
+    } as TestContext;
 
-    const [t0, t1] = await resolveFactoryPairTokenMetas(context, COLD, "0x2222222222222222222222222222222222222222");
+    const [t0, t1] = await resolveTokenMetasBatch(context, [COLD, "0x2222222222222222222222222222222222222222"]);
 
     expect(t0).toEqual({ decimals: 18, trusted: false });
     expect(t1).toEqual({ decimals: 18, trusted: false });

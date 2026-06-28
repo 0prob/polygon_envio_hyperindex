@@ -1,6 +1,6 @@
 import { ZERO_ADDRESS, KNOWN_FACTORIES_SET } from "./constants";
 
-function isLikelyGarbagePairInternal(t0: string, t1: string): boolean {
+export function isLikelyGarbagePair(t0: string, t1: string): boolean {
   return (
     !t0 || !t1 ||
     t0 === t1 ||
@@ -11,20 +11,7 @@ function isLikelyGarbagePairInternal(t0: string, t1: string): boolean {
   );
 }
 
-/**
- * Basic defensive guards for pool discovery.
- * Envio address_format: lowercase — event params are already normalized.
- */
-export function isLikelyGarbagePair(token0: string, token1: string): boolean {
-  return isLikelyGarbagePairInternal(token0, token1);
-}
-
-/**
- * Shared guard for factory PairCreated / PoolCreated (contractRegister + onEvent).
- * Skips zero-address, identical tokens, indexed factories used as tokens, and
- * the emitting factory address as either token.
- */
 export function shouldSkipFactoryPool(token0: string, token1: string, factoryAddr: string): boolean {
   if (token0 === factoryAddr || token1 === factoryAddr) return true;
-  return isLikelyGarbagePairInternal(token0, token1);
+  return isLikelyGarbagePair(token0, token1);
 }

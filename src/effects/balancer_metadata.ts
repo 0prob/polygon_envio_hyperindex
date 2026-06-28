@@ -14,59 +14,6 @@ const BALANCER_ABI = parseAbi([
 
 const VAULT_ABI = parseAbi(["function getPoolTokens(bytes32 poolId) view returns (address[], uint256[], uint256)"]);
 
-function isRetryableRpcError(err: unknown): boolean {
-  const msg = String(err);
-  return (
-    msg.includes("timeout") ||
-    msg.includes("HTTP") ||
-    msg.includes("fetch failed") ||
-    msg.includes("500") ||
-    msg.includes("502") ||
-    msg.includes("503") ||
-    msg.includes("504") ||
-    msg.includes("429")
-  );
-}
-
-async function readContractRetry<T>(fn: () => Promise<T>): Promise<T | undefined> {
-  try {
-    return await fn();
-  } catch (err) {
-    if (!isRetryableRpcError(err)) return undefined;
-    try {
-      return await fn();
-    } catch {
-      return undefined;
-    }
-  }
-}
-
-/** One retry on transient network errors — getPoolTokens is required for token discovery. */
-async function readVaultPoolTokens(
-  poolId: `0x${string}`,
-  opts: { blockNumber?: bigint } | undefined,
-): Promise<[string[], bigint[], bigint] | undefined> {
-  const call = () =>
-    publicClient.readContract({
-      address: BALANCER_VAULT,
-      abi: VAULT_ABI,
-      functionName: "getPoolTokens",
-      args: [poolId],
-      ...opts,
-    }) as Promise<[string[], bigint[], bigint]>;
-
-  try {
-    return await call();
-  } catch (err) {
-    if (!isRetryableRpcError(err)) return undefined;
-    try {
-      return await call();
-    } catch {
-      return undefined;
-    }
-  }
-}
-
 /**
  * Balancer pool metadata via batched RPC.
  * Tuned for paid archival providers (multiple reads per pool at historical blocks).
@@ -104,30 +51,42 @@ export async function fetchBalancerMetadataHandler({
       const pool = input.pool as `0x${string}`;
       const opts = input.blockNumber ? { blockNumber: input.blockNumber } : undefined;
 
-      let poolId =
-        (input.poolId as `0x${string}`) ||
-        ((await readContractRetry(
-          () => publicClient.readContract({
-            address: pool,
-            abi: BALANCER_ABI,
-            functionName: "getPoolId",
-            ...opts,
-          }) as Promise<`0x${string}`>,
-        )) || undefined);
-
-      if (!poolId) {
-        context.cache = false;
-        return { poolId: "", tokens: [], balances: [], lastChangeBlock: 0n, swapFee: 0n };
-      }
-
       let anyReadFailed = false;
       const readSafe = async <T>(fn: () => Promise<T>, onFail: T): Promise<T> => {
         try { return await fn(); }
         catch { anyReadFailed = true; return onFail; }
       };
 
-      const [poolTokensResult, swapFee, weights, ampResult, scalingFactors] = await Promise.all([
-        readVaultPoolTokens(poolId, opts),
+      let poolId: `0x${string}` | undefined = input.poolId as `0x${string}`;
+      if (!poolId) {
+        poolId = await readSafe(
+          () => publicClient.readContract({
+            address: pool,
+            abi: BALANCER_ABI,
+            functionName: "getPoolId",
+            ...opts,
+          }) as Promise<`0x${string}`>,
+          undefined,
+        );
+      }
+
+      if (!poolId) {
+        context.cache = false;
+        return { poolId: "", tokens: [], balances: [], lastChangeBlock: 0n, swapFee: 0n };
+      }
+
+      const poolTokensResult = await readSafe(
+        () => publicClient.readContract({
+          address: BALANCER_VAULT,
+          abi: VAULT_ABI,
+          functionName: "getPoolTokens",
+          args: [poolId!],
+          ...opts,
+        }) as Promise<[string[], bigint[], bigint]>,
+        undefined,
+      );
+
+      const [swapFee, weights, ampResult, scalingFactors] = await Promise.all([
         readSafe(
           () => publicClient.readContract({ address: pool, abi: BALANCER_ABI, functionName: "getSwapFeePercentage", ...opts }),
           0n,

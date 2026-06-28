@@ -28,21 +28,16 @@ export function isCurveMetadataEmpty(meta: { fee: bigint; coins: string[] }): bo
   return meta.fee === 0n && meta.coins.length === 0;
 }
 
+// ponytail: inlined curveFeeToBps into curveFeeToPoolMetaInt (was only caller)
 /**
  * Curve on-chain fee is 1e-10 fraction; convert to basis points for PoolMeta.fee.
- * Uses Number division so sub-bps fees (e.g. 500_000 → 0.5 bps) are not truncated to 0.
+ * Round to Int; sub-bps → 1.
  */
-export function curveFeeToBps(fee: bigint): number {
+export function curveFeeToPoolMetaInt(fee: bigint): number {
   if (fee <= 0n) return 0;
   const bps = Number(fee) / 1_000_000;
   if (!Number.isFinite(bps) || bps <= 0) return 0;
-  return bps;
-}
-
-/** Coerce fractional bps to GraphQL Int for PoolMeta.fee (round; sub-bps → 1). */
-export function curveFeeToPoolMetaInt(fee: bigint): number {
-  const bps = curveFeeToBps(fee);
-  return bps <= 0 ? 0 : bps < 1 ? 1 : Math.round(bps);
+  return bps < 1 ? 1 : Math.round(bps);
 }
 
 export function curvePoolTypeFromGamma(gamma: bigint | null): "stable" | "crypto" {

@@ -1,6 +1,6 @@
 import { setTokenMetasIfMissing } from "./entity_writes";
 import { poolMetaEntity } from "./pool_meta_entity";
-import { resolveFactoryPairTokenMetas } from "./factory_token_meta";
+import { resolveTokenMetasBatch } from "./factory_token_meta";
 import { ZERO_ADDRESS } from "./constants";
 import type { IndexerProtocol, PoolMetaWritePayload } from "./indexer_protocol";
 
@@ -18,7 +18,7 @@ type FactoryPoolMetaContext = {
     get(id: string): Promise<{ decimals?: number } | undefined>;
     set(entity: { id: string; decimals: number }): void;
   };
-  effect: Parameters<typeof resolveFactoryPairTokenMetas>[0]["effect"];
+  effect: <I, O>(effect: import("envio").Effect<I, O>, input: I extends undefined ? undefined : I) => Promise<O>;
 };
 
 type FactoryPoolMetaInput = {
@@ -52,7 +52,8 @@ export async function persistFactoryPoolMeta(
   if (input.poolAddr === ZERO_ADDRESS) return;
 
   _sharedExisting.clear();
-  const [t0meta, t1meta] = await resolveFactoryPairTokenMetas(context, input.token0, input.token1, _sharedExisting);
+  const results = await resolveTokenMetasBatch(context, [input.token0, input.token1], _sharedExisting);
+  const [t0meta, t1meta] = [results[0]!, results[1]!];
 
   if (context.isPreload) {
     return;

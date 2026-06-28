@@ -28,18 +28,6 @@ const RPC_ENV_KEYS = [
 ] as const;
 
 /** Parse comma/semicolon/whitespace-separated RPC URLs, deduped in order. */
-export function parseRpcUrlList(raw: string): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const part of raw.split(/[,;\s]+/)) {
-    const url = part.trim();
-    if (!url || seen.has(url)) continue;
-    seen.add(url);
-    out.push(url);
-  }
-  return out;
-}
-
 /** Redact API keys from RPC URLs before logging. */
 export function redactRpcUrl(url: string): string {
   try {
@@ -68,7 +56,7 @@ export function getRpcUrls(): string[] {
   for (const key of RPC_ENV_KEYS) {
     const raw = process.env[key];
     if (!raw) continue;
-    const list = parseRpcUrlList(raw);
+    const list = [...new Set(raw.split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean))];
     if (list.length > 0) {
       // ponytail: append public fallbacks when user has < 3 endpoints — a single
       // paid endpoint still hits quota under heavy archival eth_call volume

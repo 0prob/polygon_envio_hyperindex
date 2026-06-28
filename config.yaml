@@ -126,24 +126,6 @@ chains:
     # Default = earliest indexed deployment (QuickSwap V2 factory, block 4931780).
     # Override ENVIO_POLYGON_START_BLOCK in .env for live-tail / partial re-sync.
     start_block: ${ENVIO_POLYGON_START_BLOCK:-4931780}
-    # RPC configuration: DISABLED (HyperSync-only mode)
-    #
-    # RPC fallback is intentionally removed because at chain head HyperSync waits
-    # >20s for new blocks then triggers RPC fallback, which is unnecessary overhead
-    # for a live-discovery feed. The arb bot owns hot pool state via its own RPC.
-    #
-    # To re-enable later (e.g. for historical re-sync resilience), uncomment below.
-    #
-    # rpc:
-    #   - url: ENVIO_POLYGON_RPC_URL   # set in .env (envio scans comments for dollar-brace placeholders)
-    #     for: fallback
-    #     initial_block_interval: 2000
-    #     backoff_multiplicative: 0.8
-    #     acceleration_additive: 500
-    #     interval_ceiling: 5000
-    #     backoff_millis: 3000
-    #     query_timeout_millis: 15000
-
     # Max reorg depth for Polygon. Docs recommend 150 for Polygon, 250 for Ethereum.
     # We use 200 (the global default) which is conservative but safe.
     # HyperIndex rolls back all entity state automatically when a reorg is detected.

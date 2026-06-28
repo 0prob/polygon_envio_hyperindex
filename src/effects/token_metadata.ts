@@ -70,13 +70,76 @@ async function initDb() {
 const PERSIST_FLUSH_DEBOUNCE_MS = 2000;
 // No TTL — a contract that isn't ERC20 will never become one. Permanent blocklist.
 
+// ponytail: generic debounced NDJSON flush — two instances used for discovered + failed tokens
+function createDebouncedNdjsonFlush(
+  getPending: () => unknown[],
+  save: (pending: unknown[]) => Promise<void>,
+  label: string,
+) {
+  let dirty = false;
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
+  let savePending: Promise<void> | null = null;
+
+  function schedule(): void {
+    dirty = true;
+    if (flushTimer) return;
+    flushTimer = setTimeout(() => {
+      flushTimer = null;
+      void flush();
+    }, PERSIST_FLUSH_DEBOUNCE_MS);
+  }
+
+  async function flush(): Promise<void> {
+    if (savePending) return savePending;
+    if (!dirty) return;
+
+    savePending = (async () => {
+      while (dirty) {
+        dirty = false;
+        const pending = getPending();
+        if (pending.length === 0) continue;
+        try {
+          await save(pending);
+        } catch (e) {
+          dirty = true;
+          console.warn(`[token_metadata] Failed to persist ${label}:`, (e as Error).message);
+          break;
+        }
+      }
+    })().finally(() => {
+      savePending = null;
+    });
+
+    return savePending;
+  }
+
+  function resetTimer(): void {
+    if (flushTimer) {
+      clearTimeout(flushTimer);
+      flushTimer = null;
+    }
+  }
+
+  return { schedule, flush, resetTimer };
+}
+
 // Runtime discovered decimals (persisted across restarts for this indexer instance)
 const discoveredDecimals: Record<string, number> = {};
 const persistedDiscovered = new Set<string>();
 let discoveredLoaded = false;
-let discoveredDirty = false;
-let discoveredFlushTimer: ReturnType<typeof setTimeout> | null = null;
-let discoveredSavePending: Promise<void> | null = null;
+
+const discoveredFlush = createDebouncedNdjsonFlush(
+  () => Object.entries(discoveredDecimals)
+    .filter(([addr]) => !persistedDiscovered.has(addr))
+    .map(([address, decimals]) => ({ address, decimals })),
+  (pending) => {
+    const typed = pending as { address: string; decimals: number }[];
+    return appendDiscoveredDecimals(DISCOVERED_DECIMALS_NDJSON, typed).then(() => {
+      for (const { address } of typed) persistedDiscovered.add(address);
+    });
+  },
+  "discovered decimals",
+);
 
 const registryCache: Map<string, number> = new Map();
 let cacheLoaded = false;
@@ -176,40 +239,11 @@ async function loadDiscoveredDecimals() {
 }
 
 function scheduleDiscoveredDecimalsSave(): void {
-  discoveredDirty = true;
-  if (discoveredFlushTimer) return;
-  discoveredFlushTimer = setTimeout(() => {
-    discoveredFlushTimer = null;
-    void flushDiscoveredDecimals();
-  }, PERSIST_FLUSH_DEBOUNCE_MS);
+  discoveredFlush.schedule();
 }
 
 async function flushDiscoveredDecimals(): Promise<void> {
-  if (discoveredSavePending) return discoveredSavePending;
-  if (!discoveredDirty) return;
-
-  discoveredSavePending = (async () => {
-    while (discoveredDirty) {
-      discoveredDirty = false;
-      const pending = Object.entries(discoveredDecimals)
-        .filter(([addr]) => !persistedDiscovered.has(addr))
-        .map(([address, decimals]) => ({ address, decimals }));
-      if (pending.length === 0) continue;
-
-      try {
-        await appendDiscoveredDecimals(DISCOVERED_DECIMALS_NDJSON, pending);
-        for (const { address } of pending) persistedDiscovered.add(address);
-      } catch (e) {
-        discoveredDirty = true;
-        console.warn("[token_metadata] Failed to persist discovered decimals:", (e as Error).message);
-        break;
-      }
-    }
-  })().finally(() => {
-    discoveredSavePending = null;
-  });
-
-  return discoveredSavePending;
+  return discoveredFlush.flush();
 }
 
 // Permanent blocklist of addresses that are not ERC20 (no decimals()).
@@ -217,9 +251,17 @@ async function flushDiscoveredDecimals(): Promise<void> {
 const failedTokens: Set<string> = new Set();
 const persistedFailed = new Set<string>();
 let failedLoaded = false;
-let failedDirty = false;
-let failedFlushTimer: ReturnType<typeof setTimeout> | null = null;
-let failedSavePending: Promise<void> | null = null;
+
+const failedFlush = createDebouncedNdjsonFlush(
+  () => [...failedTokens].filter((addr) => !persistedFailed.has(addr)),
+  (pending) => {
+    const addrs = pending as string[];
+    return appendFailedTokens(FAILED_DECIMALS_NDJSON, addrs).then(() => {
+      for (const addr of addrs) persistedFailed.add(addr);
+    });
+  },
+  "failed tokens",
+);
 
 let loadFailedPromise: Promise<void> | null = null;
 
@@ -241,38 +283,11 @@ async function loadFailedTokens() {
 }
 
 function scheduleFailedTokensSave(): void {
-  failedDirty = true;
-  if (failedFlushTimer) return;
-  failedFlushTimer = setTimeout(() => {
-    failedFlushTimer = null;
-    void flushFailedTokens();
-  }, PERSIST_FLUSH_DEBOUNCE_MS);
+  failedFlush.schedule();
 }
 
 async function flushFailedTokens(): Promise<void> {
-  if (failedSavePending) return failedSavePending;
-  if (!failedDirty) return;
-
-  failedSavePending = (async () => {
-    while (failedDirty) {
-      failedDirty = false;
-      const pending = [...failedTokens].filter((addr) => !persistedFailed.has(addr));
-      if (pending.length === 0) continue;
-
-      try {
-        await appendFailedTokens(FAILED_DECIMALS_NDJSON, pending);
-        for (const addr of pending) persistedFailed.add(addr);
-      } catch (e) {
-        failedDirty = true;
-        console.warn("[token_metadata] Failed to persist failed tokens:", (e as Error).message);
-        break;
-      }
-    }
-  })().finally(() => {
-    failedSavePending = null;
-  });
-
-  return failedSavePending;
+  return failedFlush.flush();
 }
 
 const ERC20_ABI = parseAbi(["function decimals() view returns (uint8)"]);
@@ -288,17 +303,12 @@ let pendingRpcBatch = new Map<string, RpcBatchWaiter[]>();
 let rpcBatchTimer: ReturnType<typeof setTimeout> | null = null;
 let rpcBatchFlushPromise: Promise<void> | null = null;
 
-function rpcBatchWaitMs(): number {
-  if (process.env.VITEST === "true") return 0;
-  return getRpcTransportTuning().multicallWait;
-}
-
 function scheduleDecimalsRpcBatch(): void {
   if (rpcBatchTimer !== null) return;
   rpcBatchTimer = setTimeout(() => {
     rpcBatchTimer = null;
     void flushDecimalsRpcBatch();
-  }, rpcBatchWaitMs());
+  }, process.env.VITEST === "true" ? 0 : getRpcTransportTuning().multicallWait);
 }
 
 function classifyDecimalsError(err: unknown): {
@@ -535,16 +545,8 @@ export function resetTokenMetadataCachesForTest(): void {
   failedTokens.clear();
   persistedFailed.clear();
   failedDecimalsTokens.clear();
-  discoveredDirty = false;
-  failedDirty = false;
-  if (discoveredFlushTimer) {
-    clearTimeout(discoveredFlushTimer);
-    discoveredFlushTimer = null;
-  }
-  if (failedFlushTimer) {
-    clearTimeout(failedFlushTimer);
-    failedFlushTimer = null;
-  }
+  discoveredFlush.resetTimer();
+  failedFlush.resetTimer();
   pendingRpcBatch.clear();
   if (rpcBatchTimer) {
     clearTimeout(rpcBatchTimer);
