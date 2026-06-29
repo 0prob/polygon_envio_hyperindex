@@ -71,16 +71,31 @@ const DODO_DSP_FACTORY: Address = "0x43c49f8dd240e1545f147211ec9f917376ac1e87";
 export const WOOFI_PP_V2: Address = "0x5520385bfcf07ec87c4c53a7d8d65595dff69fa4";
 export const WOOFI_PP_V2_DEPLOY_BLOCK = 30_000_000;
 
-// Curve (Polygon) — MetaRegistry aggregates all pools (legacy + NG) via pool_list/pool_count.
-// This is NOT the legacy registry. Source: https://github.com/curvefi/docs (deployments.json).
-// Deploy block ~58_597_033 (2024-08 NG migration).
-export const CURVE_REGISTRY_LEGACY: Address = "0x296d2b5c23833a70d07c8fcbb97d846c1ff90ddd";
-export const CURVE_REGISTRY_DEPLOY_BLOCK = 58_597_033;
+// Curve (Polygon) — MetaRegistry is deprecated/broken on Polygon (aggregates dead sub-registries).
+// Source: https://github.com/curvefi/metaregistry (deployments.yaml + address_provider_constants.py).
+// Instead, bootstrap directly from each factory's own pool_count()/pool_list().
+// Deploy block for NG factories ~58_597_033 (2024-08 NG migration).
+export const CURVE_FACTORY_DEPLOY_BLOCK = 58_597_033;
 
-// Curve NG factory addresses (Polygon) — emit TwocryptoPoolDeployed/TricryptoPoolDeployed.
-// Source: https://github.com/curvefi/docs (deployments.json).
-export const CURVE_TWOCRYPTO_FACTORY: Address = "0x98EE851a00abeE0d95D08cF4CA2BdCE32aeaAF7F";
-export const CURVE_TRICRYPTO_FACTORY: Address = "0xC1b393EfEF38140662b91441C6710Aa704973228";
+// Curve factory addresses (Polygon) — each factory is its own registry with pool_count()/pool_list().
+// Source: https://github.com/curvefi/metaregistry (address_provider_constants.py).
+export const CURVE_TWOCRYPTO_FACTORY: Address = "0x98EE851a00abeE0d95D08cF4CA2BdCE32aeaAF7F";       // ID 13
+export const CURVE_TRICRYPTO_FACTORY: Address = "0xC1b393EfEF38140662b91441C6710Aa704973228";       // ID 11
+export const CURVE_STABLESWAP_NG_FACTORY: Address = "0x1764ee18e8B3ccA4787249Ceb249356192594585";   // ID 12
+export const CURVE_CRYPTO_FACTORY: Address = "0xE5De15A9C9bBedb4F5EC13B131E61245f2983A69";          // ID 6 (legacy twocrypto/crypto)
+
+// Ordered list of Curve factories to bootstrap. Each factory has native pool_count()/pool_list().
+// Order matters: NG factories first (actively used), legacy crypto last.
+export const CURVE_FACTORIES: ReadonlyArray<{ address: Address; id: string }> = [
+  { address: CURVE_TWOCRYPTO_FACTORY, id: "twocrypto-ng" },
+  { address: CURVE_TRICRYPTO_FACTORY, id: "tricrypto-ng" },
+  { address: CURVE_STABLESWAP_NG_FACTORY, id: "stableswap-ng" },
+  { address: CURVE_CRYPTO_FACTORY, id: "crypto-legacy" },
+];
+
+// ponytail: kept for compat — used by KNOWN_FACTORIES_SET below. Remove when that set is cleaned.
+export const CURVE_REGISTRY_LEGACY = CURVE_STABLESWAP_NG_FACTORY;
+export const CURVE_REGISTRY_DEPLOY_BLOCK = CURVE_FACTORY_DEPLOY_BLOCK;
 
 export const POLYGON_CHAIN_ID = 137;
 

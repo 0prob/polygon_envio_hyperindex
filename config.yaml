@@ -76,10 +76,10 @@ contracts:
       - event: Pool
 
   # Curve NG factories — emit pool-deployment events with pool address.
-  # MetaRegistry (0x296d2b5c...) supports pool_list/pool_count/get_coins/get_n_coins
-  # but does NOT emit PoolAdded. Bootstrap uses the MetaRegistry directly.
-  # Stableswap NG (PlainPoolDeployed/MetaPoolDeployed) events lack pool address
-  # so stableswap pools rely on the 250-block bootstrap stride.
+  # Event-based handlers catch twocrypto/tricrypto pools immediately.
+  # The 250-block bootstrap stride covers ALL pool types by querying each
+  # factory's native pool_count()/pool_list() directly (MetaRegistry is
+  # deprecated/broken on Polygon — see curvefi/metaregistry repo).
   - name: CurveTwocryptoFactory
     abi_file_path: abis/curve_twocrypto_factory.json
     events:
@@ -165,8 +165,9 @@ chains:
           - "0x411b0facc3489691f28ad58c47006af5e3ab3a28" # QuickSwap V3 Algebra
           - "0x134c1dbe4860a9caaf89002574ffe814772d9904" # QuickSwap V4 Algebra
 
-      # Curve NG factories — immediate pool discovery for twocrypto/tricrypto.
-      # Stableswap pools rely on the MetaRegistry bootstrap (every 250 blocks).
+      # Curve NG factories — event-based discovery for twocrypto/tricrypto.
+      # All pool types (including stableswap) are covered by the 250-block
+      # bootstrap stride which queries each factory's pool_count()/pool_list().
       - name: CurveTwocryptoFactory
         start_block: ${ENVIO_POLYGON_START_BLOCK:-58597033}
         address: "0x98EE851a00abeE0d95D08cF4CA2BdCE32aeaAF7F"

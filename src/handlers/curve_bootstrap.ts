@@ -5,36 +5,39 @@ import {
   isCurveMetadataEmpty,
 } from "../effects/curve_metadata";
 import type { CurveDiscoveryPoolType } from "../effects/curve_metadata";
-import { fetchCurveRegistryPage } from "../effects/curve_registry_bootstrap";
+import { fetchCurveFactoryPage } from "../effects/curve_registry_bootstrap";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch, type FactoryTokenMeta } from "../utils/factory_token_meta";
 import { runWithConcurrency } from "../utils/pacing";
-import { CURVE_REGISTRY_LEGACY, CURVE_REGISTRY_DEPLOY_BLOCK, ZERO_ADDRESS, POLYGON_CHAIN_ID, DEFAULT_CURVE_N_COINS, chainStart } from "../utils/constants";
+import {
+  CURVE_FACTORIES,
+  POLYGON_CHAIN_ID,
+  ZERO_ADDRESS,
+  DEFAULT_CURVE_N_COINS,
+  chainStart,
+  CURVE_FACTORY_DEPLOY_BLOCK,
+} from "../utils/constants";
 
 const PAGE_SIZE = 40;
-
-const CURVE_BOOTSTRAP_ID = "137-metaregistry";
-const earliestCurveDeployBlock = CURVE_REGISTRY_DEPLOY_BLOCK;
+const earliestCurveDeployBlock = CURVE_FACTORY_DEPLOY_BLOCK;
 const bootstrapStartBlock = Math.max(earliestCurveDeployBlock + 1, chainStart);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function bootstrapRegistryPage(
+async function bootstrapFactoryPage(
   context: any,
   block: { number: bigint },
-  source: { id: string; address: string; deployBlock: number },
+  factory: { address: string; id: string },
 ): Promise<void> {
-  if (Number(block.number) <= source.deployBlock) return;
-
-  const stateId = `${context.chain.id}-${source.id}`;
+  const stateId = `${context.chain.id}-${factory.id}`;
   const existingState = await context.CurveBootstrapProgress.get(stateId);
   if (existingState?.completed) return;
 
   const offset = existingState?.lastIndex ?? 0;
-  const page = await context.effect(fetchCurveRegistryPage, {
+  const page = await context.effect(fetchCurveFactoryPage, {
+    factory: factory.address,
     offset,
     limit: PAGE_SIZE,
-    registryAddress: source.address,
   });
 
   const storeProgress = (lastIndex: number, total: number) => {
@@ -48,17 +51,18 @@ async function bootstrapRegistryPage(
     });
   };
 
-  if (page.total === 0 || page.pools.length === 0) {
-    if (page.total === 0) return;
-    // Advance past this page so transient multicall failures don't stall forever.
-    // pool_count() succeeded (we know total) but pool_list/get_coins failed for
-    // all entries on this page. Skip the page; retry happens only on full restart.
-    const nextIndex = Math.min(page.total, offset + PAGE_SIZE);
-    storeProgress(nextIndex, page.total);
+  // Total is 0 → factory has no pools (or pool_count() reverted).
+  if (page.total === 0) {
+    storeProgress(0, 0);
     return;
   }
 
-  // BATCH-CHECK which pools already exist (single getWhere instead of N sequential gets)
+  // No pools on this page (all pool_list calls failed) → retry next stride.
+  if (page.pools.length === 0) {
+    return;
+  }
+
+  // Batch-check existing pools.
   const allAddrs = page.pools.map((r: { address: string }) => r.address.toLowerCase());
   const existingPools = (await context.PoolMeta.getWhere({ address: { _in: allAddrs } })) ?? [];
   const existingSet = new Set(existingPools.map((e: { address: string }) => e.address.toLowerCase()));
@@ -70,7 +74,7 @@ async function bootstrapRegistryPage(
     return;
   }
 
-  // Phase 1: fetch pool metadata with bounded concurrency (RPC effects only).
+  // Phase 1: fetch pool metadata with bounded concurrency.
   const concurrency = 3;
   const readyPools: { address: string; coins: string[]; poolType: CurveDiscoveryPoolType; fee: bigint }[] = [];
   let hasTransient = false;
@@ -90,7 +94,6 @@ async function bootstrapRegistryPage(
       return;
     }
 
-    // ponytail: fee=0 with valid coins is a transient RPC failure — retry next stride.
     if (meta.fee === 0n) {
       hasTransient = true;
       return;
@@ -104,9 +107,7 @@ async function bootstrapRegistryPage(
     });
   });
 
-  // Phase 2: always write successful pools, even when other pools on the page
-  // had transient failures. Previously the page-safety gate blocked all writes
-  // when any pool failed, permanently stalling mixed-failure pages.
+  // Phase 2: write successful pools.
   if (readyPools.length > 0) {
     const uniqueCoins = [...new Set(readyPools.flatMap((p) => p.coins))];
     const tokenExisting = new Map<string, { decimals?: number } | undefined>();
@@ -121,17 +122,19 @@ async function bootstrapRegistryPage(
     const blockNumber = Number(block.number);
 
     for (const pool of readyPools) {
-      context.PoolMeta.set(poolMetaEntity({
-        id: pool.address,
-        address: pool.address,
-        protocol: "CURVE",
-        tokens: pool.coins,
-        fee: curveFeeToPoolMetaInt(pool.fee),
-        createdBlock: blockNumber,
-        updatedAtBlock: blockNumber,
-        poolId: undefined,
-        poolType: pool.poolType,
-      }));
+      context.PoolMeta.set(
+        poolMetaEntity({
+          id: pool.address,
+          address: pool.address,
+          protocol: "CURVE",
+          tokens: pool.coins,
+          fee: curveFeeToPoolMetaInt(pool.fee),
+          createdBlock: blockNumber,
+          updatedAtBlock: blockNumber,
+          poolId: undefined,
+          poolType: pool.poolType,
+        }),
+      );
     }
 
     await setTokenMetasIfMissing(
@@ -143,10 +146,7 @@ async function bootstrapRegistryPage(
     );
   }
 
-  // ponytail: only advance when ALL new pools were handled (written or confirmed
-  // non-Curve). Transient RPC failures → don't advance, retry next stride.
-  // Previously-written pools hit the existingPools filter next stride, so only
-  // the failed ones retry.
+  // Skip advancing on transient failures — retry next stride.
   if (hasTransient) return;
 
   const nextIndex = Math.min(page.total, offset + page.pools.length);
@@ -154,17 +154,17 @@ async function bootstrapRegistryPage(
 }
 
 async function bootstrapCurvePools({ block, context }: any) {
-  // ponytail: skip during preload — handler runs every 250 blocks on the
-  // MetaRegistry (which covers all pool types). Preload would redundantly
-  // page the registry + schedule effects for every qualifying block,
-  // adding overhead for no writes.
   if (context.isPreload) return;
 
-  await bootstrapRegistryPage(context, block, {
-    id: CURVE_BOOTSTRAP_ID,
-    address: CURVE_REGISTRY_LEGACY,
-    deployBlock: earliestCurveDeployBlock,
-  });
+  // Iterate each factory independently. A broken factory doesn't stall others.
+  for (const factory of CURVE_FACTORIES) {
+    try {
+      await bootstrapFactoryPage(context, block, factory);
+    } catch {
+      // ponytail: swallow per-factory errors so one broken factory doesn't
+      // stall all others. The failing factory retries on the next stride.
+    }
+  }
 }
 
 indexer.onBlock(
