@@ -63,7 +63,7 @@ export async function fetchCurveRegistryPageHandler({
       .filter((a) => a !== "");
   } catch (err) {
     context.cache = false;
-    return { total: 0, pools: [] };
+    return { total, pools: [] };
   }
 
   if (addresses.length === 0) {
@@ -87,7 +87,7 @@ export async function fetchCurveRegistryPageHandler({
     })) as { status: "success" | "failure"; result: unknown; error: unknown }[];
   } catch (err) {
     context.cache = false;
-    return { total: 0, pools: [] };
+    return { total, pools: [] };
   }
 
   const pools: CurveRegistryPoolRow[] = [];

@@ -50,7 +50,11 @@ async function bootstrapRegistryPage(
 
   if (page.total === 0 || page.pools.length === 0) {
     if (page.total === 0) return;
-    storeProgress(offset, page.total);
+    // Advance past this page so transient multicall failures don't stall forever.
+    // pool_count() succeeded (we know total) but pool_list/get_coins failed for
+    // all entries on this page. Skip the page; retry happens only on full restart.
+    const nextIndex = Math.min(page.total, offset + PAGE_SIZE);
+    storeProgress(nextIndex, page.total);
     return;
   }
 

@@ -47,6 +47,12 @@ contracts:
     events:
       - event: PairCreated
 
+  # MeshSwap V2 Factory — custom CreatePool event (not PairCreated).
+  - name: MeshSwapFactory
+    abi_file_path: abis/meshswap_factory.json
+    events:
+      - event: CreatePool
+
   # V3 Factories (Uniswap V3 / Sushi V3 — PoolCreated)
   - name: V3Factory
     abi_file_path: abis/uniswap_v3_factory.json
@@ -135,7 +141,6 @@ chains:
           - "0x9e5a52f57b3038f1b8eee45f28b3c1967e22799c" # Uniswap
           - "0xe7fb3e833efe5f9c441105eb65ef8b261266423b" # Dfyn
           - "0xcf083be4164828f00cae704ec15a36d711491284" # Apeswap
-          - "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d" # Meshswap
           - "0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7" # Jetswap
           - "0x800b052609c355ca8103e06f022aa30647ead60a" # Cometh
 
@@ -191,3 +196,8 @@ chains:
       - name: WooPPV2
         start_block: ${ENVIO_POLYGON_START_BLOCK:-30000000}
         address: "0x5520385bfcf07ec87c4c53a7d8d65595dff69fa4"
+
+      # MeshSwap V2 — custom factory, non-standard CreatePool event
+      - name: MeshSwapFactory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-38000000}
+        address: "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d"
