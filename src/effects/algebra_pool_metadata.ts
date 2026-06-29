@@ -1,6 +1,7 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
+import { classifyRpcError } from "./error_classification";
 
 // ponytail: Algebra Integral globalState() (6 return values) works for both
 // QuickSwap V3 (Algebra V1.9, 7 return values) and V4 (Algebra Integral, 6).
@@ -56,7 +57,8 @@ export const fetchAlgebraPoolMeta = createEffect(
       const ts = (tickSpacing as number);
       return { fee, tickSpacing: ts };
     } catch (err: unknown) {
-      context.cache = false;
+      const { isPermanent } = classifyRpcError(err);
+      context.cache = isPermanent;
       return { fee: 0n };
     }
   },

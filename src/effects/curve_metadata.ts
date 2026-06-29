@@ -1,6 +1,7 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
+import { classifyRpcError } from "./error_classification";
 
 import { ZERO_ADDRESS } from "../utils/constants";
 
@@ -21,6 +22,7 @@ export const EMPTY_CURVE_RESULT = {
   fee: 0n,
   coins: [] as string[],
   poolType: "stable" as const satisfies CurveDiscoveryPoolType,
+  failureReason: undefined as string | undefined,
 };
 
 /** Both fee + all coin reads failed — do not cache for preload replay. */
@@ -105,9 +107,11 @@ export async function fetchCurveMetadataHandler({
       let results;
       try {
         results = await publicClient.multicall({ contracts, allowFailure: true, ...opts });
-      } catch {
-        if (!opts) throw new Error("multicall failed");
-        results = await publicClient.multicall({ contracts, allowFailure: true });
+      } catch (err) {
+        // Multicall itself failed (network, rate-limit, etc.)
+        const { reason, isPermanent } = classifyRpcError(err);
+        context.cache = isPermanent;
+        return { ...EMPTY_CURVE_RESULT, failureReason: reason };
       }
 
       const feeResult = results[0]!;
@@ -115,6 +119,17 @@ export async function fetchCurveMetadataHandler({
       const versionResult = results[2]!;
       const nCoinsResult = results[3]!;
       const coinRawResults = results.slice(4, 4 + MAX_CURVE_COINS);
+
+      // Classify per-call failures for actionable error reasons
+      const failures: string[] = [];
+      if (feeResult.status !== "success") {
+        const { reason } = classifyRpcError(feeResult.error ?? new Error("fee() call failed"));
+        failures.push(`fee(): ${reason}`);
+      }
+      if (nCoinsResult.status !== "success") {
+        const { reason } = classifyRpcError(nCoinsResult.error ?? new Error("N_COINS() call failed"));
+        failures.push(`N_COINS(): ${reason}`);
+      }
 
       const fee = feeResult.status === "success" ? (feeResult.result as bigint) : 0n;
       const gamma = gammaResult.status === "success" ? (gammaResult.result as bigint) : null;
@@ -131,25 +146,32 @@ export async function fetchCurveMetadataHandler({
           if (addr && addr !== ZERO_ADDRESS) coins.push(addr);
         } else {
           anyCoinFailed = true;
+          const { reason } = classifyRpcError(r.error ?? new Error(`coins(${i}) call failed`));
+          failures.push(`coins(${i}): ${reason}`);
         }
       }
 
       const isNg = typeof version === "string" && version.length > 0;
       const poolType = curveDiscoveryPoolType(gamma, isNg);
-      const result = { fee, coins, poolType };
 
-      // ponytail: don't cache when metadata is incomplete/useless.
-      // fee=0 or <2 valid coins → handlers skip the pool. Caching would
-      // cause an infinite retry loop (bootstrap re-checks the same cached
-      // bad result every stride).
-      if (fee === 0n || coins.length < 2 || anyCoinFailed) {
-        context.cache = false;
+      const isIncomplete = fee === 0n || coins.length < 2;
+      const failureReason = failures.length > 0 ? failures.join(" | ") : undefined;
+
+      // Permanent failures (reverted, zero-data, malformed input) → cache so
+      // the bootstrap doesn't retry them forever. Transient failures (network,
+      // rate-limit) → don't cache, so they get retried next stride.
+      if (isIncomplete || anyCoinFailed) {
+        const allPermanent = failures.every((f) =>
+          f.includes("ZERO_DATA") || f.includes("REVERTED") || f.includes("MALFORMED_INPUT"),
+        );
+        context.cache = allPermanent && failures.length > 0;
       }
 
-      return result;
+      return { fee, coins, poolType, failureReason };
     } catch (err) {
-      context.cache = false;
-      return { ...EMPTY_CURVE_RESULT };
+      const { reason, isPermanent } = classifyRpcError(err);
+      context.cache = isPermanent;
+      return { ...EMPTY_CURVE_RESULT, failureReason: reason };
     } finally {
       inFlightCurve.delete(key);
     }
@@ -171,8 +193,9 @@ export const fetchCurveMetadata = createEffect(
       fee: S.bigint,
       coins: S.array(S.string),
       poolType: S.string,
+      failureReason: S.optional(S.string),
     },
-    rateLimit: { calls: 25, per: "second" as const },
+    rateLimit: { calls: 60, per: "second" as const },
     cache: true,
   },
   fetchCurveMetadataHandler,

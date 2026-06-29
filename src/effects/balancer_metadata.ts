@@ -1,6 +1,7 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
+import { classifyRpcError } from "./error_classification";
 
 import { BALANCER_VAULT } from "../utils/constants";
 
@@ -126,7 +127,8 @@ export async function fetchBalancerMetadataHandler({
         scalingFactors: scalingFactors as bigint[] | undefined,
       };
     } catch (err) {
-      context.cache = false;
+      const { isPermanent } = classifyRpcError(err);
+      context.cache = isPermanent;
       return { poolId: "", tokens: [], balances: [], lastChangeBlock: 0n, swapFee: 0n };
     } finally {
       inFlightBalancer.delete(key);

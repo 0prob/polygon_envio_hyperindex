@@ -1,6 +1,7 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
+import { classifyRpcError } from "./error_classification";
 
 const FACTORY_ABI = parseAbi([
   "function pool_count() view returns (uint256)",
@@ -36,8 +37,9 @@ export async function fetchCurveFactoryPageHandler({
         functionName: "pool_count",
       }),
     );
-  } catch {
-    context.cache = false;
+  } catch (err) {
+    const { isPermanent } = classifyRpcError(err);
+    context.cache = isPermanent;
     return { total: 0, pools: [] };
   }
 
@@ -65,8 +67,9 @@ export async function fetchCurveFactoryPageHandler({
     }
 
     return { total, pools };
-  } catch {
-    context.cache = false;
+  } catch (err) {
+    const { isPermanent } = classifyRpcError(err);
+    context.cache = isPermanent;
     return { total, pools: [] };
   }
 }

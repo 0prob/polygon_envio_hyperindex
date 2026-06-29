@@ -93,9 +93,7 @@ export const CURVE_FACTORIES: ReadonlyArray<{ address: Address; id: string }> = 
   { address: CURVE_CRYPTO_FACTORY, id: "crypto-legacy" },
 ];
 
-// ponytail: kept for compat — used by KNOWN_FACTORIES_SET below. Remove when that set is cleaned.
-export const CURVE_REGISTRY_LEGACY = CURVE_STABLESWAP_NG_FACTORY;
-export const CURVE_REGISTRY_DEPLOY_BLOCK = CURVE_FACTORY_DEPLOY_BLOCK;
+
 
 export const POLYGON_CHAIN_ID = 137;
 
@@ -155,7 +153,7 @@ export const KNOWN_FACTORIES_SET = new Set(
     DODO_DVM_FACTORY,
     DODO_DPP_FACTORY,
     DODO_DSP_FACTORY,
-    CURVE_REGISTRY_LEGACY,
+    CURVE_STABLESWAP_NG_FACTORY,
   ].map((a) => a.toLowerCase()),
 );
 

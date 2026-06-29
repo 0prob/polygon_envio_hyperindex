@@ -1,11 +1,7 @@
 import { createEffect, S } from "envio";
-import {
-  BaseError,
-  ContractFunctionRevertedError,
-  ContractFunctionZeroDataError,
-  parseAbi,
-} from "viem";
+import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
+import { classifyRpcError } from "./error_classification";
 import {
   DISCOVERED_DECIMALS_NDJSON,
   FAILED_DECIMALS_NDJSON,
@@ -264,51 +260,10 @@ function scheduleDecimalsRpcBatch(): void {
   }, 16);
 }
 
-function classifyDecimalsError(err: unknown): {
-  isZeroData: boolean;
-  isReverted: boolean;
-  isMalformedInput: boolean;
-  isQuota: boolean;
-  isNetwork: boolean;
-  isDefinitiveError: boolean;
-} {
-  const errStr = String(err);
-  const isBaseError = err instanceof BaseError;
-  const cause = isBaseError ? err.walk() : err;
-  const rz = isBaseError ? err.walk((e) => e instanceof ContractFunctionZeroDataError) !== null : false;
-  const rr = isBaseError ? err.walk((e) => e instanceof ContractFunctionRevertedError) !== null : false;
-  const isZeroData = cause instanceof ContractFunctionZeroDataError || rz;
-  const isReverted = cause instanceof ContractFunctionRevertedError || rr;
-  const isMalformedInput =
-    errStr.includes("Invalid address") ||
-    errStr.includes("odd length") ||
-    errStr.includes("cannot unmarshal");
-  // ponytail: inline isQuotaError/isNetworkError since removed from rpc_client
-  const msg = errStr.toLowerCase();
-  const isQuota =
-    msg.includes("monthly") ||
-    msg.includes("capacity") ||
-    msg.includes("quota") ||
-    msg.includes("429") ||
-    msg.includes("rate limit") ||
-    msg.includes("too many requests");
-  const isNetwork =
-    msg.includes("timeout") ||
-    msg.includes("timed out") ||
-    msg.includes("failed to fetch") ||
-    msg.includes("econnreset") ||
-    msg.includes("econnrefused") ||
-    msg.includes("socket hang up") ||
-    msg.includes("http request failed") ||
-    /\b50[0-9]\b/.test(msg);
-  const isDefinitiveError = isZeroData || isReverted || isMalformedInput;
-  return { isZeroData, isReverted, isMalformedInput, isQuota, isNetwork, isDefinitiveError };
-}
-
 function handleDecimalsFetchFailure(addr: string, err: unknown, context: { cache: boolean }): DecimalsFetchResult {
-  const { isDefinitiveError, isQuota, isNetwork } = classifyDecimalsError(err);
+  const { isPermanent } = classifyRpcError(err);
 
-  if (isDefinitiveError && !isQuota && !isNetwork) {
+  if (isPermanent) {
     failedTokens.add(addr);
     failedFlush.schedule();
   }

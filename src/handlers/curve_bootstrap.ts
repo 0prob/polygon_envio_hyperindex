@@ -22,6 +22,10 @@ import {
 const PAGE_SIZE = 40;
 const earliestCurveDeployBlock = CURVE_FACTORY_DEPLOY_BLOCK;
 const bootstrapStartBlock = Math.max(earliestCurveDeployBlock + 1, chainStart);
+const MAX_TRANSIENT_RETRIES = 3;
+// ponytail: per-page retry counter so a transient RPC failure gets a second
+// chance, but permanently broken pools don't stall the whole bootstrap forever.
+const transientRetryCount = new Map<string, number>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function bootstrapFactoryPage(
@@ -78,6 +82,7 @@ async function bootstrapFactoryPage(
   const concurrency = 3;
   const readyPools: { address: string; coins: string[]; poolType: CurveDiscoveryPoolType; fee: bigint }[] = [];
   let hasTransient = false;
+  let transientCount = 0;
 
   await runWithConcurrency(newPools, concurrency, async (row: { address: string }) => {
     const meta = await context.effect(fetchCurveMetadata, {
@@ -90,12 +95,14 @@ async function bootstrapFactoryPage(
     if (coins.length < 2) {
       if (!isCurveMetadataEmpty(meta)) {
         hasTransient = true;
+        transientCount++;
       }
       return;
     }
 
     if (meta.fee === 0n) {
       hasTransient = true;
+      transientCount++;
       return;
     }
 
@@ -146,11 +153,21 @@ async function bootstrapFactoryPage(
     );
   }
 
-  // Skip advancing on transient failures — retry next stride.
-  if (hasTransient) return;
+  // Track retries: after N consecutive transient failures on the same page,
+  // skip past the broken pools instead of looping forever.
+  if (hasTransient) {
+    const retryKey = `${factory.id}-${offset}`;
+    const fails = (transientRetryCount.get(retryKey) ?? 0) + 1;
+    transientRetryCount.set(retryKey, fails);
+    if (fails < MAX_TRANSIENT_RETRIES) return;
+  }
 
   const nextIndex = Math.min(page.total, offset + page.pools.length);
   storeProgress(nextIndex, page.total);
+  // ponytail: prune retry entries for pages we've advanced past
+  for (const [key] of transientRetryCount) {
+    if (key.startsWith(factory.id + "-")) transientRetryCount.delete(key);
+  }
 }
 
 async function bootstrapCurvePools({ block, context }: any) {

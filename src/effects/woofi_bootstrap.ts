@@ -1,6 +1,7 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
+import { classifyRpcError } from "./error_classification";
 import { MAJOR_TOKENS } from "../utils/constants";
 
 const WOOFI_ABI = parseAbi([
@@ -90,7 +91,8 @@ export async function fetchWooFiTokensHandler({
 
       return { quoteToken, activeTokens, feeBps: poolFeeBps };
     } catch (err) {
-      context.cache = false;
+      const { isPermanent } = classifyRpcError(err);
+      context.cache = isPermanent;
       return EMPTY;
     } finally {
       inFlightWooFi.delete(poolAddr);

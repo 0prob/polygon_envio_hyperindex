@@ -1,6 +1,7 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
+import { classifyRpcError } from "./error_classification";
 import { ZERO_ADDRESS } from "../utils/constants";
 
 const DODO_FEE_ABI = parseAbi([
@@ -129,8 +130,9 @@ async function fetchDodoMetadataHandler({
       }
 
       return { fee, anyFailed };
-    } catch {
-      context.cache = false;
+    } catch (err) {
+      const { isPermanent } = classifyRpcError(err);
+      context.cache = isPermanent;
       return { fee: 0n, anyFailed: true };
     } finally {
       inFlightDodo.delete(key);
