@@ -1,5 +1,5 @@
 import { indexer } from "envio";
-import { fetchAlgebraPoolFee } from "../effects/algebra_pool_metadata";
+import { fetchAlgebraPoolMeta } from "../effects/algebra_pool_metadata";
 import { shouldSkipFactoryPool } from "../utils/guards";
 import { persistFactoryPoolMeta } from "../utils/factory_pool_handler";
 import { ALGEBRA_FACTORY_PROTOCOLS } from "../utils/constants";
@@ -10,7 +10,8 @@ function lookupAlgebraFactoryProtocol(factoryAddr: string): Protocol | undefined
 }
 
 // AlgebraFactory emits `Pool(token0, token1, pool)` — not Uniswap V3 `PoolCreated`.
-// QuickSwap V3 (Algebra V3) and V4 (Algebra V4 with plugin/hooks) both use this event.
+// QuickSwap V3 (Algebra V1.9) and V4 (Algebra Integral with plugin/hooks) both use
+// this event. The Pool event omits fee/tickSpacing, so those are fetched via RPC.
 indexer.onEvent(
   {
     contract: "AlgebraFactory",
@@ -36,15 +37,16 @@ indexer.onEvent(
     const existing = await context.PoolMeta.get(poolAddr);
     if (existing) return;
 
-    const feeResult = await context.effect(fetchAlgebraPoolFee, {
+    const meta = await context.effect(fetchAlgebraPoolMeta, {
       pool: poolAddr,
       blockNumber: BigInt(blockNumber),
     });
     // ponytail: fee=0 means RPC failure (Algebra pools never have 0 fee).
     // Returning early lets the next instance retry fresh; writing PoolMeta
     // with fee=undefined would permanently corrupt the row.
-    if (feeResult.fee === 0n) return;
-    const fee = Number(feeResult.fee);
+    if (meta.fee === 0n) return;
+    const fee = Number(meta.fee);
+    const tickSpacing = meta.tickSpacing != null ? meta.tickSpacing : undefined;
 
     await persistFactoryPoolMeta(context, {
       poolAddr,
@@ -53,7 +55,7 @@ indexer.onEvent(
       token1: t1,
       blockNumber,
       fee,
-      tickSpacing: undefined,
+      tickSpacing,
     });
   },
 );
