@@ -5,48 +5,33 @@ import {
   ContractFunctionZeroDataError,
   parseAbi,
 } from "viem";
-import { publicClient, getRpcTransportTuning } from "./rpc_client";
+import { publicClient } from "./rpc_client";
 import {
   DISCOVERED_DECIMALS_NDJSON,
   FAILED_DECIMALS_NDJSON,
   TOKEN_REGISTRY_DB,
 } from "../utils/data_paths";
-import { getTokenMetaEffectRateLimit } from "../utils/pacing";
 import {
   appendDiscoveredDecimals,
   appendFailedTokens,
   loadDiscoveredDecimalsEntries,
   loadFailedTokenEntries,
 } from "../utils/token_disk";
-import { safeDecimals, DAI, USDC, USDC_E, USDT, WBTC, WETH, WMATIC } from "../utils/constants";
-import { isNetworkError, isQuotaError } from "./rpc_client";
+import { safeDecimals } from "../utils/constants";
 import { normalizeTokenAddress } from "../utils/normalize_address";
 
 let db: any = null;
 
-/** Well-known Polygon tokens used by handler tests — avoids RPC when Vitest runs without bun:sqlite. */
-const VITEST_TOKEN_DECIMALS: Record<string, number> = {
-  [WMATIC]: 18,
-  [WETH]: 18,
-  [USDC_E]: 6,
-  [USDT]: 6,
-  [USDC]: 6,
-  [DAI]: 18,
-  [WBTC]: 8,
-};
-
 async function initDb() {
   if (db !== null) return;
   const dbPath = TOKEN_REGISTRY_DB;
-  let lastError: unknown;
 
   // Bun runtime (scripts, direct handler runs)
   try {
     const { Database } = await import("bun:sqlite");
     db = new Database(dbPath, { readonly: true });
     return;
-  } catch (e) {
-    lastError = e;
+  } catch {
   }
 
   // Node 22+ built-in sqlite (Envio indexer runtime)
@@ -54,17 +39,10 @@ async function initDb() {
     const { DatabaseSync } = await import("node:sqlite");
     db = new DatabaseSync(dbPath, { readOnly: true });
     return;
-  } catch (e) {
-    lastError = e;
+  } catch {
   }
 
-  db = undefined;
-  if (process.env.VITEST !== "true") {
-    const detail = lastError instanceof Error ? lastError.message : String(lastError);
-    console.warn(
-      `[token_metadata] sqlite unavailable, skipping static registry lookup (${detail}; path=${dbPath})`,
-    );
-  }
+  db = null;
 }
 
 const PERSIST_FLUSH_DEBOUNCE_MS = 2000;
@@ -102,7 +80,6 @@ function createDebouncedNdjsonFlush(
           await save(pending);
         } catch (e) {
           dirty = true;
-          console.warn(`[token_metadata] Failed to persist ${label}:`, (e as Error).message);
           break;
         }
       }
@@ -177,12 +154,6 @@ export function preloadTokenDecimalsDefault(): { decimals: number; trusted: fals
   return PRELOAD_DECIMALS_DEFAULT;
 }
 
-function seedVitestRegistry(): void {
-  for (const [addr, decimals] of Object.entries(VITEST_TOKEN_DECIMALS)) {
-    registryCache.set(addr.toLowerCase(), decimals);
-  }
-}
-
 let warmUpPromise: Promise<void> | null = null;
 
 async function warmUpCache() {
@@ -208,9 +179,6 @@ async function warmUpCache() {
       await loadDiscoveredDecimals();
       for (const [addr, decimals] of Object.entries(discoveredDecimals)) {
         registryCache.set(addr, decimals);
-      }
-      if (process.env.VITEST === "true") {
-        seedVitestRegistry();
       }
       cacheLoaded = true;
     } finally {
@@ -292,13 +260,10 @@ async function flushFailedTokens(): Promise<void> {
 
 const ERC20_ABI = parseAbi(["function decimals() view returns (uint8)"]);
 
-// Dedup warnings for broken/malformed tokens (e.g. factory address emitted as a token).
-const failedDecimalsTokens = new Set<string>();
-
 type DecimalsFetchResult = { address: string; decimals: number; trusted: boolean };
 
 /** Coalesce concurrent cold-token RPC reads into one multicall per tick. */
-type RpcBatchWaiter = { context: any; resolve: (value: DecimalsFetchResult) => void };
+type RpcBatchWaiter = { context: { cache: boolean }; resolve: (value: DecimalsFetchResult) => void };
 let pendingRpcBatch = new Map<string, RpcBatchWaiter[]>();
 let rpcBatchTimer: ReturnType<typeof setTimeout> | null = null;
 let rpcBatchFlushPromise: Promise<void> | null = null;
@@ -308,7 +273,7 @@ function scheduleDecimalsRpcBatch(): void {
   rpcBatchTimer = setTimeout(() => {
     rpcBatchTimer = null;
     void flushDecimalsRpcBatch();
-  }, process.env.VITEST === "true" ? 0 : getRpcTransportTuning().multicallWait);
+  }, 16);
 }
 
 function classifyDecimalsError(err: unknown): {
@@ -320,71 +285,55 @@ function classifyDecimalsError(err: unknown): {
   isDefinitiveError: boolean;
 } {
   const errStr = String(err);
-  const cause = err instanceof BaseError ? err.walk() : err;
-  const isZeroData =
-    cause instanceof ContractFunctionZeroDataError ||
-    (err instanceof BaseError &&
-      err.walk((e) => e instanceof ContractFunctionZeroDataError) !== null);
-  const isReverted =
-    cause instanceof ContractFunctionRevertedError ||
-    (err instanceof BaseError &&
-      err.walk((e) => e instanceof ContractFunctionRevertedError) !== null);
+  const isBaseError = err instanceof BaseError;
+  const cause = isBaseError ? err.walk() : err;
+  const rz = isBaseError ? err.walk((e) => e instanceof ContractFunctionZeroDataError) !== null : false;
+  const rr = isBaseError ? err.walk((e) => e instanceof ContractFunctionRevertedError) !== null : false;
+  const isZeroData = cause instanceof ContractFunctionZeroDataError || rz;
+  const isReverted = cause instanceof ContractFunctionRevertedError || rr;
   const isMalformedInput =
     errStr.includes("Invalid address") ||
     errStr.includes("odd length") ||
     errStr.includes("cannot unmarshal");
-  const isQuota = isQuotaError(err);
-  const isNetwork = isNetworkError(err);
+  // ponytail: inline isQuotaError/isNetworkError since removed from rpc_client
+  const msg = errStr.toLowerCase();
+  const isQuota =
+    msg.includes("monthly") ||
+    msg.includes("capacity") ||
+    msg.includes("quota") ||
+    msg.includes("429") ||
+    msg.includes("rate limit") ||
+    msg.includes("too many requests");
+  const isNetwork =
+    msg.includes("timeout") ||
+    msg.includes("timed out") ||
+    msg.includes("failed to fetch") ||
+    msg.includes("econnreset") ||
+    msg.includes("econnrefused") ||
+    msg.includes("socket hang up") ||
+    msg.includes("http request failed") ||
+    /\b50[0-9]\b/.test(msg);
   const isDefinitiveError = isZeroData || isReverted || isMalformedInput;
   return { isZeroData, isReverted, isMalformedInput, isQuota, isNetwork, isDefinitiveError };
 }
 
-function handleDecimalsFetchFailure(addr: string, err: unknown, context: any): DecimalsFetchResult {
+function handleDecimalsFetchFailure(addr: string, err: unknown, context: { cache: boolean }): DecimalsFetchResult {
   const { isDefinitiveError, isQuota, isNetwork } = classifyDecimalsError(err);
-  const errStr = String(err);
 
   if (isDefinitiveError && !isQuota && !isNetwork) {
     failedTokens.add(addr);
     scheduleFailedTokensSave();
   }
 
-  if (context.log && !failedDecimalsTokens.has(addr)) {
-    failedDecimalsTokens.add(addr);
-    if (isQuota) {
-      context.log.warn(
-        `RPC quota / monthly capacity exceeded while fetching decimals. ` +
-          `Add more providers to POLYGON_RPC_URLS (comma-separated) or lower effect rateLimits temporarily. ` +
-          `Defaulting to 18 for this token (will retry in ~5min).`,
-        { token: addr },
-      );
-    } else if (isNetwork) {
-      context.log.warn(`Network error fetching decimals for token — defaulting to 18 (will retry in ~5min)`, {
-        token: addr,
-        error: errStr.split("\n")[0],
-      });
-    } else if (isDefinitiveError) {
-      context.log.warn(
-        `Definitive failure fetching decimals for token — defaulting to 18 (added to permanent blocklist)`,
-        { token: addr, error: errStr.split("\n")[0] },
-      );
-    }
-  }
-
   context.cache = false;
   return { address: addr, decimals: 18, trusted: false };
 }
 
-function handleDecimalsFetchSuccess(addr: string, rawDecimals: unknown, context: any): DecimalsFetchResult {
+function handleDecimalsFetchSuccess(addr: string, rawDecimals: unknown): DecimalsFetchResult {
   const decimals = safeDecimals(Number(rawDecimals));
   registryCache.set(addr, decimals);
   discoveredDecimals[addr] = decimals;
   scheduleDiscoveredDecimalsSave();
-  if (context.log) {
-    context.log.info(`Fetched decimals for new token via RPC (persisted)`, {
-      token: addr,
-      decimals,
-    });
-  }
   return { address: addr, decimals, trusted: true };
 }
 
@@ -413,7 +362,7 @@ async function flushDecimalsRpcBatch(): Promise<void> {
         const item = results[i];
         for (const waiter of waiters) {
           if (item?.status === "success") {
-            waiter.resolve(handleDecimalsFetchSuccess(addr, item.result, waiter.context));
+            waiter.resolve(handleDecimalsFetchSuccess(addr, item.result));
           } else {
             waiter.resolve(handleDecimalsFetchFailure(addr, item?.error ?? new Error("multicall failure"), waiter.context));
           }
@@ -435,7 +384,7 @@ async function flushDecimalsRpcBatch(): Promise<void> {
   return rpcBatchFlushPromise;
 }
 
-function enqueueDecimalsRpc(addr: string, context: any): Promise<DecimalsFetchResult> {
+function enqueueDecimalsRpc(addr: string, context: { cache: boolean }): Promise<DecimalsFetchResult> {
   const existing = inFlightDecimals.get(addr);
   if (existing) return existing;
 
@@ -444,7 +393,7 @@ function enqueueDecimalsRpc(addr: string, context: any): Promise<DecimalsFetchRe
     waiters.push({ context, resolve });
     pendingRpcBatch.set(addr, waiters);
 
-    const maxBatch = getRpcTransportTuning().multicallBatchSize;
+    const maxBatch = 64;
     if (pendingRpcBatch.size >= maxBatch) {
       if (rpcBatchTimer) {
         clearTimeout(rpcBatchTimer);
@@ -475,7 +424,7 @@ function enqueueDecimalsRpc(addr: string, context: any): Promise<DecimalsFetchRe
  *
  * This is the #1 lever for V2Factory.PairCreated performance.
  */
-const fetchTokenMetaHandler = async ({ input, context }: { input: { address: string }, context: any }) => {
+const fetchTokenMetaHandler = async ({ input, context }: { input: { address: string }; context: { cache: boolean; isPreload?: boolean } }) => {
   await warmUpCache();
 
   const addr = normalizeTokenAddress(input.address);
@@ -519,39 +468,10 @@ export const fetchTokenMeta = createEffect(
       address: S.string,
     },
     output: { address: S.string, decimals: S.number, trusted: S.boolean },
-    rateLimit: getTokenMetaEffectRateLimit(),
-    cache: process.env.VITEST === "true" || process.env.NODE_ENV === "test" ? false : true,
+    rateLimit: { calls: 250, per: "second" as const },
+    cache: true,
   },
   fetchTokenMetaHandler
 );
-export { fetchTokenMetaHandler };
-
 // Warm registry before first PairCreated burst (backfill throughput).
 void warmUpCache().catch(() => {});
-
-/** @internal Vitest-only — resets module caches between isolated test cases. */
-export function resetTokenMetadataCachesForTest(): void {
-  if (process.env.VITEST !== "true") return;
-  cacheLoaded = false;
-  discoveredLoaded = false;
-  failedLoaded = false;
-  warmUpPromise = null;
-  loadDiscoveredPromise = null;
-  loadFailedPromise = null;
-  db = null;
-  registryCache.clear();
-  for (const key of Object.keys(discoveredDecimals)) delete discoveredDecimals[key];
-  persistedDiscovered.clear();
-  failedTokens.clear();
-  persistedFailed.clear();
-  failedDecimalsTokens.clear();
-  discoveredFlush.resetTimer();
-  failedFlush.resetTimer();
-  pendingRpcBatch.clear();
-  if (rpcBatchTimer) {
-    clearTimeout(rpcBatchTimer);
-    rpcBatchTimer = null;
-  }
-  rpcBatchFlushPromise = null;
-  inFlightDecimals.clear();
-}

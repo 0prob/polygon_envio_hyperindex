@@ -1,7 +1,6 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
-import { publicClient, isQuotaError } from "./rpc_client";
-import { getHistoricalMetaEffectRateLimit } from "../utils/pacing";
+import { publicClient } from "./rpc_client";
 
 /** Fee fields only — reserves/i/k are unused by PoolMeta discovery handlers. */
 const DODO_FEE_ABI = parseAbi([
@@ -25,13 +24,11 @@ export const fetchDodoMetadata = createEffect(
       lpFeeRate: S.bigint,
       mtFeeRate: S.bigint,
     },
-    rateLimit: getHistoricalMetaEffectRateLimit(),
+    rateLimit: { calls: 60, per: "second" as const },
     cache: true,
   },
   fetchDodoMetadataHandler,
 );
-export { fetchDodoMetadataHandler };
-
 /** Both fee reads failed or reverted — do not cache for preload replay. */
 export function isDodoMetadataEmpty(meta: { lpFeeRate: bigint; mtFeeRate: bigint }): boolean {
   return meta.lpFeeRate === 0n && meta.mtFeeRate === 0n;
@@ -64,7 +61,7 @@ async function readDodoFeeRates(
   address: `0x${string}`,
   blockNumber?: bigint,
 ): Promise<{ fee: bigint; lpFeeRate: bigint; mtFeeRate: bigint; anyFailed: boolean }> {
-  const opts = blockNumber ? { blockNumber } : undefined;
+  const opts = blockNumber != null ? { blockNumber } : undefined;
   let results;
   try {
     results = await publicClient.multicall({
@@ -95,7 +92,7 @@ async function fetchDodoMetadataHandler({
   context,
 }: {
   input: { pool: string; blockNumber?: bigint };
-  context: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  context: { cache: boolean };
 }) {
   const poolAddr = input.pool.toLowerCase();
   const blockKey = input.blockNumber != null ? String(input.blockNumber) : "";
@@ -111,53 +108,24 @@ async function fetchDodoMetadataHandler({
       const address = input.pool as `0x${string}`;
       let { anyFailed, ...result } = await readDodoFeeRates(address, input.blockNumber);
 
-      // Creation-block reads often return empty (same-block deploy, archive gaps). Latest state is
-      // sufficient for discovery PoolMeta.fee; the arb bot reads live rates via RPC anyway.
+      // Block-pinned reads may return empty at creation block — fall back to latest state.
       if (isDodoMetadataEmpty(result) && input.blockNumber !== undefined) {
         const latest = await readDodoFeeRates(address);
         if (!isDodoMetadataEmpty(latest)) {
           anyFailed = latest.anyFailed;
           const { anyFailed: _, ...clean } = latest;
           result = clean;
-          if (context.log) {
-            context.log.info("DODO metadata: block-pinned read empty, used latest state", {
-              pool: input.pool,
-              blockNumber: String(input.blockNumber),
-            });
-          }
         }
       }
 
       if (isDodoMetadataEmpty(result)) {
-        if (context.log) {
-          context.log.warn("DODO metadata reads returned empty — not caching", { pool: input.pool });
-        }
         context.cache = false;
       } else if (anyFailed) {
-        if (context.log?.debug) {
-          context.log.debug("DODO metadata read partially failed — not caching", { pool: input.pool });
-        }
         context.cache = false;
-      } else if (context.log) {
-        context.log.info("Fetched DODO pool metadata", { pool: input.pool });
       }
 
       return result;
     } catch (err) {
-      const errStr = String(err);
-
-      if (context.log) {
-        if (isQuotaError(err)) {
-          context.log.warn(
-            "RPC quota / monthly capacity exceeded while fetching DODO metadata. Add more RPC providers to POLYGON_RPC_URLS.",
-          );
-        } else {
-          context.log.warn("Failed to fetch DODO metadata", {
-            pool: input.pool,
-            error: errStr,
-          });
-        }
-      }
       context.cache = false;
       return { ...EMPTY_DODO_RESULT };
     } finally {

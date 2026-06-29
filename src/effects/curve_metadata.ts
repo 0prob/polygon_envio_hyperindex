@@ -1,7 +1,7 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
-import { publicClient, isQuotaError } from "./rpc_client";
-import { getCurveMetaEffectRateLimit } from "../utils/pacing";
+import { publicClient } from "./rpc_client";
+
 import { ZERO_ADDRESS } from "../utils/constants";
 
 /** Discovery-only reads — PoolMeta needs coins, fee, crypto vs stable (gamma), and NG subtype. */
@@ -40,7 +40,7 @@ export function curveFeeToPoolMetaInt(fee: bigint): number {
   return bps < 1 ? 1 : Math.round(bps);
 }
 
-export function curvePoolTypeFromGamma(gamma: bigint | null): "stable" | "crypto" {
+function curvePoolTypeFromGamma(gamma: bigint | null): "stable" | "crypto" {
   return gamma != null && gamma > 0n ? "crypto" : "stable";
 }
 
@@ -73,8 +73,7 @@ export async function fetchCurveMetadataHandler({
   context,
 }: {
   input: { pool: string; nCoins: number; blockNumber?: bigint };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any;
+  context: { cache: boolean };
 }) {
   const poolAddr = input.pool.toLowerCase();
   const blockKey = input.blockNumber != null ? String(input.blockNumber) : "";
@@ -88,7 +87,7 @@ export async function fetchCurveMetadataHandler({
   promise = (async () => {
     try {
       const pool = input.pool as `0x${string}`;
-      const opts = input.blockNumber ? { blockNumber: input.blockNumber } : undefined;
+      const opts = input.blockNumber != null ? { blockNumber: input.blockNumber } : undefined;
 
       const contracts = [
         { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "fee" as const },
@@ -117,7 +116,7 @@ export async function fetchCurveMetadataHandler({
       const nCoinsResult = results[3]!;
       const coinRawResults = results.slice(4, 4 + MAX_CURVE_COINS);
 
-      const fee = feeResult.status === "success" ? BigInt(feeResult.result as bigint) : 0n;
+      const fee = feeResult.status === "success" ? (feeResult.result as bigint) : 0n;
       const gamma = gammaResult.status === "success" ? (gammaResult.result as bigint) : null;
       const version = versionResult.status === "success" ? (versionResult.result as string) : null;
       const nCoinsOnChain = nCoinsResult.status === "success" ? (nCoinsResult.result as bigint) : null;
@@ -140,35 +139,13 @@ export async function fetchCurveMetadataHandler({
       const result = { fee, coins, poolType };
 
       if (isCurveMetadataEmpty(result)) {
-        if (context.log) {
-          context.log.warn("Curve metadata reads returned empty — not caching", { pool: input.pool });
-        }
         context.cache = false;
       } else if (anyCoinFailed) {
-        if (context.log) {
-          context.log.info("Curve metadata coin reads partially failed — not caching", { pool: input.pool });
-        }
         context.cache = false;
-      } else if (context.log) {
-        context.log.info("Fetched Curve pool metadata", { pool: input.pool, nCoins, poolType });
       }
 
       return result;
     } catch (err) {
-      const errStr = String(err);
-
-      if (context.log) {
-        if (isQuotaError(err)) {
-          context.log.warn(
-            "RPC quota / monthly capacity exceeded while fetching Curve metadata. Add more RPC providers to POLYGON_RPC_URLS.",
-          );
-        } else {
-          context.log.warn("Failed to fetch Curve metadata", {
-            pool: input.pool,
-            error: errStr,
-          });
-        }
-      }
       context.cache = false;
       return { ...EMPTY_CURVE_RESULT };
     } finally {
@@ -193,7 +170,7 @@ export const fetchCurveMetadata = createEffect(
       coins: S.array(S.string),
       poolType: S.string,
     },
-    rateLimit: getCurveMetaEffectRateLimit(),
+    rateLimit: { calls: 25, per: "second" as const },
     cache: true,
   },
   fetchCurveMetadataHandler,

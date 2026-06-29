@@ -21,37 +21,12 @@ raw_events: false
 #   → fast startup
 #   → minimal historical backfill
 #
-# Historical backfill (processing 50M+ events from 2021) is still gated by:
-#   → effect loaders on first-seen pools
-#   → batch size (now 6000 for 200 rpm)
-#
-# === Backfill / Live performance debugging (Pipeline Split) ===
-# Envio "Pipeline split" (visible in envio dev / metrics) shows time distribution:
-#   Loaders | Handlers | DB Writes
-#
-# Ideal for a live debug indexer: Loaders + Handlers dominate, DB Writes near zero.
-#   - Only creation-time metadata writes (factory/registry events + V4 Initialize + DODO factory handlers).
-#   - *PoolState entities are not written at discovery (bot owns hot state via RPC).
-#   - DB Writes → minimal (pool discovery metadata only)
-#   - Loaders → token metadata effects on first-seen pools (dominated by data/token_registry.db hit rate)
-#   - Handlers → tiny (mostly contractRegister + PoolMeta/TokenMeta sets on creation)
-#
-# The arb bot tolerates this because:
-#   - Primary live state source is its own RPC fetcher (fetchMissingPoolState).
-#   - Pool discovery (new PairCreated/PoolCreated/...) flows through Hasura → bot.
-#
-# To observe real-time:
-#   - Run `bun run dev` (or the bot) and watch envio stdout for "events", "processed", block arrows.
-#   - The bot's HyperIndexMonitor logs blk/s every ~30s (proxy for overall throughput).
-#   - For raw eps + pipeline split, use `envio dev` TUI/metrics or grep logs.
+# Historical backfill processes 50M+ events from 2021.
+# Discovery uses factory/registry onEvent handlers only.
+# Guards (shouldSkipFactoryPool) + onBlock `where` strides reject garbage early.
 
-# Polygon optimization: 3000-8000 range for Polygon (very high log volume from 1000s of DEX pools).
-# This is one of the most important config knobs for "events per second" during historical backfill.
-#
-# Dynamic batch sizing based on quota tier - uses environment variable for runtime flexibility
-# Paid 200 rpm plan: 6000, Free tier: 1000
-# Enhanced to read from ENVIO_ prefixed variable first
-full_batch_size: ${ENVIO_FULL_BATCH_SIZE:-6000} # Dynamic based on quota via env var. See pacing.ts for recommended values.
+# Polygon batch sizing. This is one of the most important knobs for backfill throughput.
+full_batch_size: ${ENVIO_FULL_BATCH_SIZE:-6000}
 
 # HyperSync is the recommended high-performance data source (2000x faster than RPC).
 # Token is passed via ENVIO_API_TOKEN (required for production use per 2026 docs).
@@ -130,19 +105,7 @@ chains:
     # We use 200 (the global default) which is conservative but safe.
     # HyperIndex rolls back all entity state automatically when a reorg is detected.
     # Side effects in handler code (external calls, logs) are NOT rolled back.
-    max_reorg_depth: 200
-
-    # === Envio/HyperSync Optimizations (see user best-practices) ===
-    # Point 2: All contracts use tight event whitelists (never empty/generic). HyperSync drops
-    #          unneeded payloads before they reach the indexer → major historical sync speedup.
-    # Point 4: Preload optimization is enabled by default in Envio v3 (batched entity pre-fetch alongside
-    #          event processing). No explicit flag required; visible in metrics as "envio_preload_*".
-    # Point 3: Per-pool dynamic registration was removed (contractRegister + Sync/Swap subscriptions
-    #          wasted HyperSync budget). Discovery uses factory/registry onEvent handlers only.
-    #          JS guards (shouldSkipFactoryPool) + onBlock `where` strides reject garbage early.
-    # Point 5: JoinMode (JoinNothing) applies to direct @envio-dev/hypersync-client log queries
-    #          with complex field selection. Our usage is either (a) the managed HyperIndex pipeline or
-    #          (b) simple block queries + post-index Hasura GraphQL against the DB (no joins needed).
+    max_reorg_depth: 150
     hypersync_config:
       url: ${ENVIO_POLYGON_HYPERSYNC_URL:-https://polygon.hypersync.xyz}
       # api_token can also be set here, but ENVIO_API_TOKEN env var is the standard approach.

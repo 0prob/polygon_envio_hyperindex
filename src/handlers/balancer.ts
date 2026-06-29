@@ -33,9 +33,6 @@ indexer.onEvent(
     const meta = await context.effect(fetchBalancerMetadata, { pool, poolId, blockNumber: BigInt(blockNumber) });
 
     if (meta.tokens.length < 2) {
-      if (context.log) {
-        context.log.warn("Balancer pool has < 2 tokens — skipping PoolMeta write", { pool, poolId });
-      }
       return;
     }
 
@@ -129,13 +126,13 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     return;
   }
 
-  const fee = existing?.fee;
-  const poolType = existing?.poolType;
+  const fee = existing.fee;
+  const poolType = existing.poolType;
 
   if (context.isPreload) return;
 
   const tokensUnchanged =
-    existing?.tokens &&
+    existing.tokens &&
     existing.tokens.length === rawTokens.length &&
     rawTokens.every((t, i) => t === existing.tokens![i]);
   if (tokensUnchanged) return;

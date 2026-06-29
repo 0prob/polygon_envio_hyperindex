@@ -2,7 +2,6 @@ import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
 import { CURVE_REGISTRY_LEGACY, ZERO_ADDRESS } from "../utils/constants";
-import { getHistoricalMetaEffectRateLimit } from "../utils/pacing";
 
 const REGISTRY_ABI = parseAbi([
   "function pool_count() view returns (uint256)",
@@ -22,12 +21,11 @@ export async function fetchCurveRegistryPageHandler({
   context,
 }: {
   input: { offset: number; limit: number; registryAddress?: string };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any;
+  context: { cache: boolean };
 }) {
   const offset = Math.max(0, input.offset);
   const limit = Math.min(Math.max(1, input.limit), 100);
-  const registry = (input.registryAddress ?? CURVE_REGISTRY_LEGACY).toLowerCase() as `0x${string}`;
+  const registry = (input.registryAddress ? input.registryAddress.toLowerCase() : CURVE_REGISTRY_LEGACY) as `0x${string}`;
   const ZERO = ZERO_ADDRESS;
 
   let total: number;
@@ -38,14 +36,6 @@ export async function fetchCurveRegistryPageHandler({
       functionName: "pool_count",
     }));
   } catch (err) {
-    if (context.log) {
-      context.log.warn("fetchCurveRegistryPage: pool_count failed — retrying next stride", {
-        offset,
-        limit,
-        registryAddress: registry,
-        error: String(err),
-      });
-    }
     context.cache = false;
     return { total: 0, pools: [] };
   }
@@ -68,24 +58,11 @@ export async function fetchCurveRegistryPageHandler({
     });
     addresses = poolListResults
       .map((r, j) => {
-        if (r.status === "success") return (r.result as string).toLowerCase();
-        if (context.log) {
-          context.log.warn("fetchCurveRegistryPage: pool_list failed", {
-            index: offset + j,
-            registry,
-            error: String(r.error),
-          });
-        }
+        if (r.status === "success") return String(r.result).toLowerCase();
         return "";
       })
       .filter((a) => a !== "");
   } catch (err) {
-    if (context.log) {
-      context.log.warn("fetchCurveRegistryPage: pool_list multicall failed", {
-        offset, limit, registry,
-        error: String(err),
-      });
-    }
     context.cache = false;
     return { total: 0, pools: [] };
   }
@@ -98,9 +75,9 @@ export async function fetchCurveRegistryPageHandler({
 
   // Round 2: multicall get_n_coins + get_coins with allowFailure.
   // 2 calls per pool, interleaved: [nCoins_0, coins_0, nCoins_1, coins_1, ...]
-  const metaContracts = addresses.flatMap((addr) => [
-    { address: registry, abi: REGISTRY_ABI, functionName: "get_n_coins", args: [addr as `0x${string}`] } as const,
-    { address: registry, abi: REGISTRY_ABI, functionName: "get_coins", args: [addr as `0x${string}`] } as const,
+    const metaContracts = addresses.flatMap((addr) => [
+    { address: registry, abi: REGISTRY_ABI, functionName: "get_n_coins", args: [addr as `0x${string}`] },
+    { address: registry, abi: REGISTRY_ABI, functionName: "get_coins", args: [addr as `0x${string}`] },
   ]);
 
   let metaResults: { status: "success" | "failure"; result: unknown; error: unknown }[];
@@ -110,12 +87,6 @@ export async function fetchCurveRegistryPageHandler({
       allowFailure: true,
     })) as { status: "success" | "failure"; result: unknown; error: unknown }[];
   } catch (err) {
-    if (context.log) {
-      context.log.warn("fetchCurveRegistryPage: metadata multicall failed", {
-        poolCount: addresses.length, registry,
-        error: String(err),
-      });
-    }
     context.cache = false;
     return { total: 0, pools: [] };
   }
@@ -127,13 +98,6 @@ export async function fetchCurveRegistryPageHandler({
     const coinsResult = metaResults[i * 2 + 1];
 
     if (nCoinsResult?.status !== "success" || coinsResult?.status !== "success") {
-      if (context.log) {
-        context.log.warn("fetchCurveRegistryPage: metadata read failed — skipping pool", {
-          pool: addr,
-          nCoinsStatus: nCoinsResult?.status,
-          coinsStatus: coinsResult?.status,
-        });
-      }
       continue;
     }
 
@@ -170,7 +134,7 @@ export const fetchCurveRegistryPage = createEffect(
         }),
       ),
     },
-    rateLimit: getHistoricalMetaEffectRateLimit(),
+    rateLimit: { calls: 60, per: "second" as const },
     cache: true,
   },
   fetchCurveRegistryPageHandler,

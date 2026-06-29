@@ -5,7 +5,7 @@ import {
   preloadTokenDecimalsDefault,
 } from "../effects/token_metadata";
 import { normalizeTokenAddress } from "./normalize_address";
-import { getMetadataConcurrency, runWithConcurrency } from "./pacing";
+import { runWithConcurrency } from "./pacing";
 
 export type FactoryTokenMeta = { decimals: number; trusted: boolean };
 
@@ -18,7 +18,7 @@ type FactoryTokenMetaContext = {
   effect: <I, O>(effect: Effect<I, O>, input: I extends undefined ? undefined : I) => Promise<O>;
   TokenMeta: {
     get: (id: string) => Promise<TokenMetaEntity | undefined>;
-    getWhere?: (filter: { id: { _in: string[] } }) => Promise<TokenMetaRow[]>;
+    getWhere: (filter: { id: { _in: string[] } }) => Promise<TokenMetaRow[]>;
   };
 };
 
@@ -77,7 +77,7 @@ async function resolveTokenMetaSlots(
     return resolved;
   }
 
-  const concurrency = getMetadataConcurrency();
+  const concurrency = 3;
   const fetched = await runWithConcurrency(needsEffect, concurrency, (slot) =>
     context.effect(fetchTokenMeta, { address: slot.addr }),
   );
@@ -110,9 +110,7 @@ export async function resolveTokenMetasBatch(
   // Only read DB for tokens NOT in registry
   const idsNotInRegistry = normalized.filter((a) => !localHits.has(a));
   const rows = idsNotInRegistry.length > 0
-    ? context.TokenMeta.getWhere
-      ? await context.TokenMeta.getWhere({ id: { _in: idsNotInRegistry } })
-      : (await Promise.all(idsNotInRegistry.map((a) => context.TokenMeta.get(a).then((r) => r && { id: a, ...r })))).filter(Boolean) as TokenMetaRow[]
+    ? await context.TokenMeta.getWhere({ id: { _in: idsNotInRegistry } })
     : [];
   const existingMap = new Map(rows.map((r) => [r.id, r]));
   const existing = normalized.map((addr) => existingMap.get(addr));

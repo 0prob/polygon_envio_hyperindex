@@ -1,6 +1,6 @@
 import { createPublicClient, http, fallback, type PublicClient, type HttpTransport } from "viem";
 import { polygon } from "viem/chains";
-import { getRpmTarget } from "../utils/pacing";
+// ponytail: polygon is used by publicClient context below
 
 /**
  * Centralized RPC client for all effects (token decimals, Curve/Balancer/DODO metadata, etc.).
@@ -28,30 +28,6 @@ const RPC_ENV_KEYS = [
 ] as const;
 
 /** Parse comma/semicolon/whitespace-separated RPC URLs, deduped in order. */
-/** Redact API keys from RPC URLs before logging. */
-export function redactRpcUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    const segments = parsed.pathname.split("/");
-    const keySlot = segments.length - 1;
-    const prev = segments[keySlot - 1];
-    if (keySlot > 0 && (prev === "v2" || prev === "v3" || prev === "v4")) {
-      segments[keySlot] = "***";
-      parsed.pathname = segments.join("/");
-    }
-    for (const param of ["apiKey", "apikey", "key", "token"]) {
-      if (parsed.searchParams.has(param)) {
-        parsed.searchParams.set(param, "***");
-      }
-    }
-    return parsed.toString();
-  } catch {
-    return url.replace(/\/[A-Za-z0-9_-]{16,}(?=\/|$)/g, "/***");
-  }
-}
-
-
-
 export function getRpcUrls(): string[] {
   for (const key of RPC_ENV_KEYS) {
     const raw = process.env[key];
@@ -79,38 +55,15 @@ interface RpcTransportTuning {
   retryDelayMs: number;
 }
 
-/** Scale HTTP + multicall batching with HyperSync quota — tighter budgets get smaller bursts. */
-export function getRpcTransportTuning(rpm = getRpmTarget()): RpcTransportTuning {
-  if (rpm >= 180) {
-    return {
-      httpBatchSize: 8,
-      httpBatchWait: 16,
-      multicallBatchSize: 64,
-      multicallWait: 16,
-      timeoutMs: 12_000,
-      retryCount: 2,
-      retryDelayMs: 400,
-    };
-  }
-  if (rpm >= 150) {
-    return {
-      httpBatchSize: 12,
-      httpBatchWait: 24,
-      multicallBatchSize: 48,
-      multicallWait: 24,
-      timeoutMs: 15_000,
-      retryCount: 2,
-      retryDelayMs: 500,
-    };
-  }
+export function getRpcTransportTuning(): RpcTransportTuning {
   return {
     httpBatchSize: 8,
-    httpBatchWait: 32,
-    multicallBatchSize: 32,
-    multicallWait: 32,
-    timeoutMs: 15_000,
-    retryCount: 3,
-    retryDelayMs: 500,
+    httpBatchWait: 16,
+    multicallBatchSize: 64,
+    multicallWait: 16,
+    timeoutMs: 12_000,
+    retryCount: 2,
+    retryDelayMs: 400,
   };
 }
 
@@ -138,30 +91,6 @@ function buildHttpTransport(url: string, tuning: RpcTransportTuning): HttpTransp
 export function buildPublicClient(): PublicClient {
   const rpcUrls = getRpcUrls();
   const tuning = getRpcTransportTuning();
-  const usingFallbacks = rpcUrls.every((url) =>
-    (PUBLIC_FALLBACK_RPC_URLS as readonly string[]).includes(url),
-  );
-
-  if (process.env.VITEST !== "true") {
-    console.log(
-      JSON.stringify({
-        level: 30,
-        msg: "rpc_client_init",
-        endpointCount: rpcUrls.length,
-        endpoints: rpcUrls.map(redactRpcUrl),
-        usingPublicFallbacks: usingFallbacks,
-        rpmTarget: getRpmTarget(),
-        httpBatchSize: tuning.httpBatchSize,
-        multicallBatchSize: tuning.multicallBatchSize,
-      }),
-    );
-    if (usingFallbacks) {
-      console.warn(
-        "[rpc_client] No POLYGON_RPC_URLS configured — using public fallbacks. " +
-          "Add paid archival endpoints to .env for reliable historical eth_call in effects.",
-      );
-    }
-  }
 
   const transports = rpcUrls.map((url) => buildHttpTransport(url, tuning));
   const transport =
@@ -195,38 +124,3 @@ export const publicClient: PublicClient = new Proxy({} as PublicClient, {
   },
 });
 
-/** @internal Vitest-only — rebuild client after env changes between cases. */
-export function resetPublicClientForTest(): void {
-  if (process.env.VITEST !== "true") return;
-  publicClientInstance = undefined;
-}
-
-/** Lightweight RPC error classification (mirrors bot retry.ts). */
-export function isQuotaError(err: unknown): boolean {
-  const msg = String(err).toLowerCase();
-  return (
-    msg.includes("monthly") ||
-    msg.includes("capacity") ||
-    msg.includes("quota") ||
-    msg.includes("429") ||
-    msg.includes("rate limit") ||
-    msg.includes("too many requests")
-  );
-}
-
-export function isNetworkError(err: unknown): boolean {
-  const msg = String(err).toLowerCase();
-  return (
-    msg.includes("timeout") ||
-    msg.includes("timed out") ||
-    msg.includes("failed to fetch") ||
-    msg.includes("econnreset") ||
-    msg.includes("econnrefused") ||
-    msg.includes("socket hang up") ||
-    msg.includes("http request failed") ||
-    /\b50[0-9]\b/.test(msg)
-  );
-}
-
-// Re-export for convenience in effects
-export { polygon };

@@ -58,7 +58,7 @@ indexer.onBlock(
       return;
     }
 
-    const { quoteToken, activeTokens, feeBps } = await context.effect(fetchWooFiTokens, { pool: WOOFI_PP_V2 });
+    const { activeTokens, feeBps } = await context.effect(fetchWooFiTokens, { pool: WOOFI_PP_V2 });
 
     if (activeTokens.length < 2) return;
 
@@ -89,14 +89,6 @@ indexer.onBlock(
       tokenExisting,
     );
 
-    if (context.log) {
-      context.log.info("WooFiBootstrap: discovered tokens", {
-        pool: WOOFI_PP_V2,
-        quoteToken,
-        tokenCount: activeTokens.length,
-        tokens: activeTokens,
-      });
-    }
   },
 );
 

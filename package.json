@@ -6,7 +6,6 @@
     "codegen": "envio codegen",
     "dev": "bun scripts/envio-dev.ts",
     "run": "bun scripts/envio-dev.ts run",
-    "test": "vitest run",
     "validate-config": "python3 scripts/validate_envio_config.py",
     "validate-data": "python3 scripts/validate_data.py",
     "validate": "bun run validate-config && bun run validate-data",
@@ -19,7 +18,6 @@
   },
   "devDependencies": {
     "@types/node": "^26.0.1",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "^6.0.3"
   }
 }

@@ -34,7 +34,7 @@ export async function appendDiscoveredDecimals(
   if (entries.length === 0) return;
   await mkdir(path.dirname(ndjsonPath), { recursive: true });
   const payload = entries
-    .map(({ address, decimals }) => JSON.stringify({ address: address.toLowerCase(), decimals }) + "\n")
+    .map(({ address, decimals }) => JSON.stringify({ address, decimals }) + "\n")
     .join("");
   await appendFile(ndjsonPath, payload, "utf8");
 }

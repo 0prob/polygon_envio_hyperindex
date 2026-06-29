@@ -1,3 +1,0 @@
-# Vitest owns *.test.ts (createTestIndexer + envio). Use `bun run test`, not bare `bun test`.
-[test]
-pathIgnorePatterns = ["src/**/*.test.ts"]

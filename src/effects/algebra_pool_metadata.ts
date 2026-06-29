@@ -1,7 +1,6 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
-import { getHistoricalMetaEffectRateLimit } from "../utils/pacing";
 
 const ALGEBRA_POOL_ABI = parseAbi([
   "function globalState() view returns (uint160 price, int24 tick, uint16 fee, uint16 timepointIndex, uint8 communityFeeToken0, uint8 communityFeeToken1, bool unlocked)",
@@ -22,12 +21,12 @@ export const fetchAlgebraPoolFee = createEffect(
     output: {
       fee: S.bigint,
     },
-    rateLimit: getHistoricalMetaEffectRateLimit(),
+    rateLimit: { calls: 60, per: "second" as const },
     cache: true,
   },
   async ({ input, context }: {
     input: { pool: string; blockNumber?: bigint };
-    context: any;
+    context: { cache: boolean };
   }) => {
     try {
       const pool = input.pool as `0x${string}`;
@@ -40,12 +39,6 @@ export const fetchAlgebraPoolFee = createEffect(
       }) as [bigint, number, number, number, number, number, boolean];
       return { fee: BigInt(state[2]) };
     } catch (err: unknown) {
-      if (context.log) {
-        context.log.warn("Failed to fetch Algebra pool fee", {
-          pool: input.pool,
-          error: String(err),
-        });
-      }
       context.cache = false;
       return { fee: 0n };
     }

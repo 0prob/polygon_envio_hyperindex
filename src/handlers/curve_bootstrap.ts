@@ -9,7 +9,7 @@ import { fetchCurveRegistryPage } from "../effects/curve_registry_bootstrap";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch, type FactoryTokenMeta } from "../utils/factory_token_meta";
-import { runWithConcurrency, getMetadataConcurrency } from "../utils/pacing";
+import { runWithConcurrency } from "../utils/pacing";
 import { CURVE_REGISTRY_SOURCES, ZERO_ADDRESS, POLYGON_CHAIN_ID, DEFAULT_CURVE_N_COINS, chainStart } from "../utils/constants";
 
 const PAGE_SIZE = 40;
@@ -19,8 +19,7 @@ const DEFAULT_N_COINS = DEFAULT_CURVE_N_COINS;
 const earliestCurveDeployBlock = Math.min(...CURVE_REGISTRY_SOURCES.map((s) => s.deployBlock));
 const bootstrapStartBlock = Math.max(earliestCurveDeployBlock + 1, chainStart);
 
-/** Advance registry pagination only when the page produced indexable pools or was fully deduped. */
-export function shouldAdvanceBootstrapPage(newPoolCount: number, readyPoolCount: number): boolean {
+function shouldAdvanceBootstrapPage(newPoolCount: number, readyPoolCount: number): boolean {
   if (newPoolCount === 0) return true;
   return readyPoolCount > 0;
 }
@@ -74,7 +73,7 @@ async function bootstrapRegistryPage(
   }
 
   // Phase 1: fetch pool metadata with bounded concurrency (RPC effects only).
-  const concurrency = Math.min(3, getMetadataConcurrency());
+  const concurrency = 3;
   const readyPools: { address: string; coins: string[]; poolType: CurveDiscoveryPoolType; fee: bigint }[] = [];
   let allNonCurve = true;
 
@@ -91,12 +90,6 @@ async function bootstrapRegistryPage(
         // Some reads succeeded — not a non-Curve contract, just an RPC / coin count issue.
         allNonCurve = false;
       }
-      if (context.log) {
-        const reason = isCurveMetadataEmpty(meta)
-          ? "all multicall reads reverted (likely non-Curve contract)"
-          : "metadata partially unavailable";
-        context.log.warn(`Curve bootstrap: ${reason} — skipping pool`, { pool: row.address });
-      }
       return;
     }
 
@@ -104,9 +97,6 @@ async function bootstrapRegistryPage(
     // PoolMeta with fee=0. Mark as non-complete so page retries on next stride.
     if (meta.fee === 0n) {
       allNonCurve = false;
-      if (context.log) {
-        context.log.warn("Curve bootstrap: fee read failed — skipping pool (will retry)", { pool: row.address });
-      }
       return;
     }
 
@@ -114,7 +104,7 @@ async function bootstrapRegistryPage(
     readyPools.push({
       address: row.address,
       coins,
-      poolType: meta.poolType as CurveDiscoveryPoolType,
+      poolType: meta.poolType,
       fee: meta.fee,
     });
   });

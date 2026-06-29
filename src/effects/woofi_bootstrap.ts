@@ -2,7 +2,6 @@ import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
 import { MAJOR_TOKENS } from "../utils/constants";
-import { getHistoricalMetaEffectRateLimit } from "../utils/pacing";
 
 const WOOFI_ABI = parseAbi([
   "function quoteToken() external view returns (address)",
@@ -35,8 +34,7 @@ export async function fetchWooFiTokensHandler({
   context,
 }: {
   input: { pool: string };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any;
+  context: { cache: boolean };
 }) {
   const poolAddr = input.pool.toLowerCase();
   const EMPTY = { quoteToken: "", activeTokens: [] as string[], feeBps: 0 };
@@ -82,12 +80,6 @@ export async function fetchWooFiTokensHandler({
       }
 
       if (activeTokens.length < 2) {
-        if (context.log) {
-          context.log.warn("fetchWooFiTokens: no active base tokens found — pool may be empty", {
-            pool: input.pool,
-            quoteToken,
-          });
-        }
         context.cache = false;
         return EMPTY;
       }
@@ -98,9 +90,6 @@ export async function fetchWooFiTokensHandler({
 
       return { quoteToken, activeTokens, feeBps: poolFeeBps };
     } catch (err) {
-      if (context.log) {
-        context.log.warn("fetchWooFiTokens failed", { pool: input.pool, error: String(err) });
-      }
       context.cache = false;
       return EMPTY;
     } finally {
@@ -121,7 +110,7 @@ export const fetchWooFiTokens = createEffect(
       activeTokens: S.array(S.string),
       feeBps: S.number,
     },
-    rateLimit: getHistoricalMetaEffectRateLimit(),
+    rateLimit: { calls: 60, per: "second" as const },
     cache: true,
   },
   fetchWooFiTokensHandler,

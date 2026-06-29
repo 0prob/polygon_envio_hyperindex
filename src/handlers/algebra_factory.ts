@@ -26,12 +26,10 @@ indexer.onEvent(
     // globalState().fee is in hundredths of a basis point (same format as Uniswap V3
     // PoolCreated event fee), stored as-is.
     const blockNumber = Number(event.block.number);
-    const feeP = context.effect(fetchAlgebraPoolFee, {
+    const feeResult = await context.effect(fetchAlgebraPoolFee, {
       pool: event.params.pool,
       blockNumber: BigInt(blockNumber),
     });
-
-    const feeResult = await feeP;
     const fee = feeResult.fee > 0n ? Number(feeResult.fee) : undefined;
 
     await persistFactoryPoolMeta(context, {

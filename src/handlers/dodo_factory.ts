@@ -1,4 +1,5 @@
-import { indexer, Effect } from "envio";
+import { indexer } from "envio";
+import type { Effect } from "envio";
 import {
   dodoFeeToBps,
   fetchDodoMetadata,
@@ -12,13 +13,13 @@ import { shouldSkipFactoryPool } from "../utils/guards";
 interface DodoHandlerContext {
   effect: <I, O>(effect: Effect<I, O>, input: I extends undefined ? undefined : I) => Promise<O>;
   isPreload: boolean;
-  log?: { warn: (msg: string, ctx?: unknown) => void; info?: (msg: string, ctx?: unknown) => void };
   PoolMeta: {
     get: (id: string) => Promise<{ id?: string } | undefined>;
     set: (entity: unknown) => void;
   };
   TokenMeta: {
     get: (id: string) => Promise<{ decimals?: number } | undefined>;
+    getWhere: (filter: { id: { _in: string[] } }) => Promise<{ id: string; decimals?: number }[]>;
     set: (entity: { id: string; decimals: number }) => void;
   };
 }
@@ -52,12 +53,7 @@ async function handleDodoPool(
 
   const metadataUnavailable = isDodoMetadataEmpty(meta);
   if (metadataUnavailable) {
-    if (context.log) {
-      context.log.warn("DODO metadata RPC unavailable — skipping pool, will retry on re-index", {
-        pool,
-      });
-    }
-    return; // Don't persist with fabricated fee; replayed event or bootstrap catches on restart.
+    return;
   }
 
   const feeBps = dodoFeeToBps(meta.fee);

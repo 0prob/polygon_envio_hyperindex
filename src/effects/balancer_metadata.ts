@@ -1,8 +1,8 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
-import { publicClient, isQuotaError } from "./rpc_client";
+import { publicClient } from "./rpc_client";
+
 import { BALANCER_VAULT } from "../utils/constants";
-import { getHistoricalMetaEffectRateLimit } from "../utils/pacing";
 
 const BALANCER_ABI = parseAbi([
   "function getPoolId() view returns (bytes32)",
@@ -34,8 +34,7 @@ export async function fetchBalancerMetadataHandler({
   context,
 }: {
   input: { pool: string; poolId?: string; blockNumber?: bigint };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any;
+  context: { cache: boolean };
 }) {
   const poolAddr = input.pool.toLowerCase();
   const blockKey = input.blockNumber != null ? String(input.blockNumber) : "";
@@ -65,7 +64,7 @@ export async function fetchBalancerMetadataHandler({
             abi: BALANCER_ABI,
             functionName: "getPoolId",
             ...opts,
-          }) as Promise<`0x${string}`>,
+          }),
           undefined,
         );
       }
@@ -82,7 +81,7 @@ export async function fetchBalancerMetadataHandler({
           functionName: "getPoolTokens",
           args: [poolId!],
           ...opts,
-        }) as Promise<[string[], bigint[], bigint]>,
+        }),
         undefined,
       );
 
@@ -106,12 +105,6 @@ export async function fetchBalancerMetadataHandler({
       ]);
 
       if (!poolTokensResult) {
-        if (context.log) {
-          context.log.warn("Failed to fetch Balancer vault pool tokens — skipping pool metadata", {
-            pool: input.pool,
-            poolId,
-          });
-        }
         context.cache = false;
         return { poolId: poolId as string, tokens: [], balances: [], lastChangeBlock: 0n, swapFee: 0n };
       }
@@ -119,12 +112,7 @@ export async function fetchBalancerMetadataHandler({
       const [tokens, balances, lastChangeBlock] = poolTokensResult;
 
       if (anyReadFailed) {
-        if (context.log?.debug) {
-          context.log.debug("Balancer metadata reads partially failed — not caching", { pool: input.pool, poolId });
-        }
         context.cache = false;
-      } else {
-        context.log?.info?.("Fetched Balancer pool metadata", { pool: input.pool });
       }
 
       return {
@@ -132,27 +120,12 @@ export async function fetchBalancerMetadataHandler({
         tokens: tokens.map((t) => t.toLowerCase()),
         balances: balances.map((b) => BigInt(b)),
         lastChangeBlock: BigInt(lastChangeBlock),
-        swapFee: BigInt(swapFee as bigint),
+        swapFee: swapFee as bigint,
         weights: weights as bigint[] | undefined,
         amp: ampResult ? (ampResult as [bigint, boolean, bigint])[0] : undefined,
         scalingFactors: scalingFactors as bigint[] | undefined,
       };
     } catch (err) {
-      const errStr = String(err);
-
-      if (context.log) {
-        if (isQuotaError(err)) {
-          context.log.warn(
-            `RPC quota / monthly capacity exceeded while fetching Balancer metadata. ` +
-              `Add more providers to POLYGON_RPC_URLS or reduce effect rateLimits.`,
-          );
-        } else {
-          context.log.warn("Failed to fetch Balancer metadata", {
-            pool: input.pool,
-            error: errStr,
-          });
-        }
-      }
       context.cache = false;
       return { poolId: "", tokens: [], balances: [], lastChangeBlock: 0n, swapFee: 0n };
     } finally {
@@ -182,7 +155,7 @@ export const fetchBalancerMetadata = createEffect(
       amp: S.optional(S.bigint),
       scalingFactors: S.optional(S.array(S.bigint)),
     },
-    rateLimit: getHistoricalMetaEffectRateLimit(),
+    rateLimit: { calls: 60, per: "second" as const },
     cache: true,
   },
   fetchBalancerMetadataHandler,

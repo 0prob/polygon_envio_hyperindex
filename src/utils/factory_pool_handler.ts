@@ -16,6 +16,7 @@ type FactoryPoolMetaContext = {
   };
   TokenMeta: {
     get(id: string): Promise<{ decimals?: number } | undefined>;
+    getWhere(filter: { id: { _in: string[] } }): Promise<{ id: string; decimals?: number }[]>;
     set(entity: { id: string; decimals: number }): void;
   };
   effect: <I, O>(effect: import("envio").Effect<I, O>, input: I extends undefined ? undefined : I) => Promise<O>;
