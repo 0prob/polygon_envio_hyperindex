@@ -1,17 +1,17 @@
 import { createEffect, S } from "envio";
 import { parseAbi } from "viem";
 import { publicClient } from "./rpc_client";
+import { ZERO_ADDRESS } from "../utils/constants";
 
-/** Fee fields only — reserves/i/k are unused by PoolMeta discovery handlers. */
 const DODO_FEE_ABI = parseAbi([
   "function _LP_FEE_RATE_() view returns (uint256)",
-  "function _MT_FEE_RATE_() view returns (uint256)",
+  "function _MT_FEE_RATE_MODEL_() view returns (address)",
 ]);
 
-/**
- * DODO V2 pool metadata. Indexer only needs LP/MT fee rates for PoolMeta.fee.
- * Uses single multicall for both reads.
- */
+const FEE_MODEL_ABI = parseAbi([
+  "function getFeeRate(address) view returns (uint256)",
+]);
+
 export const fetchDodoMetadata = createEffect(
   {
     name: "fetchDodoMetadata",
@@ -21,8 +21,6 @@ export const fetchDodoMetadata = createEffect(
     },
     output: {
       fee: S.bigint,
-      lpFeeRate: S.bigint,
-      mtFeeRate: S.bigint,
       anyFailed: S.boolean,
     },
     rateLimit: { calls: 60, per: "second" as const },
@@ -30,58 +28,63 @@ export const fetchDodoMetadata = createEffect(
   },
   fetchDodoMetadataHandler,
 );
-/**
- * DODO LP/MT fee rates are 1e18 fractions (see dodo.ts mulFloor). PoolMeta.fee stores
- * combined LP+MT in basis points for routing weights; simulation still reads raw rates from RPC.
- * Non-zero fees that truncate to <1 bps round up to 1 (e.g. 0.5 bps → 1).
- */
+
 export function dodoFeeToBps(totalFeeRate: bigint): number {
   if (totalFeeRate <= 0n) return 0;
   const bps = Number(totalFeeRate / 10n ** 14n);
   return Math.max(1, bps);
 }
 
-const EMPTY_DODO_RESULT = {
-  fee: 0n,
-  lpFeeRate: 0n,
-  mtFeeRate: 0n,
-  anyFailed: true,
-};
 
-const inFlightDodo = new Map<string, Promise<{
-  fee: bigint;
-  lpFeeRate: bigint;
-  mtFeeRate: bigint;
-  anyFailed: boolean;
-}>>();
+
+const inFlightDodo = new Map<string, Promise<{ fee: bigint; anyFailed: boolean }>>();
 
 async function readDodoFeeRates(
   address: `0x${string}`,
   blockNumber?: bigint,
-): Promise<{ fee: bigint; lpFeeRate: bigint; mtFeeRate: bigint; anyFailed: boolean }> {
+): Promise<{ fee: bigint; anyFailed: boolean }> {
   const opts = blockNumber != null ? { blockNumber } : undefined;
   let results;
   try {
     results = await publicClient.multicall({
       contracts: [
         { address, abi: DODO_FEE_ABI, functionName: "_LP_FEE_RATE_" as const },
-        { address, abi: DODO_FEE_ABI, functionName: "_MT_FEE_RATE_" as const },
+        { address, abi: DODO_FEE_ABI, functionName: "_MT_FEE_RATE_MODEL_" as const },
       ],
       allowFailure: true,
       ...opts,
     });
   } catch {
-    return { fee: 0n, lpFeeRate: 0n, mtFeeRate: 0n, anyFailed: true };
+    return { fee: 0n, anyFailed: true };
   }
 
   const lp = results[0]!.status === "success" ? BigInt(results[0]!.result as bigint) : 0n;
-  const mt = results[1]!.status === "success" ? BigInt(results[1]!.result as bigint) : 0n;
+  let mt = 0n;
+  let mtFailed = results[1]!.status !== "success";
+
+  if (!mtFailed) {
+    const mtModel = results[1]!.result as `0x${string}`;
+    if (mtModel !== ZERO_ADDRESS) {
+      try {
+        // ponytail: getFeeRate passes msg.sender as pool to impl.
+        // From outside msg.sender != pool, but most models ignore it.
+        const mtResult = await publicClient.readContract({
+          address: mtModel,
+          abi: FEE_MODEL_ABI,
+          functionName: "getFeeRate",
+          args: [ZERO_ADDRESS],
+          ...opts,
+        }) as bigint;
+        mt = mtResult;
+      } catch {
+        mtFailed = true;
+      }
+    }
+  }
 
   return {
     fee: lp + mt,
-    lpFeeRate: lp,
-    mtFeeRate: mt,
-    anyFailed: results[0]!.status !== "success" || results[1]!.status !== "success",
+    anyFailed: results[0]!.status !== "success" || mtFailed,
   };
 }
 
@@ -106,39 +109,29 @@ async function fetchDodoMetadataHandler({
       const address = input.pool as `0x${string}`;
       let anyFailed = false;
       let fee = 0n;
-      let lpFeeRate = 0n;
-      let mtFeeRate = 0n;
 
       {
         const r = await readDodoFeeRates(address, input.blockNumber);
         anyFailed = r.anyFailed;
         fee = r.fee;
-        lpFeeRate = r.lpFeeRate;
-        mtFeeRate = r.mtFeeRate;
       }
 
-      // Block-pinned reads may return empty at creation block — fall back to latest state.
       if (fee === 0n && input.blockNumber !== undefined) {
         const latest = await readDodoFeeRates(address);
         if (latest.fee !== 0n) {
           anyFailed = latest.anyFailed;
           fee = latest.fee;
-          lpFeeRate = latest.lpFeeRate;
-          mtFeeRate = latest.mtFeeRate;
         }
       }
 
-      // ponytail: don't cache when metadata is incomplete/useless.
-      // fee=0 or any partial read failure → handlers skip the pool. Caching
-      // would cause an infinite retry loop.
       if (fee === 0n || anyFailed) {
         context.cache = false;
       }
 
-      return { fee, lpFeeRate, mtFeeRate, anyFailed };
-    } catch (err) {
+      return { fee, anyFailed };
+    } catch {
       context.cache = false;
-      return { ...EMPTY_DODO_RESULT };
+      return { fee: 0n, anyFailed: true };
     } finally {
       inFlightDodo.delete(key);
     }

@@ -75,7 +75,7 @@ export const WOOFI_PP_V2_DEPLOY_BLOCK = 30_000_000;
 // This is NOT the legacy registry. Source: https://github.com/curvefi/docs (deployments.json).
 // Deploy block ~58_597_033 (2024-08 NG migration).
 export const CURVE_REGISTRY_LEGACY: Address = "0x296d2b5c23833a70d07c8fcbb97d846c1ff90ddd";
-const CURVE_REGISTRY_DEPLOY_BLOCK = 58_597_033;
+export const CURVE_REGISTRY_DEPLOY_BLOCK = 58_597_033;
 
 // Curve NG factory addresses (Polygon) — emit TwocryptoPoolDeployed/TricryptoPoolDeployed.
 // Source: https://github.com/curvefi/docs (deployments.json).
@@ -96,26 +96,27 @@ export const DEFAULT_CURVE_N_COINS = 2;
  * Major high-liquidity tokens on the network.
  * Used as "bases" for rate propagation and prioritizing pool discovery.
  */
-const RATE_PRECISION = 10n ** 18n;
-export const MAJOR_TOKEN_DATA = {
-  WMATIC: { address: WMATIC, decimals: 18, approxWholeMaticWei: RATE_PRECISION },
-  WETH: { address: WETH, decimals: 18, approxWholeMaticWei: RATE_PRECISION * 1000n },
-  USDC: { address: USDC, decimals: 6, approxWholeMaticWei: RATE_PRECISION * 2n },
-  USDC_E: { address: USDC_E, decimals: 6, approxWholeMaticWei: RATE_PRECISION * 2n },
-  USDT: { address: USDT, decimals: 6, approxWholeMaticWei: RATE_PRECISION * 2n },
-  DAI: { address: DAI, decimals: 18, approxWholeMaticWei: RATE_PRECISION * 2n },
-  WBTC: { address: WBTC, decimals: 8, approxWholeMaticWei: RATE_PRECISION * 30000n },
-  LINK: { address: LINK, decimals: 18, approxWholeMaticWei: RATE_PRECISION * 5n },
-  AAVE: { address: AAVE, decimals: 18, approxWholeMaticWei: RATE_PRECISION * 50n },
-  CRV: { address: CRV, decimals: 18, approxWholeMaticWei: RATE_PRECISION * 2n },
-  BAL: { address: BAL, decimals: 18, approxWholeMaticWei: RATE_PRECISION * 3n },
-  UNI: { address: UNI, decimals: 18, approxWholeMaticWei: RATE_PRECISION * 5n },
-  GHST: { address: GHST, decimals: 18, approxWholeMaticWei: RATE_PRECISION * 3n },
-  QUICK: { address: QUICK, decimals: 18, approxWholeMaticWei: RATE_PRECISION * 100n },
-  TEL: { address: TEL, decimals: 2, approxWholeMaticWei: RATE_PRECISION / 100n },
-  SAND: { address: SAND, decimals: 18, approxWholeMaticWei: RATE_PRECISION / 2n },
-  GRT: { address: GRT, decimals: 18, approxWholeMaticWei: RATE_PRECISION / 4n },
-} as const;
+export const MAJOR_TOKEN_DATA = (() => {
+  const PREC = 10n ** 18n;
+  return {
+  WMATIC: { address: WMATIC, decimals: 18, approxWholeMaticWei: PREC },
+  WETH: { address: WETH, decimals: 18, approxWholeMaticWei: PREC * 1000n },
+  USDC: { address: USDC, decimals: 6, approxWholeMaticWei: PREC * 2n },
+  USDC_E: { address: USDC_E, decimals: 6, approxWholeMaticWei: PREC * 2n },
+  USDT: { address: USDT, decimals: 6, approxWholeMaticWei: PREC * 2n },
+  DAI: { address: DAI, decimals: 18, approxWholeMaticWei: PREC * 2n },
+  WBTC: { address: WBTC, decimals: 8, approxWholeMaticWei: PREC * 30000n },
+  LINK: { address: LINK, decimals: 18, approxWholeMaticWei: PREC * 5n },
+  AAVE: { address: AAVE, decimals: 18, approxWholeMaticWei: PREC * 50n },
+  CRV: { address: CRV, decimals: 18, approxWholeMaticWei: PREC * 2n },
+  BAL: { address: BAL, decimals: 18, approxWholeMaticWei: PREC * 3n },
+  UNI: { address: UNI, decimals: 18, approxWholeMaticWei: PREC * 5n },
+  GHST: { address: GHST, decimals: 18, approxWholeMaticWei: PREC * 3n },
+  QUICK: { address: QUICK, decimals: 18, approxWholeMaticWei: PREC * 100n },
+  TEL: { address: TEL, decimals: 2, approxWholeMaticWei: PREC / 100n },
+  SAND: { address: SAND, decimals: 18, approxWholeMaticWei: PREC / 2n },
+  GRT: { address: GRT, decimals: 18, approxWholeMaticWei: PREC / 4n },
+} as const; })();
 
 /** Set of lowercased major token addresses for fast lookup */
 export const MAJOR_TOKENS = new Set(Object.values(MAJOR_TOKEN_DATA).map((t) => t.address.toLowerCase()));
@@ -178,10 +179,3 @@ export function lookupV3FactoryProtocol(factoryAddr: string): string | undefined
   return V3_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()];
 }
 
-// ── Curve MetaRegistry bootstrap ────────────────────────────────────────
-
-const CURVE_BOOTSTRAP_LEGACY_ID = "137-metaregistry";
-
-export const CURVE_REGISTRY_SOURCES = [
-  { id: CURVE_BOOTSTRAP_LEGACY_ID, address: CURVE_REGISTRY_LEGACY, deployBlock: CURVE_REGISTRY_DEPLOY_BLOCK },
-] as const;

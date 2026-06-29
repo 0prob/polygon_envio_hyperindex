@@ -6,7 +6,7 @@ import { CURVE_REGISTRY_LEGACY, ZERO_ADDRESS } from "../utils/constants";
 const REGISTRY_ABI = parseAbi([
   "function pool_count() view returns (uint256)",
   "function pool_list(uint256) view returns (address)",
-  "function get_n_coins(address) view returns (uint256)",
+  "function get_n_coins(address) view returns (uint256, uint256)",
   "function get_coins(address) view returns (address[8])",
 ]);
 
@@ -26,7 +26,6 @@ export async function fetchCurveRegistryPageHandler({
   const offset = Math.max(0, input.offset);
   const limit = Math.min(Math.max(1, input.limit), 100);
   const registry = (input.registryAddress ? input.registryAddress.toLowerCase() : CURVE_REGISTRY_LEGACY) as `0x${string}`;
-  const ZERO = ZERO_ADDRESS;
 
   let total: number;
   try {
@@ -101,14 +100,14 @@ export async function fetchCurveRegistryPageHandler({
       continue;
     }
 
-    const nCoins = Number(nCoinsResult.result as bigint);
+    const nCoins = Number((nCoinsResult.result as readonly bigint[])[0]);
     if (!Number.isFinite(nCoins) || nCoins < 2) continue;
 
     const coinArr = coinsResult.result as readonly string[];
     const coins = coinArr
       .slice(0, Math.min(nCoins, 8))
       .map((c) => c.toLowerCase())
-      .filter((c) => c && c !== ZERO);
+      .filter((c) => c && c !== ZERO_ADDRESS);
     if (coins.length >= 2) {
       pools.push({ address: addr, coins });
     }

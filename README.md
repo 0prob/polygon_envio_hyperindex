@@ -63,8 +63,6 @@ Effects (`createEffect` with preload optimization) resolve token decimals and po
 | `bun run validate` | Run both validate-config and validate-data |
 | `bun run generate-tokens` | Merge local data into `data/token_registry.db` (no network fetch) |
 | `bun run backup-db` | pg_dump the Hasura database |
-| `bun test` | Vitest suite for effects, handlers, and utilities |
-
 ## Files
 
 | Path | Role |
@@ -72,6 +70,7 @@ Effects (`createEffect` with preload optimization) resolve token decimals and po
 | `src/handlers/` | onEvent/onBlock handlers (10 files, one per protocol) |
 | `src/effects/` | Envio Effect API implementations (token, curve, balancer, dodo, woofi) |
 | `src/utils/` | Guards, pacing, entity writes, constants, address normalization |
+| `scripts/` | Dev launcher, validation, token registry generator, db backup |
 | `abis/` | JSON ABIs for all indexed contracts |
 | `data/token_registry.db` | Static SQLite decimals lookup (~180k tokens, 0 RPC at runtime) |
 | `data/pools.json` | Bot anchor pool token addresses (optional input to `generate-tokens`) |
@@ -84,4 +83,4 @@ Effects (`createEffect` with preload optimization) resolve token decimals and po
 - **Polygon-only** (chain id 137). No multichain setup.
 - **HyperSync-only.** RPC fallback disabled to avoid fatal wildcard-contract errors.
 - **No hot pool state.** This indexer discovers pools and writes metadata; the arb bot reads pool state via RPC.
-- **Reorgs handled automatically** via `rollback_on_reorg: true` (max depth 200). Module-level caches (Balancer poolId cache) self-heal on entity rollback.
+- **Reorgs handled automatically** via `rollback_on_reorg: true` (max depth 150). Module-level caches (Balancer poolId cache) self-heal on entity rollback.

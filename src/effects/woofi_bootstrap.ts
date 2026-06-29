@@ -5,7 +5,7 @@ import { MAJOR_TOKENS } from "../utils/constants";
 
 const WOOFI_ABI = parseAbi([
   "function quoteToken() external view returns (address)",
-  "function tokenInfos(address token) external view returns (uint192 reserve, uint16 feeRate)",
+  "function tokenInfos(address token) external view returns (uint192 reserve, uint16 feeRate, uint128 maxGamma, uint128 maxNotionalSwap)",
 ]);
 
 /**
@@ -69,7 +69,7 @@ export async function fetchWooFiTokensHandler({
       for (let i = 0; i < tokenList.length; i++) {
         const r = results[1 + i]!;
         if (r.status !== "success") continue;
-        const rVal = r.result as { reserve: bigint; feeRate: number } | [bigint, number];
+        const rVal = r.result as unknown as { reserve: bigint; feeRate: number } | [bigint, number];
         const reserve = Array.isArray(rVal) ? rVal[0] : rVal.reserve;
         const feeRate = Array.isArray(rVal) ? rVal[1] : rVal.feeRate;
         const addr = tokenList[i]!;

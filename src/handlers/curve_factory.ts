@@ -9,7 +9,7 @@ import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 import { ZERO_ADDRESS, DEFAULT_CURVE_N_COINS } from "../utils/constants";
 
-const ZERO = ZERO_ADDRESS;
+
 const DEFAULT_N_COINS = DEFAULT_CURVE_N_COINS;
 
 interface CurveHandlerContext {
@@ -74,7 +74,7 @@ async function handleCurvePoolAdded({
     blockNumber: BigInt(blockNumber),
   });
 
-  const coins = meta.coins.filter((c: string) => c && c !== ZERO);
+  const coins = meta.coins.filter((c: string) => c && c !== ZERO_ADDRESS);
   if (coins.length < 2) {
     return;
   }

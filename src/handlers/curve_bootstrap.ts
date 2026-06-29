@@ -10,13 +10,12 @@ import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch, type FactoryTokenMeta } from "../utils/factory_token_meta";
 import { runWithConcurrency } from "../utils/pacing";
-import { CURVE_REGISTRY_SOURCES, ZERO_ADDRESS, POLYGON_CHAIN_ID, DEFAULT_CURVE_N_COINS, chainStart } from "../utils/constants";
+import { CURVE_REGISTRY_LEGACY, CURVE_REGISTRY_DEPLOY_BLOCK, ZERO_ADDRESS, POLYGON_CHAIN_ID, DEFAULT_CURVE_N_COINS, chainStart } from "../utils/constants";
 
 const PAGE_SIZE = 40;
-const ZERO = ZERO_ADDRESS;
-const DEFAULT_N_COINS = DEFAULT_CURVE_N_COINS;
 
-const earliestCurveDeployBlock = Math.min(...CURVE_REGISTRY_SOURCES.map((s) => s.deployBlock));
+const CURVE_BOOTSTRAP_ID = "137-metaregistry";
+const earliestCurveDeployBlock = CURVE_REGISTRY_DEPLOY_BLOCK;
 const bootstrapStartBlock = Math.max(earliestCurveDeployBlock + 1, chainStart);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,11 +74,11 @@ async function bootstrapRegistryPage(
   await runWithConcurrency(newPools, concurrency, async (row: { address: string }) => {
     const meta = await context.effect(fetchCurveMetadata, {
       pool: row.address,
-      nCoins: DEFAULT_N_COINS,
+      nCoins: DEFAULT_CURVE_N_COINS,
       blockNumber: block.number,
     });
 
-    const coins = meta.coins.filter((c: string) => c && c !== ZERO);
+    const coins = meta.coins.filter((c: string) => c && c !== ZERO_ADDRESS);
     if (coins.length < 2) {
       if (!isCurveMetadataEmpty(meta)) {
         hasTransient = true;
@@ -153,13 +152,15 @@ async function bootstrapRegistryPage(
 async function bootstrapCurvePools({ block, context }: any) {
   // ponytail: skip during preload — handler runs every 250 blocks on the
   // MetaRegistry (which covers all pool types). Preload would redundantly
-  // would redundantly page the registry + schedule effects for every
-  // qualifying block, adding overhead for no writes.
+  // page the registry + schedule effects for every qualifying block,
+  // adding overhead for no writes.
   if (context.isPreload) return;
 
-  for (const source of CURVE_REGISTRY_SOURCES) {
-    await bootstrapRegistryPage(context, block, source);
-  }
+  await bootstrapRegistryPage(context, block, {
+    id: CURVE_BOOTSTRAP_ID,
+    address: CURVE_REGISTRY_LEGACY,
+    deployBlock: earliestCurveDeployBlock,
+  });
 }
 
 indexer.onBlock(

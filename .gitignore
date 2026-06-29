@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Bun is the package manager; prevent pnpm lockfile from re-entering
+pnpm-lock.yaml
+
 # Build output
 generated/
 

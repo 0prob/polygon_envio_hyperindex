@@ -6,8 +6,6 @@ import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 import { WOOFI_PP_V2, WOOFI_PP_V2_DEPLOY_BLOCK, ZERO_ADDRESS, POLYGON_CHAIN_ID } from "../utils/constants";
 import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
 
-const ZERO = ZERO_ADDRESS;
-
 function mergeTokensDiff(
   existing: readonly string[] | undefined,
   ...add: string[]
@@ -16,7 +14,7 @@ function mergeTokensDiff(
   const merged = [...(existing ?? [])];
   const added: string[] = [];
   for (const t of add) {
-    if (t === ZERO || existingSet.has(t)) continue;
+    if (t === ZERO_ADDRESS || existingSet.has(t)) continue;
     existingSet.add(t);
     merged.push(t);
     added.push(t);

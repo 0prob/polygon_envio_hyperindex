@@ -206,13 +206,7 @@ async function loadDiscoveredDecimals() {
   return loadDiscoveredPromise;
 }
 
-function scheduleDiscoveredDecimalsSave(): void {
-  discoveredFlush.schedule();
-}
 
-async function flushDiscoveredDecimals(): Promise<void> {
-  return discoveredFlush.flush();
-}
 
 // Permanent blocklist of addresses that are not ERC20 (no decimals()).
 // A non-ERC20 contract never becomes one, so no TTL — skip forever.
@@ -250,13 +244,7 @@ async function loadFailedTokens() {
   return loadFailedPromise;
 }
 
-function scheduleFailedTokensSave(): void {
-  failedFlush.schedule();
-}
 
-async function flushFailedTokens(): Promise<void> {
-  return failedFlush.flush();
-}
 
 const ERC20_ABI = parseAbi(["function decimals() view returns (uint8)"]);
 
@@ -322,7 +310,7 @@ function handleDecimalsFetchFailure(addr: string, err: unknown, context: { cache
 
   if (isDefinitiveError && !isQuota && !isNetwork) {
     failedTokens.add(addr);
-    scheduleFailedTokensSave();
+    failedFlush.schedule();
   }
 
   context.cache = false;
@@ -333,7 +321,7 @@ function handleDecimalsFetchSuccess(addr: string, rawDecimals: unknown): Decimal
   const decimals = safeDecimals(Number(rawDecimals));
   registryCache.set(addr, decimals);
   discoveredDecimals[addr] = decimals;
-  scheduleDiscoveredDecimalsSave();
+  discoveredFlush.schedule();
   return { address: addr, decimals, trusted: true };
 }
 
