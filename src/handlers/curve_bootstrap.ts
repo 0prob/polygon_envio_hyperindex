@@ -19,11 +19,6 @@ const DEFAULT_N_COINS = DEFAULT_CURVE_N_COINS;
 const earliestCurveDeployBlock = Math.min(...CURVE_REGISTRY_SOURCES.map((s) => s.deployBlock));
 const bootstrapStartBlock = Math.max(earliestCurveDeployBlock + 1, chainStart);
 
-function shouldAdvanceBootstrapPage(newPoolCount: number, readyPoolCount: number): boolean {
-  if (newPoolCount === 0) return true;
-  return readyPoolCount > 0;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function bootstrapRegistryPage(
   context: any,
@@ -75,7 +70,7 @@ async function bootstrapRegistryPage(
   // Phase 1: fetch pool metadata with bounded concurrency (RPC effects only).
   const concurrency = 3;
   const readyPools: { address: string; coins: string[]; poolType: CurveDiscoveryPoolType; fee: bigint }[] = [];
-  let allNonCurve = true;
+  let hasTransient = false;
 
   await runWithConcurrency(newPools, concurrency, async (row: { address: string }) => {
     const meta = await context.effect(fetchCurveMetadata, {
@@ -87,20 +82,17 @@ async function bootstrapRegistryPage(
     const coins = meta.coins.filter((c: string) => c && c !== ZERO);
     if (coins.length < 2) {
       if (!isCurveMetadataEmpty(meta)) {
-        // Some reads succeeded — not a non-Curve contract, just an RPC / coin count issue.
-        allNonCurve = false;
+        hasTransient = true;
       }
       return;
     }
 
-    // Partial RPC failure: coins resolved but fee read failed. Don't write
-    // PoolMeta with fee=0. Mark as non-complete so page retries on next stride.
+    // ponytail: fee=0 with valid coins is a transient RPC failure — retry next stride.
     if (meta.fee === 0n) {
-      allNonCurve = false;
+      hasTransient = true;
       return;
     }
 
-    allNonCurve = false;
     readyPools.push({
       address: row.address,
       coins,
@@ -109,64 +101,58 @@ async function bootstrapRegistryPage(
     });
   });
 
-  if (readyPools.length === 0) {
-    if (allNonCurve && newPools.length > 0) {
-      // Every new pool on this page had all reads revert — they are non-Curve/garbage.
-      // Advance past them so we don't retry forever.
-      const nextIndex = Math.min(page.total, offset + page.pools.length);
-      storeProgress(nextIndex, page.total);
+  // Phase 2: always write successful pools, even when other pools on the page
+  // had transient failures. Previously the page-safety gate blocked all writes
+  // when any pool failed, permanently stalling mixed-failure pages.
+  if (readyPools.length > 0) {
+    const uniqueCoins = [...new Set(readyPools.flatMap((p) => p.coins))];
+    const tokenExisting = new Map<string, { decimals?: number } | undefined>();
+    const tokenMetasPromise = resolveTokenMetasBatch(context, uniqueCoins, tokenExisting);
+
+    if (context.isPreload) {
+      await tokenMetasPromise;
+      return;
     }
-    // Otherwise: transient RPC failures — do not advance; retry this page on the next stride.
-    return;
+
+    const tokenMetas = await tokenMetasPromise;
+    const blockNumber = Number(block.number);
+
+    for (const pool of readyPools) {
+      context.PoolMeta.set(poolMetaEntity({
+        id: pool.address,
+        address: pool.address,
+        protocol: "CURVE",
+        tokens: pool.coins,
+        fee: curveFeeToPoolMetaInt(pool.fee),
+        createdBlock: blockNumber,
+        updatedAtBlock: blockNumber,
+        poolId: undefined,
+        poolType: pool.poolType,
+      }));
+    }
+
+    await setTokenMetasIfMissing(
+      context,
+      uniqueCoins,
+      tokenMetas.map((m: FactoryTokenMeta) => m.decimals),
+      tokenMetas.map((m: FactoryTokenMeta) => m.trusted),
+      tokenExisting,
+    );
   }
 
-  // ponytail: only advance when ALL new pools on this page were successfully
-  // processed. If any pool failed metadata fetch, don't advance — retry the
-  // whole page next stride. This prevents permanently losing pools that had
-  // transient RPC failures mid-page while sibling pools succeeded.
-  if (readyPools.length < newPools.length) return;
-
-  // Phase 2: one batched token-meta pass for all coins on the page (not N× per pool).
-  const uniqueCoins = [...new Set(readyPools.flatMap((p) => p.coins))];
-  const tokenExisting = new Map<string, { decimals?: number } | undefined>();
-  const tokenMetasPromise = resolveTokenMetasBatch(context, uniqueCoins, tokenExisting);
-
-  if (context.isPreload) {
-    await tokenMetasPromise;
-    return;
-  }
-
-  const tokenMetas = await tokenMetasPromise;
-  const blockNumber = Number(block.number);
-
-  for (const pool of readyPools) {
-    context.PoolMeta.set(poolMetaEntity({
-      id: pool.address,
-      address: pool.address,
-      protocol: "CURVE",
-      tokens: pool.coins,
-      fee: curveFeeToPoolMetaInt(pool.fee),
-      createdBlock: blockNumber,
-      updatedAtBlock: blockNumber,
-      poolId: undefined,
-      poolType: pool.poolType,
-    }));
-  }
-
-  await setTokenMetasIfMissing(
-    context,
-    uniqueCoins,
-    tokenMetas.map((m: FactoryTokenMeta) => m.decimals),
-    tokenMetas.map((m: FactoryTokenMeta) => m.trusted),
-    tokenExisting,
-  );
+  // ponytail: only advance when ALL new pools were handled (written or confirmed
+  // non-Curve). Transient RPC failures → don't advance, retry next stride.
+  // Previously-written pools hit the existingPools filter next stride, so only
+  // the failed ones retry.
+  if (hasTransient) return;
 
   const nextIndex = Math.min(page.total, offset + page.pools.length);
   storeProgress(nextIndex, page.total);
 }
 
 async function bootstrapCurvePools({ block, context }: any) {
-  // ponytail: skip during preload — handler runs every 250 blocks. Preload
+  // ponytail: skip during preload — handler runs every 250 blocks on the
+  // MetaRegistry (which covers all pool types). Preload would redundantly
   // would redundantly page the registry + schedule effects for every
   // qualifying block, adding overhead for no writes.
   if (context.isPreload) return;
@@ -178,7 +164,7 @@ async function bootstrapCurvePools({ block, context }: any) {
 
 indexer.onBlock(
   {
-    name: "CurveRegistryBootstrap",
+    name: "CurveMetaRegistryBootstrap",
     where: ({ chain }) => {
       if (chain.id !== POLYGON_CHAIN_ID) return false;
       return {

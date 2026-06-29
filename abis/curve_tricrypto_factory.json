@@ -1,0 +1,22 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "pool", "type": "address" },
+      { "indexed": false, "internalType": "string", "name": "name", "type": "string" },
+      { "indexed": false, "internalType": "string", "name": "symbol", "type": "string" },
+      { "indexed": false, "internalType": "address", "name": "weth", "type": "address" },
+      { "indexed": false, "internalType": "address[3]", "name": "coins", "type": "address[3]" },
+      { "indexed": false, "internalType": "address", "name": "math", "type": "address" },
+      { "indexed": false, "internalType": "bytes32", "name": "salt", "type": "bytes32" },
+      { "indexed": false, "internalType": "uint256", "name": "packed_precisions", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "packed_A_gamma", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "packed_fee_params", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "packed_rebalancing_params", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "packed_prices", "type": "uint256" },
+      { "indexed": false, "internalType": "address", "name": "deployer", "type": "address" }
+    ],
+    "name": "TricryptoPoolDeployed",
+    "type": "event"
+  }
+]

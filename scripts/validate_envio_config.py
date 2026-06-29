@@ -67,8 +67,6 @@ EXCLUDED_EVENTS: set[tuple[str, str]] = {
 # Suppressed type warnings — (contract, event, param) or ("*", event, param).
 SUPPRESSED_TYPE_WARNINGS: set[tuple[str, str, str]] = {
     ("V2Factory", "PairCreated", "_3"),
-    ("CurveRegistry", "PoolAdded", "n_coins"),
-    ("CurveRegistry", "PoolAdded", "nCoins"),
     ("PoolManager", "Initialize", "sqrtPriceX96"),
     ("PoolManager", "Initialize", "tick"),
     ("WooPPV2", "WooSwap", "fromAmount"),

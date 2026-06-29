@@ -51,7 +51,11 @@ const UNISWAP_V2_FACTORY: Address = "0x9e5a52f57b3038f1b8eee45f28b3c1967e22799c"
 const UNISWAP_V3_FACTORY: Address = "0x1f98431c8ad98523631ae4a59f267346ea31f984";
 const SUSHISWAP_V3_FACTORY: Address = "0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e2";
 const QUICKSWAP_V3_FACTORY: Address = "0x411b0facc3489691f28ad58c47006af5e3ab3a28";
+/** QuickSwap V4 Algebra on Polygon — new factory with plugin/hooks support. */
+export const QUICKSWAP_V4_FACTORY: Address = "0x134c1dbe4860a9caaf89002574ffe814772d9904";
 const KYBERSWAP_ELASTIC_FACTORY: Address = "0x5f1dddbf348ac2fbe22a163e30f99f9ece3dd50a";
+/** KyberSwap Elastic factory — canonical cross-chain deployment (same address on all chains). */
+const KYBERSWAP_ELASTIC_OFFICIAL_FACTORY: Address = "0xc7a590291e07b9fe9e64b86c58fd8fc764308c4a";
 /** Ramses V3 CL factory on Polygon (PoolCreated matches Uniswap V3 layout). */
 const RAMSES_V3_FACTORY: Address = "0x2bef16a0081565e72100d73cbe19b1bd2d802380";
 
@@ -70,9 +74,16 @@ const DODO_DSP_FACTORY: Address = "0x43c49f8dd240e1545f147211ec9f917376ac1e87";
 export const WOOFI_PP_V2: Address = "0x5520385bfcf07ec87c4c53a7d8d65595dff69fa4";
 export const WOOFI_PP_V2_DEPLOY_BLOCK = 30_000_000;
 
-// Curve (Polygon) — registry redeployed ~block 58_597_033 (2024-08).
+// Curve (Polygon) — MetaRegistry aggregates all pools (legacy + NG) via pool_list/pool_count.
+// This is NOT the legacy registry. Source: https://github.com/curvefi/docs (deployments.json).
+// Deploy block ~58_597_033 (2024-08 NG migration).
 export const CURVE_REGISTRY_LEGACY: Address = "0x296d2b5c23833a70d07c8fcbb97d846c1ff90ddd";
 const CURVE_REGISTRY_DEPLOY_BLOCK = 58_597_033;
+
+// Curve NG factory addresses (Polygon) — emit TwocryptoPoolDeployed/TricryptoPoolDeployed.
+// Source: https://github.com/curvefi/docs (deployments.json).
+export const CURVE_TWOCRYPTO_FACTORY: Address = "0x98EE851a00abeE0d95D08cF4CA2BdCE32aeaAF7F";
+export const CURVE_TRICRYPTO_FACTORY: Address = "0xC1b393EfEF38140662b91441C6710Aa704973228";
 
 export const POLYGON_CHAIN_ID = 137;
 
@@ -125,7 +136,9 @@ export const KNOWN_FACTORIES_SET = new Set(
     UNISWAP_V3_FACTORY,
     SUSHISWAP_V3_FACTORY,
     QUICKSWAP_V3_FACTORY,
+    QUICKSWAP_V4_FACTORY,
     KYBERSWAP_ELASTIC_FACTORY,
+    KYBERSWAP_ELASTIC_OFFICIAL_FACTORY,
     RAMSES_V3_FACTORY,
     UNISWAP_V4_POOL_MANAGER,
     DODO_DVM_FACTORY,
@@ -152,7 +165,14 @@ export const V3_FACTORY_PROTOCOLS: Record<string, string> = {
   [UNISWAP_V3_FACTORY]: "UNISWAP_V3",
   [SUSHISWAP_V3_FACTORY]: "SUSHISWAP_V3",
   [KYBERSWAP_ELASTIC_FACTORY]: "KYBERSWAP_ELASTIC",
+  [KYBERSWAP_ELASTIC_OFFICIAL_FACTORY]: "KYBERSWAP_ELASTIC",
   [RAMSES_V3_FACTORY]: "RAMSES_V3",
+};
+
+/** Algebra factory address → protocol label. Keys are lowercase. */
+export const ALGEBRA_FACTORY_PROTOCOLS: Record<string, string> = {
+  [QUICKSWAP_V3_FACTORY]: "QUICKSWAP_V3",
+  [QUICKSWAP_V4_FACTORY]: "QUICKSWAP_V4",
 };
 
 export function lookupV2FactoryProtocol(
@@ -165,9 +185,9 @@ export function lookupV3FactoryProtocol(factoryAddr: string): string | undefined
   return V3_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()];
 }
 
-// ── Curve registry bootstrap ────────────────────────────────────────────
+// ── Curve MetaRegistry bootstrap ────────────────────────────────────────
 
-const CURVE_BOOTSTRAP_LEGACY_ID = "137-legacy";
+const CURVE_BOOTSTRAP_LEGACY_ID = "137-metaregistry";
 
 export const CURVE_REGISTRY_SOURCES = [
   { id: CURVE_BOOTSTRAP_LEGACY_ID, address: CURVE_REGISTRY_LEGACY, deployBlock: CURVE_REGISTRY_DEPLOY_BLOCK },

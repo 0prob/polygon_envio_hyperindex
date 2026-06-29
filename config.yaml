@@ -53,19 +53,26 @@ contracts:
     events:
       - event: PoolCreated
 
-  # Algebra factories (QuickSwap V3 on Polygon — Pool, not PoolCreated)
+  # Algebra factories (QuickSwap V3 on Polygon — Pool, not PoolCreated).
+  # V4 Algebra (0x134c1d...) adds plugin/hooks support, same `Pool` event.
   - name: AlgebraFactory
     abi_file_path: abis/algebra_factory.json
     events:
       - event: Pool
 
-  # Curve
-  - name: CurveRegistry
-    abi_file_path: abis/curve_factory.json
+  # Curve NG factories — emit pool-deployment events with pool address.
+  # MetaRegistry (0x296d2b5c...) supports pool_list/pool_count/get_coins/get_n_coins
+  # but does NOT emit PoolAdded. Bootstrap uses the MetaRegistry directly.
+  # Stableswap NG (PlainPoolDeployed/MetaPoolDeployed) events lack pool address
+  # so stableswap pools rely on the 250-block bootstrap stride.
+  - name: CurveTwocryptoFactory
+    abi_file_path: abis/curve_twocrypto_factory.json
     events:
-      - event: PoolAdded
-      - event: PoolAdded(address,bytes)
-      - event: PoolAdded(address,uint256,bool)
+      - event: TwocryptoPoolDeployed
+  - name: CurveTricryptoFactory
+    abi_file_path: abis/curve_tricrypto_factory.json
+    events:
+      - event: TricryptoPoolDeployed
 
   # Uniswap V4
   - name: PoolManager
@@ -131,17 +138,24 @@ chains:
           - "0x1f98431c8ad98523631ae4a59f267346ea31f984" # Uniswap
           - "0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e2" # Sushi
           - "0x5f1dddbf348ac2fbe22a163e30f99f9ece3dd50a" # Kyber Elastic
+          - "0xc7a590291e07b9fe9e64b86c58fd8fc764308c4a" # Kyber Elastic (canonical)
           - "0x2bef16a0081565e72100d73cbe19b1bd2d802380" # Ramses V3 CL
 
-      # Algebra (QuickSwap V3)
+      # Algebra (QuickSwap V3 + V4)
       - name: AlgebraFactory
         start_block: ${ENVIO_POLYGON_START_BLOCK:-34502463}
-        address: "0x411b0facc3489691f28ad58c47006af5e3ab3a28"
+        address:
+          - "0x411b0facc3489691f28ad58c47006af5e3ab3a28" # QuickSwap V3 Algebra
+          - "0x134c1dbe4860a9caaf89002574ffe814772d9904" # QuickSwap V4 Algebra
 
-      # Curve
-      - name: CurveRegistry
+      # Curve NG factories — immediate pool discovery for twocrypto/tricrypto.
+      # Stableswap pools rely on the MetaRegistry bootstrap (every 250 blocks).
+      - name: CurveTwocryptoFactory
         start_block: ${ENVIO_POLYGON_START_BLOCK:-58597033}
-        address: "0x296d2b5c23833a70d07c8fcbb97d846c1ff90ddd" # registry + MetaRegistry (AddressProvider id=7)
+        address: "0x98EE851a00abeE0d95D08cF4CA2BdCE32aeaAF7F"
+      - name: CurveTricryptoFactory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-58597033}
+        address: "0xC1b393EfEF38140662b91441C6710Aa704973228"
 
       # Uniswap V4
       - name: PoolManager

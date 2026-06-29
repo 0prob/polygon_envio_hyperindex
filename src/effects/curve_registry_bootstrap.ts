@@ -15,7 +15,7 @@ export interface CurveRegistryPoolRow {
   coins: string[];
 }
 
-/** Paginated read of Curve legacy registry pool_list + get_coins. */
+/** Paginated read of Curve MetaRegistry pool_list + get_coins. */
 export async function fetchCurveRegistryPageHandler({
   input,
   context,

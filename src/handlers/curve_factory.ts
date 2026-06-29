@@ -79,12 +79,6 @@ async function handleCurvePoolAdded({
     return;
   }
 
-  // Partial RPC failure: coins resolved but fee read failed. Don't write
-  // PoolMeta with fee=0 — the arb bot needs real fee data. Retry on re-index.
-  if (meta.fee === 0n) {
-    return;
-  }
-
   const tokenExisting = new Map<string, { decimals?: number } | undefined>();
   const coinMetas = await resolveTokenMetasBatch(context, coins, tokenExisting);
 
@@ -116,4 +110,5 @@ async function handleCurvePoolAdded({
   );
 }
 
-indexer.onEvent({ contract: "CurveRegistry", event: "PoolAdded" }, handleCurvePoolAdded as never);
+indexer.onEvent({ contract: "CurveTwocryptoFactory", event: "TwocryptoPoolDeployed" }, handleCurvePoolAdded as never);
+indexer.onEvent({ contract: "CurveTricryptoFactory", event: "TricryptoPoolDeployed" }, handleCurvePoolAdded as never);

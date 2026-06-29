@@ -2,13 +2,15 @@ import { indexer } from "envio";
 import { fetchAlgebraPoolFee } from "../effects/algebra_pool_metadata";
 import { shouldSkipFactoryPool } from "../utils/guards";
 import { persistFactoryPoolMeta } from "../utils/factory_pool_handler";
+import { ALGEBRA_FACTORY_PROTOCOLS } from "../utils/constants";
 import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
 
-const ALGEBRA_PROTOCOL = "QUICKSWAP_V3" as Protocol;
+function lookupAlgebraFactoryProtocol(factoryAddr: string): Protocol | undefined {
+  return ALGEBRA_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()] as Protocol | undefined;
+}
 
-// QuickSwap V3 uses AlgebraFactory, which emits `Pool(token0, token1, pool)` — not Uniswap V3
-// `PoolCreated`. Indexing it under V3Factory/PoolCreated silently dropped every QuickSwap V3 pool.
-// ponytail: single factory → hardcoded protocol; hook back to lookupAlgebraFactoryProtocol if additional Algebra factories are added.
+// AlgebraFactory emits `Pool(token0, token1, pool)` — not Uniswap V3 `PoolCreated`.
+// QuickSwap V3 (Algebra V3) and V4 (Algebra V4 with plugin/hooks) both use this event.
 indexer.onEvent(
   {
     contract: "AlgebraFactory",
@@ -23,8 +25,9 @@ indexer.onEvent(
       return;
     }
 
-    // globalState().fee is in hundredths of a basis point (same format as Uniswap V3
-    // PoolCreated event fee), stored as-is.
+    const protocol = lookupAlgebraFactoryProtocol(factoryAddr);
+    if (!protocol) return;
+
     const poolAddr = event.params.pool;
     const blockNumber = Number(event.block.number);
 
@@ -45,7 +48,7 @@ indexer.onEvent(
 
     await persistFactoryPoolMeta(context, {
       poolAddr,
-      protocol: ALGEBRA_PROTOCOL,
+      protocol,
       token0: t0,
       token1: t1,
       blockNumber,

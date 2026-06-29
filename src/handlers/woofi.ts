@@ -36,7 +36,7 @@ const BOOTSTRAP_EVERY_BLOCKS = 20_000;
  * WooSwap handler below can only discover tokens lazily (one pair per swap).
  * This block handler runs at startup and probes tokenInfos() for every major
  * token to build the complete active-token list immediately — the same pattern
- * used by CurveRegistryBootstrap.
+ * used by CurveMetaRegistryBootstrap.
  *
  * It fires every BOOTSTRAP_EVERY_BLOCKS blocks but returns early once
  * PoolMeta.tokens reaches BOOTSTRAP_MIN_TOKENS, so repeat cost is minimal

@@ -11,6 +11,7 @@ export type IndexerProtocol =
   | "UNISWAP_V3"
   | "SUSHISWAP_V3"
   | "QUICKSWAP_V3"
+  | "QUICKSWAP_V4"
   | "KYBERSWAP_ELASTIC"
   | "RAMSES_V3"
   | "CURVE"
