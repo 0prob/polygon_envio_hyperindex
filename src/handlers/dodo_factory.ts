@@ -3,7 +3,6 @@ import type { Effect } from "envio";
 import {
   dodoFeeToBps,
   fetchDodoMetadata,
-  isDodoMetadataEmpty,
 } from "../effects/dodo_metadata";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
@@ -51,7 +50,7 @@ async function handleDodoPool(
     return; // Aggressive preload exit: effects done (batched), skip writes (ignored anyway) and any future work.
   }
 
-  const metadataUnavailable = isDodoMetadataEmpty(meta);
+  const metadataUnavailable = meta.fee === 0n || meta.anyFailed;
   if (metadataUnavailable) {
     return;
   }

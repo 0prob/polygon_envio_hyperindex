@@ -25,15 +25,26 @@ indexer.onEvent(
 
     // globalState().fee is in hundredths of a basis point (same format as Uniswap V3
     // PoolCreated event fee), stored as-is.
+    const poolAddr = event.params.pool;
     const blockNumber = Number(event.block.number);
+
+    // ponytail: skip existing pools before the RPC effect. Algebra pools emit
+    // Pool once at creation; re-processing (reorg) wastes a globalState() call.
+    const existing = await context.PoolMeta.get(poolAddr);
+    if (existing) return;
+
     const feeResult = await context.effect(fetchAlgebraPoolFee, {
-      pool: event.params.pool,
+      pool: poolAddr,
       blockNumber: BigInt(blockNumber),
     });
-    const fee = feeResult.fee > 0n ? Number(feeResult.fee) : undefined;
+    // ponytail: fee=0 means RPC failure (Algebra pools never have 0 fee).
+    // Returning early lets the next instance retry fresh; writing PoolMeta
+    // with fee=undefined would permanently corrupt the row.
+    if (feeResult.fee === 0n) return;
+    const fee = Number(feeResult.fee);
 
     await persistFactoryPoolMeta(context, {
-      poolAddr: event.params.pool,
+      poolAddr,
       protocol: ALGEBRA_PROTOCOL,
       token0: t0,
       token1: t1,

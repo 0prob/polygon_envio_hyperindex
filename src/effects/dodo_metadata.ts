@@ -23,17 +23,13 @@ export const fetchDodoMetadata = createEffect(
       fee: S.bigint,
       lpFeeRate: S.bigint,
       mtFeeRate: S.bigint,
+      anyFailed: S.boolean,
     },
     rateLimit: { calls: 60, per: "second" as const },
     cache: true,
   },
   fetchDodoMetadataHandler,
 );
-/** Both fee reads failed or reverted — do not cache for preload replay. */
-export function isDodoMetadataEmpty(meta: { lpFeeRate: bigint; mtFeeRate: bigint }): boolean {
-  return meta.lpFeeRate === 0n && meta.mtFeeRate === 0n;
-}
-
 /**
  * DODO LP/MT fee rates are 1e18 fractions (see dodo.ts mulFloor). PoolMeta.fee stores
  * combined LP+MT in basis points for routing weights; simulation still reads raw rates from RPC.
@@ -49,12 +45,14 @@ const EMPTY_DODO_RESULT = {
   fee: 0n,
   lpFeeRate: 0n,
   mtFeeRate: 0n,
+  anyFailed: true,
 };
 
 const inFlightDodo = new Map<string, Promise<{
   fee: bigint;
   lpFeeRate: bigint;
   mtFeeRate: bigint;
+  anyFailed: boolean;
 }>>();
 
 async function readDodoFeeRates(
@@ -106,25 +104,38 @@ async function fetchDodoMetadataHandler({
   promise = (async () => {
     try {
       const address = input.pool as `0x${string}`;
-      let { anyFailed, ...result } = await readDodoFeeRates(address, input.blockNumber);
+      let anyFailed = false;
+      let fee = 0n;
+      let lpFeeRate = 0n;
+      let mtFeeRate = 0n;
+
+      {
+        const r = await readDodoFeeRates(address, input.blockNumber);
+        anyFailed = r.anyFailed;
+        fee = r.fee;
+        lpFeeRate = r.lpFeeRate;
+        mtFeeRate = r.mtFeeRate;
+      }
 
       // Block-pinned reads may return empty at creation block — fall back to latest state.
-      if (isDodoMetadataEmpty(result) && input.blockNumber !== undefined) {
+      if (fee === 0n && input.blockNumber !== undefined) {
         const latest = await readDodoFeeRates(address);
-        if (!isDodoMetadataEmpty(latest)) {
+        if (latest.fee !== 0n) {
           anyFailed = latest.anyFailed;
-          const { anyFailed: _, ...clean } = latest;
-          result = clean;
+          fee = latest.fee;
+          lpFeeRate = latest.lpFeeRate;
+          mtFeeRate = latest.mtFeeRate;
         }
       }
 
-      if (isDodoMetadataEmpty(result)) {
-        context.cache = false;
-      } else if (anyFailed) {
+      // ponytail: don't cache when metadata is incomplete/useless.
+      // fee=0 or any partial read failure → handlers skip the pool. Caching
+      // would cause an infinite retry loop.
+      if (fee === 0n || anyFailed) {
         context.cache = false;
       }
 
-      return result;
+      return { fee, lpFeeRate, mtFeeRate, anyFailed };
     } catch (err) {
       context.cache = false;
       return { ...EMPTY_DODO_RESULT };

@@ -138,9 +138,11 @@ export async function fetchCurveMetadataHandler({
       const poolType = curveDiscoveryPoolType(gamma, isNg);
       const result = { fee, coins, poolType };
 
-      if (isCurveMetadataEmpty(result)) {
-        context.cache = false;
-      } else if (anyCoinFailed) {
+      // ponytail: don't cache when metadata is incomplete/useless.
+      // fee=0 or <2 valid coins → handlers skip the pool. Caching would
+      // cause an infinite retry loop (bootstrap re-checks the same cached
+      // bad result every stride).
+      if (fee === 0n || coins.length < 2 || anyCoinFailed) {
         context.cache = false;
       }
 

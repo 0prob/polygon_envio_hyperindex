@@ -1,7 +1,6 @@
 import { indexer } from "envio";
 import { isLikelyGarbagePair } from "../utils/guards";
 import { persistFactoryPoolMeta } from "../utils/factory_pool_handler";
-import { ZERO_ADDRESS } from "../utils/constants";
 
 indexer.onEvent(
   {
@@ -12,10 +11,6 @@ indexer.onEvent(
     const poolId = event.params.id;
     const currency0 = event.params.currency0;
     const currency1 = event.params.currency1;
-    if (event.params.hooks !== ZERO_ADDRESS) {
-      return;
-    }
-
     if (isLikelyGarbagePair(currency0, currency1)) {
       return;
     }

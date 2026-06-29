@@ -113,12 +113,18 @@ async function bootstrapRegistryPage(
     if (allNonCurve && newPools.length > 0) {
       // Every new pool on this page had all reads revert — they are non-Curve/garbage.
       // Advance past them so we don't retry forever.
-      const nextIndex = Math.min(page.total, offset + PAGE_SIZE);
+      const nextIndex = Math.min(page.total, offset + page.pools.length);
       storeProgress(nextIndex, page.total);
     }
     // Otherwise: transient RPC failures — do not advance; retry this page on the next stride.
     return;
   }
+
+  // ponytail: only advance when ALL new pools on this page were successfully
+  // processed. If any pool failed metadata fetch, don't advance — retry the
+  // whole page next stride. This prevents permanently losing pools that had
+  // transient RPC failures mid-page while sibling pools succeeded.
+  if (readyPools.length < newPools.length) return;
 
   // Phase 2: one batched token-meta pass for all coins on the page (not N× per pool).
   const uniqueCoins = [...new Set(readyPools.flatMap((p) => p.coins))];
@@ -155,18 +161,14 @@ async function bootstrapRegistryPage(
     tokenExisting,
   );
 
-  const nextIndex = Math.min(page.total, offset + PAGE_SIZE);
+  const nextIndex = Math.min(page.total, offset + page.pools.length);
   storeProgress(nextIndex, page.total);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function bootstrapCurvePools({ block, context }: any) {
-  // ponytail: early return during preload — the bootstrap fires every 250 blocks and
-  // the preload phase would redundantly run the full page logic (entity reads, effect
-  // scheduling) for every qualifying block in the preload batch. Effects are cached
-  // by input but entity reads and the sequential getWhere/get/metadata fetch still
-  // add overhead. PoolMeta writes and progress are already gated inside the page
-  // handler, so skipping the entire entry point during preload is safe.
+  // ponytail: skip during preload — handler runs every 250 blocks. Preload
+  // would redundantly page the registry + schedule effects for every
+  // qualifying block, adding overhead for no writes.
   if (context.isPreload) return;
 
   for (const source of CURVE_REGISTRY_SOURCES) {
