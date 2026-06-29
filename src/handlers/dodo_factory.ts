@@ -29,6 +29,7 @@ async function handleDodoPool(
   base: string,
   quote: string,
   blockNumber: number,
+  poolType: string,
 ) {
   const existing = await context.PoolMeta.get(pool);
   if (existing) return;
@@ -67,6 +68,7 @@ async function handleDodoPool(
     createdBlock: blockNumber,
     updatedAtBlock: blockNumber,
     poolId: undefined,
+    poolType,
   }));
 
   // Hot DODO state comes from arb bot RPC — skip DodoPoolState DB write.
@@ -80,9 +82,9 @@ async function handleDodoPool(
 }
 
 const DODO_POOL_EVENTS = [
-  { event: "NewDVM" as const, poolField: "dvm" as const },
-  { event: "NewDPP" as const, poolField: "dpp" as const },
-  { event: "NewDSP" as const, poolField: "dsp" as const },
+  { event: "NewDVM" as const, poolField: "dvm" as const, poolType: "dvm" },
+  { event: "NewDPP" as const, poolField: "dpp" as const, poolType: "dpp" },
+  { event: "NewDSP" as const, poolField: "dsp" as const, poolType: "dsp" },
 ];
 
 function registerDodoEvent(cfg: (typeof DODO_POOL_EVENTS)[number]): void {
@@ -100,6 +102,7 @@ function registerDodoEvent(cfg: (typeof DODO_POOL_EVENTS)[number]): void {
       base,
       quote,
       Number(ev.block.number),
+      cfg.poolType,
     );
   });
 }

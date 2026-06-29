@@ -55,7 +55,7 @@ type PoolMeta @index(fields: ["protocol", "createdBlock"]) {
   fee: Int
   tickSpacing: Int
   createdBlock: Int! @index
-  updatedAtBlock: Int!
+  updatedAtBlock: Int! @index
   poolId: String @index # Balancer internal poolId; Uniswap V4 bytes32 pool key
   hooks: String # Uniswap V4 hooks contract (zero address when none)
   poolType: String # e.g. weighted | stable | crypto
