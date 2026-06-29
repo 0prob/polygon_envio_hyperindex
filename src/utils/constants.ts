@@ -53,9 +53,6 @@ const SUSHISWAP_V3_FACTORY: Address = "0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e
 const QUICKSWAP_V3_FACTORY: Address = "0x411b0facc3489691f28ad58c47006af5e3ab3a28";
 /** QuickSwap V4 Algebra on Polygon — new factory with plugin/hooks support. */
 export const QUICKSWAP_V4_FACTORY: Address = "0x134c1dbe4860a9caaf89002574ffe814772d9904";
-const KYBERSWAP_ELASTIC_FACTORY: Address = "0x5f1dddbf348ac2fbe22a163e30f99f9ece3dd50a";
-/** KyberSwap Elastic factory — canonical cross-chain deployment (same address on all chains). */
-const KYBERSWAP_ELASTIC_OFFICIAL_FACTORY: Address = "0xc7a590291e07b9fe9e64b86c58fd8fc764308c4a";
 /** Ramses V3 CL factory on Polygon (PoolCreated matches Uniswap V3 layout). */
 const RAMSES_V3_FACTORY: Address = "0x2bef16a0081565e72100d73cbe19b1bd2d802380";
 
@@ -137,8 +134,6 @@ export const KNOWN_FACTORIES_SET = new Set(
     SUSHISWAP_V3_FACTORY,
     QUICKSWAP_V3_FACTORY,
     QUICKSWAP_V4_FACTORY,
-    KYBERSWAP_ELASTIC_FACTORY,
-    KYBERSWAP_ELASTIC_OFFICIAL_FACTORY,
     RAMSES_V3_FACTORY,
     UNISWAP_V4_POOL_MANAGER,
     DODO_DVM_FACTORY,
@@ -164,8 +159,6 @@ export const V2_FACTORY_PROTOCOLS: Record<string, { protocol: string; feeBps: nu
 export const V3_FACTORY_PROTOCOLS: Record<string, string> = {
   [UNISWAP_V3_FACTORY]: "UNISWAP_V3",
   [SUSHISWAP_V3_FACTORY]: "SUSHISWAP_V3",
-  [KYBERSWAP_ELASTIC_FACTORY]: "KYBERSWAP_ELASTIC",
-  [KYBERSWAP_ELASTIC_OFFICIAL_FACTORY]: "KYBERSWAP_ELASTIC",
   [RAMSES_V3_FACTORY]: "RAMSES_V3",
 };
 

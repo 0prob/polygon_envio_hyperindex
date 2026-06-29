@@ -47,7 +47,7 @@ contracts:
     events:
       - event: PairCreated
 
-  # V3 Factories (Uniswap V3 / Sushi V3 / Kyber Elastic — PoolCreated)
+  # V3 Factories (Uniswap V3 / Sushi V3 — PoolCreated)
   - name: V3Factory
     abi_file_path: abis/uniswap_v3_factory.json
     events:
@@ -137,8 +137,6 @@ chains:
         address:
           - "0x1f98431c8ad98523631ae4a59f267346ea31f984" # Uniswap
           - "0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e2" # Sushi
-          - "0x5f1dddbf348ac2fbe22a163e30f99f9ece3dd50a" # Kyber Elastic
-          - "0xc7a590291e07b9fe9e64b86c58fd8fc764308c4a" # Kyber Elastic (canonical)
           - "0x2bef16a0081565e72100d73cbe19b1bd2d802380" # Ramses V3 CL
 
       # Algebra (QuickSwap V3 + V4)
