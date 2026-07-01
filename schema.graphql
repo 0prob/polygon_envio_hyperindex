@@ -57,8 +57,9 @@ type PoolMeta @index(fields: ["protocol", "createdBlock"]) {
   createdBlock: Int! @index
   updatedAtBlock: Int! @index
   poolId: String @index # Balancer internal poolId; Uniswap V4 bytes32 pool key
+  specialization: Int # Balancer Vault PoolSpecialization: 0 general, 1 minimal, 2 two-token
   hooks: String # Uniswap V4 hooks contract (zero address when none)
-  poolType: String # e.g. weighted | stable | crypto
+  poolType: String # e.g. weighted | stable | linear | crypto
 }
 
 """

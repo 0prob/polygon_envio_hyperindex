@@ -55,6 +55,7 @@ indexer.onEvent(
       poolId: existing.poolId,
       hooks: existing.hooks,
       poolType: existing.poolType,
+      specialization: existing.specialization,
     });
   },
 );

@@ -32,4 +32,5 @@ export type PoolMetaWritePayload = {
   readonly poolId: string | undefined;
   readonly hooks: string | undefined;
   readonly poolType: string | undefined;
+  readonly specialization: number | undefined;
 };

@@ -47,7 +47,7 @@ indexer.onEvent(
     // Legitimate Balancer swap fees are always ≥ 0.0001 bps (swapFee ≥ 10^12), so
     // only broken RPC returns or trivial pools hit the truncation path.
     const fee = meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
-    const poolType = meta.amp != null && meta.amp > 0n ? "stable" : meta.weights?.length ? "weighted" : undefined;
+    const poolType = meta.poolType;
 
     // Write to both entity (durable, auto-rolled back on reorg) and in-memory cache
     // (same-block bridging for TokensRegistered which only emits poolId).
@@ -68,6 +68,7 @@ indexer.onEvent(
       createdBlock: blockNumber,
       updatedAtBlock: blockNumber,
       poolId: poolId,
+      specialization: Number(event.params.specialization),
       poolType,
     }));
 
@@ -128,6 +129,7 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
 
   const fee = existing.fee;
   const poolType = existing.poolType;
+  const specialization = existing.specialization;
 
   if (context.isPreload) return;
 
@@ -147,6 +149,7 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     createdBlock: existing.createdBlock,
     updatedAtBlock: blockNumber,
     poolId: poolId,
+    specialization,
     poolType,
   }));
 
@@ -158,5 +161,3 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     tokenExisting,
   );
 });
-
-
