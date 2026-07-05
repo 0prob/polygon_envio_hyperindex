@@ -17,6 +17,15 @@ if (env.POLYGON_START_BLOCK && !env.ENVIO_POLYGON_START_BLOCK) env.ENVIO_POLYGON
 if (env.POLYGON_RPC_URLS && !env.ENVIO_POLYGON_RPC_URLS) env.ENVIO_POLYGON_RPC_URLS = env.POLYGON_RPC_URLS;
 if (env.POLYGON_RPC_URL && !env.ENVIO_POLYGON_RPC_URL) env.ENVIO_POLYGON_RPC_URL = env.POLYGON_RPC_URL;
 
+// Historical Polygon backfill exceeds Node's default ~4GB heap; host has headroom.
+const heapMb = Number(env.ENVIO_NODE_MAX_OLD_SPACE_MB ?? "8192");
+if (Number.isFinite(heapMb) && heapMb > 0) {
+  const flag = `--max-old-space-size=${Math.floor(heapMb)}`;
+  env.NODE_OPTIONS = env.NODE_OPTIONS?.includes("max-old-space-size")
+    ? env.NODE_OPTIONS
+    : [env.NODE_OPTIONS, flag].filter(Boolean).join(" ");
+}
+
 const envioBin = path.resolve(ROOT, "node_modules/.bin/envio");
 const child = spawn(envioBin, [subcommand, ...extraArgs], {
   cwd: ROOT,
