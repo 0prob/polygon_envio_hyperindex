@@ -42,7 +42,6 @@ const GRT: Address = "0x5fe2b58c013d7601147dcdd68c143a77499f5531";
 export const QUICKSWAP_V2_FACTORY: Address = "0x5757371414417b8c6caad45baef941abc7d3ab32";
 const SUSHISWAP_V2_FACTORY: Address = "0xc35dadb65012ec5796536bd9864ed8773abc74c4";
 const DFYN_V2_FACTORY: Address = "0xe7fb3e833efe5f9c441105eb65ef8b261266423b";
-export const APESWAP_V2_FACTORY: Address = "0xcf083be4164828f00cae704ec15a36d711491284";
 const MESHSWAP_V2_FACTORY: Address = "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d";
 const JETSWAP_V2_FACTORY: Address = "0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7";
 const COMETHSWAP_V2_FACTORY: Address = "0x800b052609c355ca8103e06f022aa30647ead60a";
@@ -53,8 +52,6 @@ const SUSHISWAP_V3_FACTORY: Address = "0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e
 const QUICKSWAP_V3_FACTORY: Address = "0x411b0facc3489691f28ad58c47006af5e3ab3a28";
 /** QuickSwap V4 Algebra on Polygon — new factory with plugin/hooks support. */
 export const QUICKSWAP_V4_FACTORY: Address = "0x134c1dbe4860a9caaf89002574ffe814772d9904";
-/** Ramses V3 CL factory on Polygon (PoolCreated matches Uniswap V3 layout). */
-const RAMSES_V3_FACTORY: Address = "0x2bef16a0081565e72100d73cbe19b1bd2d802380";
 
 /** Uniswap V4 PoolManager on Polygon (canonical deployment). */
 const UNISWAP_V4_POOL_MANAGER: Address = "0x67366782805870060151383f4bbff9dab53e5cd6";
@@ -140,7 +137,6 @@ export const KNOWN_FACTORIES_SET = new Set(
     SUSHISWAP_V2_FACTORY,
     UNISWAP_V2_FACTORY,
     DFYN_V2_FACTORY,
-    APESWAP_V2_FACTORY,
     MESHSWAP_V2_FACTORY,
     JETSWAP_V2_FACTORY,
     COMETHSWAP_V2_FACTORY,
@@ -148,7 +144,6 @@ export const KNOWN_FACTORIES_SET = new Set(
     SUSHISWAP_V3_FACTORY,
     QUICKSWAP_V3_FACTORY,
     QUICKSWAP_V4_FACTORY,
-    RAMSES_V3_FACTORY,
     UNISWAP_V4_POOL_MANAGER,
     DODO_DVM_FACTORY,
     DODO_DPP_FACTORY,
@@ -163,7 +158,6 @@ export const V2_FACTORY_PROTOCOLS: Record<string, { protocol: string; feeBps: nu
   [SUSHISWAP_V2_FACTORY]: { protocol: "SUSHISWAP_V2", feeBps: 25 },
   [UNISWAP_V2_FACTORY]: { protocol: "UNISWAP_V2", feeBps: 30 },
   [DFYN_V2_FACTORY]: { protocol: "DFYN_V2", feeBps: 30 },
-  [APESWAP_V2_FACTORY]: { protocol: "APESWAP_V2", feeBps: 20 },
   [MESHSWAP_V2_FACTORY]: { protocol: "MESHSWAP_V2", feeBps: 30 },
   [JETSWAP_V2_FACTORY]: { protocol: "JETSWAP_V2", feeBps: 20 },
   [COMETHSWAP_V2_FACTORY]: { protocol: "COMETHSWAP_V2", feeBps: 30 },
@@ -173,7 +167,6 @@ export const V2_FACTORY_PROTOCOLS: Record<string, { protocol: string; feeBps: nu
 export const V3_FACTORY_PROTOCOLS: Record<string, string> = {
   [UNISWAP_V3_FACTORY]: "UNISWAP_V3",
   [SUSHISWAP_V3_FACTORY]: "SUSHISWAP_V3",
-  [RAMSES_V3_FACTORY]: "RAMSES_V3",
 };
 
 /** Algebra factory address → protocol label. Keys are lowercase. */

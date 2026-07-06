@@ -59,15 +59,6 @@ contracts:
     events:
       - event: PoolCreated
 
-  # Ramses V3 CL Factory (Polygon) — PoolCreated + FeeAdjustment (mutable fees).
-  # Separate from generic V3Factory because Ramses pools support dynamic fee updates
-  # and the factory emits FeeAdjustment when fees change post-creation.
-  - name: RamsesV3Factory
-    abi_file_path: abis/ramses_v3_factory.json
-    events:
-      - event: PoolCreated
-      - event: FeeAdjustment
-
   # Algebra factories (QuickSwap V3 on Polygon — Pool, not PoolCreated).
   # V4 Algebra (0x134c1d...) adds plugin/hooks support, same `Pool` event.
   - name: AlgebraFactory
@@ -140,7 +131,6 @@ chains:
           - "0xc35dadb65012ec5796536bd9864ed8773abc74c4" # Sushi
           - "0x9e5a52f57b3038f1b8eee45f28b3c1967e22799c" # Uniswap
           - "0xe7fb3e833efe5f9c441105eb65ef8b261266423b" # Dfyn
-          - "0xcf083be4164828f00cae704ec15a36d711491284" # Apeswap
           - "0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7" # Jetswap
           - "0x800b052609c355ca8103e06f022aa30647ead60a" # Cometh
 
@@ -151,12 +141,6 @@ chains:
         address:
           - "0x1f98431c8ad98523631ae4a59f267346ea31f984" # Uniswap
           - "0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e2" # Sushi
-
-      # Ramses V3 CL — own contract definition for FeeAdjustment support.
-      # Deployed Jan 2026 at block ~82.17M.
-      - name: RamsesV3Factory
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-82177000}
-        address: "0x2bef16a0081565e72100d73cbe19b1bd2d802380"
 
       # Algebra (QuickSwap V3 + V4)
       - name: AlgebraFactory
