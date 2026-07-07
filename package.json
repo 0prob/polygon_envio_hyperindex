@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "envio": "3.2.1",
-    "viem": "^2.54.1"
+    "viem": "^2.54.6"
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
