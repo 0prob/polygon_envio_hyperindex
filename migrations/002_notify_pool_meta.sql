@@ -1,30 +1,26 @@
--- Migration: PostgreSQL LISTEN/NOTIFY trigger for real-time pool discovery.
--- When Envio inserts/updates PoolMeta rows, this sends a NOTIFY so the
--- Rust bot can trigger immediate discovery instead of waiting for the
--- next poll interval.
--- Run: psql $PG_URL -f migrations/002_notify_pool_meta.sql
-
--- Notification payload: JSON with pool address and protocol for early routing.
 CREATE OR REPLACE FUNCTION notify_pool_meta_change()
-RETURNS trigger AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
 BEGIN
-    PERFORM pg_notify(
-        'pool_meta_channel',
-        json_build_object(
-            'address', NEW."address",
-            'protocol', NEW.protocol,
-            'action', TG_OP
-        )::text
-    );
-    RETURN NEW;
+  PERFORM pg_notify(
+    'pool_meta_channel',
+    json_build_object(
+      'id', NEW.id,
+      'address', NEW.address,
+      'protocol', NEW.protocol,
+      'createdBlock', NEW."createdBlock",
+      'updatedAtBlock', NEW."updatedAtBlock"
+    )::text
+  );
+  RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
--- Drop first to make this idempotent for re-runs.
-DROP TRIGGER IF EXISTS trg_pool_meta_notify ON "PoolMeta";
+DROP TRIGGER IF EXISTS pool_meta_notify_trigger ON "PoolMeta";
 
-CREATE TRIGGER trg_pool_meta_notify
-    AFTER INSERT OR UPDATE OF "address", protocol, tokens
-    ON "PoolMeta"
-    FOR EACH ROW
-    EXECUTE FUNCTION notify_pool_meta_change();
+CREATE TRIGGER pool_meta_notify_trigger
+AFTER INSERT OR UPDATE ON "PoolMeta"
+FOR EACH ROW
+EXECUTE FUNCTION notify_pool_meta_change();
+

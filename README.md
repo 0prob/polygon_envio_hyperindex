@@ -21,13 +21,14 @@ See `.env.example` for all variables. Key ones:
 | `ENVIO_API_TOKEN` | Yes | Envio API token for HyperSync |
 | `ENVIO_POLYGON_RPC_URLS` | Yes | Comma-separated archival RPC endpoints for metadata effects |
 | `ENVIO_POLYGON_HYPERSYNC_URL` | No | HyperSync endpoint (default: `https://polygon.hypersync.xyz`) |
-| `ENVIO_FULL_BATCH_SIZE` | No | Blocks per HyperSync request (auto-tuned from RPM target) |
+| `ENVIO_FULL_BATCH_SIZE` | No | Blocks per HyperSync request (default: 6000; `config.yaml` applies `${ENVIO_FULL_BATCH_SIZE:-6000}`) |
 | `ENVIO_HYPERSYNC_RPM_TARGET` | No | Max HyperSync requests/min for pacing (default: 180) |
 | `ENVIO_POLYGON_START_BLOCK` | No | Override start block; `POLYGON_START_BLOCK` alias works too |
 | `INDEXER_PROGRESS_REALTIME_START` | No | Block to switch from historical→realtime stride (default: 65M) |
 | `INDEXER_PROGRESS_HISTORICAL_EVERY` | No | Historical progress stride (default: 4000) |
 | `INDEXER_PROGRESS_REALTIME_EVERY` | No | Realtime progress stride (default: 500) |
 | `ENVIO_NODE_MAX_OLD_SPACE_MB` | No | Node V8 heap cap for historical backfill (default: 8192) |
+| `ENVIO_LOG_LEVEL` | No | Log verbosity: `info` \| `debug` \| `trace` \| `warn` \| `error` |
 
 RPC URL resolution follows a priority chain: `ENVIO_POLYGON_RPC_URLS` → `ENVIO_POLYGON_RPC_URL` → `POLYGON_RPC_URLS` → `POLYGON_RPC_URL` → `POLYGON_RPC`. Public fallback endpoints are appended when fewer than 3 user endpoints are configured.
 
@@ -82,6 +83,8 @@ All pool discovery is via factory/registry `onEvent` handlers and `onBlock` boot
 |---|---|
 | `migrations/001_pool_meta_indexes.sql` | Composite B-tree index on `PoolMeta("createdBlock", id)` for keyset-paginated bootstrap queries |
 | `migrations/002_notify_pool_meta.sql` | `LISTEN/NOTIFY` trigger on `PoolMeta` for real-time pool discovery notification |
+| `migrations/003_composite_incremental_index.sql` | Covering composite index `("createdBlock", "updatedAtBlock")` for the bot's incremental UNION ALL query |
+| `migrations/004_pool_meta_updated_index.sql` | Descending index on `"updatedAtBlock"` for the incremental query's second branch |
 
 Run after Envio schema creation:
 ```bash
@@ -120,6 +123,10 @@ The Curve MetaRegistry contract is deprecated/broken on Polygon. Bootstrap now q
 
 ### Balancer Pool Type Detection
 `fetchBalancerMetadataHandler` probes capability getters (`getNormalizedWeights`, `getAmplificationParameter`, `getMainToken`/`getWrappedToken`) to auto-detect pool type: `weighted`, `stable`, or `linear`. The `specialization` field stores the Balancer Vault PoolSpecialization enum value.
+
+## .gitignore
+
+The `.gitignore` excludes dependencies (`node_modules/`, `pnpm-lock.yaml`), build output (`generated/`), Envio runtime state (`.hyperindex/`, `backups/`, `hyperindex.db`), most `data/` artifacts (runtime ndjson files, token registry), secrets (`.env`), agent tool configs (`.claude/`, `.gemini/`, `.cursor/`, etc.), and graph output (`graphify-rs-out/`).
 
 ## Constraints
 
