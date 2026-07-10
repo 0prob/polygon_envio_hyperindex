@@ -22,13 +22,15 @@ async function writeIndexerProgress(
   });
 }
 
+// Envio onBlock `where` only receives `{ chain }` — block filters use _gte/_lte/_every.
 indexer.onBlock(
   {
     name: "IndexerProgressHistorical",
-    where: ({ chain, block }) => {
+    where: ({ chain }) => {
       if (chain.id !== POLYGON_CHAIN_ID) return false;
-      if (block.number >= REALTIME_START) return false;
-      return { block: { number: { _every: HISTORICAL_EVERY } } };
+      return {
+        block: { number: { _lte: REALTIME_START - 1, _every: HISTORICAL_EVERY } },
+      };
     },
   },
   async ({ block, context }) => {
@@ -39,10 +41,11 @@ indexer.onBlock(
 indexer.onBlock(
   {
     name: "IndexerProgressRealtime",
-    where: ({ chain, block }) => {
+    where: ({ chain }) => {
       if (chain.id !== POLYGON_CHAIN_ID) return false;
-      if (block.number < REALTIME_START) return false;
-      return { block: { number: { _every: REALTIME_EVERY } } };
+      return {
+        block: { number: { _gte: REALTIME_START, _every: REALTIME_EVERY } },
+      };
     },
   },
   async ({ block, context }) => {
