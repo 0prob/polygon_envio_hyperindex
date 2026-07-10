@@ -1,9 +1,4 @@
-CREATE INDEX IF NOT EXISTS "PoolMeta_createdBlock_id_idx"
-ON "PoolMeta" ("createdBlock", id);
-
-CREATE INDEX IF NOT EXISTS "PoolMeta_updatedAtBlock_idx"
-ON "PoolMeta" ("updatedAtBlock");
-
-CREATE INDEX IF NOT EXISTS "PoolMeta_protocol_createdBlock_idx"
-ON "PoolMeta" (protocol, "createdBlock");
-
+-- Canonical keyset index for bootstrap pagination:
+--   WHERE ("createdBlock", id) > ($1, $2) ORDER BY "createdBlock", id
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_pool_meta_keyset
+    ON "PoolMeta" ("createdBlock", id);

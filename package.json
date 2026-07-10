@@ -10,7 +10,8 @@
     "validate-data": "python3 scripts/validate_data.py",
     "validate": "bun run validate-config && bun run validate-data",
     "generate-tokens": "bun scripts/generate-polygon-tokens.ts",
-    "backup-db": "bash scripts/backup-db.sh"
+    "backup-db": "bash scripts/backup-db.sh",
+    "migrate-db": "bash scripts/migrate-db.sh"
   },
   "dependencies": {
     "envio": "3.2.1",

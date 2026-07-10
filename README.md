@@ -81,15 +81,15 @@ All pool discovery is via factory/registry `onEvent` handlers and `onBlock` boot
 
 | File | Purpose |
 |---|---|
-| `migrations/001_pool_meta_indexes.sql` | Composite B-tree index on `PoolMeta("createdBlock", id)` for keyset-paginated bootstrap queries |
+| `migrations/001_pool_meta_indexes.sql` | `idx_pool_meta_keyset` on `("createdBlock", id)` for keyset-paginated bootstrap queries |
 | `migrations/002_notify_pool_meta.sql` | `LISTEN/NOTIFY` trigger on `PoolMeta` for real-time pool discovery notification |
-| `migrations/003_composite_incremental_index.sql` | Covering composite index `("createdBlock", "updatedAtBlock")` for the bot's incremental UNION ALL query |
-| `migrations/004_pool_meta_updated_index.sql` | Descending index on `"updatedAtBlock"` for the incremental query's second branch |
+| `migrations/003_composite_incremental_index.sql` | `idx_pool_meta_incr` on `("createdBlock", "updatedAtBlock")` for incremental UNION ALL |
+| `migrations/004_pool_meta_updated_index.sql` | `idx_pool_meta_updated` on `"updatedAtBlock"` for the incremental query's second branch |
+| `migrations/005_pool_meta_index_cleanup.sql` | Drops redundant Envio/legacy indexes superseded by bot composite indexes |
 
 Run after Envio schema creation:
 ```bash
-psql "$PG_URL" -f migrations/001_pool_meta_indexes.sql
-psql "$PG_URL" -f migrations/002_notify_pool_meta.sql
+bun run migrate-db
 ```
 
 ## Files
