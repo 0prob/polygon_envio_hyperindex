@@ -87,7 +87,7 @@ All pool discovery is via factory/registry `onEvent` handlers and `onBlock` boot
 | `migrations/004_pool_meta_updated_index.sql` | `idx_pool_meta_updated` on `"updatedAtBlock"` for the incremental query's second branch |
 | `migrations/005_pool_meta_index_cleanup.sql` | Drops redundant Envio/legacy indexes superseded by bot composite indexes |
 
-Run after Envio schema creation:
+Run after Envio schema creation (Envio docker defaults on port 5433):
 ```bash
 bun run migrate-db
 ```
