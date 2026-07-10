@@ -23,6 +23,7 @@ export const WETH: Address = "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619";
 /** Native USDC (Circle) */
 export const USDC: Address = "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359";
 /** Bridged USDC (USDC.e / PoS) */
+// Canonical Polygon PoS bridged USDC (USDC.e), pinned by Circle/Uniswap deployments.
 export const USDC_E: Address = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174";
 export const USDT: Address = "0xc2132d05d31c914a87c6611c10748aeb04b58e8f";
 export const DAI: Address = "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063";
@@ -184,4 +185,3 @@ export function lookupV2FactoryProtocol(
 export function lookupV3FactoryProtocol(factoryAddr: string): string | undefined {
   return V3_FACTORY_PROTOCOLS[factoryAddr.toLowerCase()];
 }
-

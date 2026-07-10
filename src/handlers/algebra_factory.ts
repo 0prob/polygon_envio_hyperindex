@@ -35,7 +35,9 @@ indexer.onEvent(
     // ponytail: skip existing pools before the RPC effect. Algebra pools emit
     // Pool once at creation; re-processing (reorg) wastes a globalState() call.
     const existing = await context.PoolMeta.get(poolAddr);
-    if (existing) return;
+
+    const needsRepair = existing && (existing.fee == null || existing.tickSpacing == null);
+    if (existing && !needsRepair) return;
 
     const meta = await context.effect(fetchAlgebraPoolMeta, {
       pool: poolAddr,
@@ -47,6 +49,20 @@ indexer.onEvent(
     if (meta.fee === 0n) return;
     const fee = Number(meta.fee);
     const tickSpacing = meta.tickSpacing != null ? meta.tickSpacing : undefined;
+
+    if (existing) {
+      context.PoolMeta.set({
+        ...existing,
+        id: poolAddr,
+        address: existing.address ?? poolAddr,
+        protocol: existing.protocol ?? protocol,
+        tokens: existing.tokens?.length ? existing.tokens : [t0, t1],
+        fee,
+        tickSpacing,
+        updatedAtBlock: blockNumber,
+      });
+      return;
+    }
 
     await persistFactoryPoolMeta(context, {
       poolAddr,

@@ -1,0 +1,18 @@
+{
+  "task": "todo-2-algebra-repair",
+  "handler": "src/handlers/algebra_factory.ts",
+  "fixture": "scripts/test_algebra_repair.ts",
+  "results": {
+    "happy_repair": "pass",
+    "rpc_failure_fee_zero_no_write": "pass",
+    "500_rows": { "commits": 1, "checkpoints": [500] },
+    "501_rows": { "commits": 2, "checkpoints": [500, 501] }
+  },
+  "gates": {
+    "bun_fixture": "pass",
+    "bun_run_validate": "pass",
+    "bunx_tsc_noEmit": "pass",
+    "bun_run_codegen": "pass"
+  },
+  "live_backfill_runner": "not_implemented"
+}
