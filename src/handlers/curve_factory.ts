@@ -46,6 +46,14 @@ function poolAddressFromEventParams(params: Record<string, unknown>): string | u
   return (params._0 as string | undefined) ?? (params.pool as string | undefined);
 }
 
+function coinsFromEventParams(params: Record<string, unknown>): string[] {
+  const raw = params.coins;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((coin) => (typeof coin === "string" ? coin.toLowerCase() : ""))
+    .filter((coin) => coin && coin !== ZERO_ADDRESS);
+}
+
 async function handleCurvePoolAdded({
   event,
   context,
@@ -66,12 +74,14 @@ async function handleCurvePoolAdded({
   const existing = await context.PoolMeta.get(pool);
   if (existing) return;
 
-  const nCoins = nCoinsFromEventParams(event.params);
+  const eventCoins = coinsFromEventParams(event.params as Record<string, unknown>);
+  const nCoins = eventCoins.length >= 2 ? eventCoins.length : nCoinsFromEventParams(event.params);
 
   const meta = await context.effect(fetchCurveMetadata, {
     pool,
     nCoins,
     blockNumber: BigInt(blockNumber),
+    knownCoins: eventCoins.length >= 2 ? eventCoins : undefined,
   });
 
   const coins = meta.coins.filter((c: string) => c && c !== ZERO_ADDRESS);

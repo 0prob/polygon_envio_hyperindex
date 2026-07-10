@@ -70,16 +70,24 @@ const inFlightCurve = new Map<
   }>
 >();
 
+function normalizeKnownCoins(coins: string[] | undefined): string[] {
+  if (!coins?.length) return [];
+  return coins
+    .map((c) => c.toLowerCase())
+    .filter((c) => c && c !== ZERO_ADDRESS);
+}
+
 export async function fetchCurveMetadataHandler({
   input,
   context,
 }: {
-  input: { pool: string; nCoins: number; blockNumber?: bigint };
+  input: { pool: string; nCoins: number; blockNumber?: bigint; knownCoins?: string[] };
   context: { cache: boolean };
 }) {
   const poolAddr = input.pool.toLowerCase();
   const blockKey = input.blockNumber != null ? String(input.blockNumber) : "";
-  const key = `${poolAddr}-${blockKey}-${input.nCoins}`;
+  const knownCoins = normalizeKnownCoins(input.knownCoins);
+  const key = `${poolAddr}-${blockKey}-${input.nCoins}-${knownCoins.join(",")}`;
 
   let promise = inFlightCurve.get(key);
   if (promise) {
@@ -91,17 +99,22 @@ export async function fetchCurveMetadataHandler({
       const pool = input.pool as `0x${string}`;
       const opts = input.blockNumber != null ? { blockNumber: input.blockNumber } : undefined;
 
+      const skipCoinProbes = knownCoins.length >= 2;
       const contracts = [
         { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "fee" as const },
         { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "gamma" as const },
         { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "version" as const },
-        { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "N_COINS" as const },
-        ...Array.from({ length: MAX_CURVE_COINS }, (_, i) => ({
-          address: pool,
-          abi: CURVE_DISCOVERY_ABI,
-          functionName: "coins" as const,
-          args: [BigInt(i)] as const,
-        })),
+        ...(skipCoinProbes
+          ? []
+          : [
+              { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "N_COINS" as const },
+              ...Array.from({ length: MAX_CURVE_COINS }, (_, i) => ({
+                address: pool,
+                abi: CURVE_DISCOVERY_ABI,
+                functionName: "coins" as const,
+                args: [BigInt(i)] as const,
+              })),
+            ]),
       ];
 
       let results;
@@ -117,8 +130,8 @@ export async function fetchCurveMetadataHandler({
       const feeResult = results[0]!;
       const gammaResult = results[1]!;
       const versionResult = results[2]!;
-      const nCoinsResult = results[3]!;
-      const coinRawResults = results.slice(4, 4 + MAX_CURVE_COINS);
+      const nCoinsResult = skipCoinProbes ? null : results[3]!;
+      const coinRawResults = skipCoinProbes ? [] : results.slice(4, 4 + MAX_CURVE_COINS);
 
       // Classify per-call failures for actionable error reasons
       const failures: string[] = [];
@@ -126,28 +139,35 @@ export async function fetchCurveMetadataHandler({
         const { reason } = classifyRpcError(feeResult.error ?? new Error("fee() call failed"));
         failures.push(`fee(): ${reason}`);
       }
-      if (nCoinsResult.status !== "success") {
-        const { reason } = classifyRpcError(nCoinsResult.error ?? new Error("N_COINS() call failed"));
+      if (!skipCoinProbes && nCoinsResult?.status !== "success") {
+        const { reason } = classifyRpcError(nCoinsResult?.error ?? new Error("N_COINS() call failed"));
         failures.push(`N_COINS(): ${reason}`);
       }
 
       const fee = feeResult.status === "success" ? (feeResult.result as bigint) : 0n;
       const gamma = gammaResult.status === "success" ? (gammaResult.result as bigint) : null;
       const version = versionResult.status === "success" ? (versionResult.result as string) : null;
-      const nCoinsOnChain = nCoinsResult.status === "success" ? (nCoinsResult.result as bigint) : null;
+      const nCoinsOnChain =
+        !skipCoinProbes && nCoinsResult?.status === "success"
+          ? (nCoinsResult.result as bigint)
+          : null;
 
-      const nCoins = resolveCurveNCoins(input.nCoins, nCoinsOnChain);
+      const nCoins = skipCoinProbes
+        ? Math.min(Math.max(knownCoins.length, input.nCoins, 2), MAX_CURVE_COINS)
+        : resolveCurveNCoins(input.nCoins, nCoinsOnChain);
       let anyCoinFailed = false;
-      const coins: string[] = [];
-      for (let i = 0; i < nCoins && i < coinRawResults.length; i++) {
-        const r = coinRawResults[i]!;
-        if (r.status === "success") {
-          const addr = (r.result as string).toLowerCase();
-          if (addr && addr !== ZERO_ADDRESS) coins.push(addr);
-        } else {
-          anyCoinFailed = true;
-          const { reason } = classifyRpcError(r.error ?? new Error(`coins(${i}) call failed`));
-          failures.push(`coins(${i}): ${reason}`);
+      const coins: string[] = skipCoinProbes ? knownCoins.slice(0, nCoins) : [];
+      if (!skipCoinProbes) {
+        for (let i = 0; i < nCoins && i < coinRawResults.length; i++) {
+          const r = coinRawResults[i]!;
+          if (r.status === "success") {
+            const addr = (r.result as string).toLowerCase();
+            if (addr && addr !== ZERO_ADDRESS) coins.push(addr);
+          } else {
+            anyCoinFailed = true;
+            const { reason } = classifyRpcError(r.error ?? new Error(`coins(${i}) call failed`));
+            failures.push(`coins(${i}): ${reason}`);
+          }
         }
       }
 
@@ -188,6 +208,7 @@ export const fetchCurveMetadata = createEffect(
       pool: S.string,
       nCoins: S.number,
       blockNumber: S.optional(S.bigint),
+      knownCoins: S.optional(S.array(S.string)),
     },
     output: {
       fee: S.bigint,
