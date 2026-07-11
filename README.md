@@ -2,7 +2,7 @@
 
 Envio HyperIndex pipeline that indexes DEX pool creation events on Polygon. Feeds pool discovery metadata to an arbitrage bot via Hasura GraphQL.
 
-**Protocols:** Uniswap V2/V3/V4, SushiSwap V2/V3, QuickSwap V2/V3/V4, Dfyn, MeshSwap, JetSwap, Cometh, Curve, Balancer V2, DODO V2, WOOFi.
+**Protocols:** Uniswap V2/V3/V4, SushiSwap V2/V3, QuickSwap V2/V3/V4, Curve, Balancer V2, DODO V2, WOOFi.
 
 ## Quick Start
 
@@ -29,6 +29,9 @@ See `.env.example` for all variables. Key ones:
 | `INDEXER_PROGRESS_REALTIME_EVERY` | No | Realtime progress stride (default: 500) |
 | `ENVIO_NODE_MAX_OLD_SPACE_MB` | No | Node V8 heap cap for historical backfill (default: 8192) |
 | `ENVIO_LOG_LEVEL` | No | Log verbosity: `info` \| `debug` \| `trace` \| `warn` \| `error` |
+| `PG_URL` | No | Postgres connection string for migrations (`migrate-db.sh`). Falls back to `ENVIO_PG_URL` → `DATABASE_URL` → `envio-postgres` container defaults (user: `postgres`, db: `envio-dev`, port: 5433) |
+| `TOKEN_REGISTRY_DB` | No | Path to SQLite token registry (default: `data/token_registry.db`) |
+| `POOLS_JSON` | No | Path to bot anchor pools JSON (default: `data/pools.json`) |
 
 RPC URL resolution follows a priority chain: `ENVIO_POLYGON_RPC_URLS` → `ENVIO_POLYGON_RPC_URL` → `POLYGON_RPC_URLS` → `POLYGON_RPC_URL` → `POLYGON_RPC`. Public fallback endpoints are appended when fewer than 3 user endpoints are configured.
 

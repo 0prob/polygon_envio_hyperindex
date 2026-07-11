@@ -30,6 +30,9 @@ data/*
 # Graph visualization output
 graphify-rs-out/
 
+# OpenCode agent runtime artifacts (evidence, session continuation)
+.omo/
+
 # Safety net: other AI/IDE tool configs
 .cursor/
 .github/copilot-instructions.md

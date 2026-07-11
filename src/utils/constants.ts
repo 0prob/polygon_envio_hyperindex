@@ -42,10 +42,6 @@ const GRT: Address = "0x5fe2b58c013d7601147dcdd68c143a77499f5531";
 // Factory addresses
 export const QUICKSWAP_V2_FACTORY: Address = "0x5757371414417b8c6caad45baef941abc7d3ab32";
 const SUSHISWAP_V2_FACTORY: Address = "0xc35dadb65012ec5796536bd9864ed8773abc74c4";
-const DFYN_V2_FACTORY: Address = "0xe7fb3e833efe5f9c441105eb65ef8b261266423b";
-const MESHSWAP_V2_FACTORY: Address = "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d";
-const JETSWAP_V2_FACTORY: Address = "0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7";
-const COMETHSWAP_V2_FACTORY: Address = "0x800b052609c355ca8103e06f022aa30647ead60a";
 const UNISWAP_V2_FACTORY: Address = "0x9e5a52f57b3038f1b8eee45f28b3c1967e22799c";
 
 const UNISWAP_V3_FACTORY: Address = "0x1f98431c8ad98523631ae4a59f267346ea31f984";
@@ -137,10 +133,6 @@ export const KNOWN_FACTORIES_SET = new Set(
     QUICKSWAP_V2_FACTORY,
     SUSHISWAP_V2_FACTORY,
     UNISWAP_V2_FACTORY,
-    DFYN_V2_FACTORY,
-    MESHSWAP_V2_FACTORY,
-    JETSWAP_V2_FACTORY,
-    COMETHSWAP_V2_FACTORY,
     UNISWAP_V3_FACTORY,
     SUSHISWAP_V3_FACTORY,
     QUICKSWAP_V3_FACTORY,
@@ -158,10 +150,6 @@ export const V2_FACTORY_PROTOCOLS: Record<string, { protocol: string; feeBps: nu
   [QUICKSWAP_V2_FACTORY]: { protocol: "QUICKSWAP_V2", feeBps: 30 },
   [SUSHISWAP_V2_FACTORY]: { protocol: "SUSHISWAP_V2", feeBps: 25 },
   [UNISWAP_V2_FACTORY]: { protocol: "UNISWAP_V2", feeBps: 30 },
-  [DFYN_V2_FACTORY]: { protocol: "DFYN_V2", feeBps: 30 },
-  [MESHSWAP_V2_FACTORY]: { protocol: "MESHSWAP_V2", feeBps: 30 },
-  [JETSWAP_V2_FACTORY]: { protocol: "JETSWAP_V2", feeBps: 20 },
-  [COMETHSWAP_V2_FACTORY]: { protocol: "COMETHSWAP_V2", feeBps: 30 },
 };
 
 /** V3 factory address → protocol label. Keys are lowercase. */

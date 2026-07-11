@@ -8,16 +8,11 @@ declare namespace NodeJS {
     POLYGON_START_BLOCK?: string;
     ENVIO_POLYGON_START_BLOCK?: string;
     TOKEN_REGISTRY_DB?: string;
-    HYPERSYNC_RPM_TARGET?: string;
     ENVIO_HYPERSYNC_RPM_TARGET?: string;
-    HYPERSYNC_MAX_RPM_PER_TOKEN?: string;
     ENVIO_FULL_BATCH_SIZE?: string;
-    VITEST?: string;
     ENVIO_LOG_LEVEL?: string;
-    HYPER_SYNC_URL?: string;
     ENVIO_POLYGON_HYPERSYNC_URL?: string;
     INDEXER_PROGRESS_REALTIME_START?: string;
-    ENVIO_INDEXER_PROGRESS_REALTIME_START?: string;
     INDEXER_PROGRESS_HISTORICAL_EVERY?: string;
     INDEXER_PROGRESS_REALTIME_EVERY?: string;
     POOLS_JSON?: string;
