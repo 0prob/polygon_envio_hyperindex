@@ -60,11 +60,9 @@ contracts:
     events:
       - event: Pool
 
-  # Curve NG factories — emit pool-deployment events with pool address.
-  # Event-based handlers catch twocrypto/tricrypto pools immediately.
-  # The 250-block bootstrap stride covers ALL pool types by querying each
-  # factory's native pool_count()/pool_list() directly (MetaRegistry is
-  # deprecated/broken on Polygon — see curvefi/metaregistry repo).
+  # Curve factories — event-based discovery + 250-block bootstrap stride
+  # (pool_count/pool_list per factory; re-opens when pool_count grows after completed).
+  # MetaRegistry is deprecated/broken on Polygon — see curvefi/metaregistry repo.
   - name: CurveTwocryptoFactory
     abi_file_path: abis/curve_twocrypto_factory.json
     events:
@@ -73,6 +71,15 @@ contracts:
     abi_file_path: abis/curve_tricrypto_factory.json
     events:
       - event: TricryptoPoolDeployed
+  - name: CurveStableswapNgFactory
+    abi_file_path: abis/curve_stableswap_ng_factory.json
+    events:
+      - event: PlainPoolDeployed
+      # MetaPoolDeployed has no pool address; bootstrap growth re-probe covers metapools.
+  - name: CurveCryptoFactory
+    abi_file_path: abis/curve_crypto_factory.json
+    events:
+      - event: CryptoPoolDeployed
 
   # Uniswap V4
   - name: PoolManager
@@ -140,15 +147,19 @@ chains:
           - "0x411b0facc3489691f28ad58c47006af5e3ab3a28" # QuickSwap V3 Algebra
           - "0x134c1dbe4860a9caaf89002574ffe814772d9904" # QuickSwap V4 Algebra
 
-      # Curve NG factories — event-based discovery for twocrypto/tricrypto.
-      # All pool types (including stableswap) are covered by the 250-block
-      # bootstrap stride which queries each factory's pool_count()/pool_list().
+      # Curve factories (events + bootstrap). Addresses match CURVE_FACTORIES in constants.ts.
       - name: CurveTwocryptoFactory
         start_block: ${ENVIO_POLYGON_START_BLOCK:-58597033}
         address: "0x98EE851a00abeE0d95D08cF4CA2BdCE32aeaAF7F"
       - name: CurveTricryptoFactory
         start_block: ${ENVIO_POLYGON_START_BLOCK:-58597033}
         address: "0xC1b393EfEF38140662b91441C6710Aa704973228"
+      - name: CurveStableswapNgFactory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-58597033}
+        address: "0x1764ee18e8B3ccA4787249Ceb249356192594585"
+      - name: CurveCryptoFactory
+        start_block: ${ENVIO_POLYGON_START_BLOCK:-58597033}
+        address: "0xE5De15A9C9bBedb4F5EC13B131E61245f2983A69"
 
       # Uniswap V4
       - name: PoolManager

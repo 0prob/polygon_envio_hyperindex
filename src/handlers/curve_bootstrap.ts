@@ -35,13 +35,38 @@ async function bootstrapFactoryPage(
 ): Promise<void> {
   const stateId = `${context.chain.id}-${factory.id}`;
   const existingState = await context.CurveBootstrapProgress.get(stateId);
-  if (existingState?.completed) return;
+  const blockNum = Number(block.number);
 
-  const offset = existingState?.lastIndex ?? 0;
+  let offset = existingState?.lastIndex ?? 0;
+
+  // Previously completed factories stay frozen unless pool_count grew.
+  // Re-probe with epoch=block so Envio effect cache does not return the old total.
+  if (existingState?.completed) {
+    const probe = await context.effect(fetchCurveFactoryPage, {
+      factory: factory.address,
+      offset: existingState.total,
+      limit: PAGE_SIZE,
+      epoch: blockNum,
+    });
+    if (probe.total <= existingState.total) return;
+    offset = existingState.total;
+    if (!context.isPreload) {
+      context.CurveBootstrapProgress.set({
+        id: stateId,
+        lastIndex: offset,
+        total: probe.total,
+        completed: false,
+        updatedAtBlock: blockNum,
+      });
+    }
+  }
+
   const page = await context.effect(fetchCurveFactoryPage, {
     factory: factory.address,
     offset,
     limit: PAGE_SIZE,
+    // bust cache when resuming after a growth reopen (same offset may have been cached empty)
+    epoch: existingState?.completed ? blockNum : undefined,
   });
 
   const storeProgress = (lastIndex: number, total: number) => {
@@ -51,7 +76,7 @@ async function bootstrapFactoryPage(
       lastIndex,
       total,
       completed: lastIndex >= total || total === 0,
-      updatedAtBlock: Number(block.number),
+      updatedAtBlock: blockNum,
     });
   };
 
@@ -82,7 +107,6 @@ async function bootstrapFactoryPage(
   const concurrency = 3;
   const readyPools: { address: string; coins: string[]; poolType: CurveDiscoveryPoolType; fee: bigint }[] = [];
   let hasTransient = false;
-  let transientCount = 0;
 
   await runWithConcurrency(newPools, concurrency, async (row: { address: string }) => {
     const meta = await context.effect(fetchCurveMetadata, {
@@ -95,14 +119,12 @@ async function bootstrapFactoryPage(
     if (coins.length < 2) {
       if (!isCurveMetadataEmpty(meta)) {
         hasTransient = true;
-        transientCount++;
       }
       return;
     }
 
     if (meta.fee === 0n) {
       hasTransient = true;
-      transientCount++;
       return;
     }
 
@@ -126,7 +148,6 @@ async function bootstrapFactoryPage(
     }
 
     const tokenMetas = await tokenMetasPromise;
-    const blockNumber = Number(block.number);
 
     for (const pool of readyPools) {
       context.PoolMeta.set(
@@ -136,8 +157,8 @@ async function bootstrapFactoryPage(
           protocol: "CURVE",
           tokens: pool.coins,
           fee: curveFeeToPoolMetaInt(pool.fee),
-          createdBlock: blockNumber,
-          updatedAtBlock: blockNumber,
+          createdBlock: blockNum,
+          updatedAtBlock: blockNum,
           poolId: undefined,
           poolType: pool.poolType,
         }),

@@ -62,6 +62,8 @@ EXCLUDED_EVENTS: set[tuple[str, str]] = {
     ("PoolManager", "Swap"),
     ("BalancerVault", "PoolBalanceChanged"),
     ("BalancerVault", "Swap"),
+    # MetaPoolDeployed has no pool address; bootstrap growth re-probe covers metapools.
+    ("CurveStableswapNgFactory", "MetaPoolDeployed"),
 }
 
 # Suppressed type warnings — (contract, event, param) or ("*", event, param).

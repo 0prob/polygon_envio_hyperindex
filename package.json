@@ -11,14 +11,15 @@
     "validate": "bun run validate-config && bun run validate-data",
     "generate-tokens": "bun scripts/generate-polygon-tokens.ts",
     "backup-db": "bash scripts/backup-db.sh",
-    "migrate-db": "bash scripts/migrate-db.sh"
+    "migrate-db": "bash scripts/migrate-db.sh",
+    "repair-balancer-pooltype": "bun scripts/repair-balancer-pooltype.ts"
   },
   "dependencies": {
     "envio": "3.2.1",
-    "viem": "^2.54.6"
+    "viem": "^2.55.2"
   },
   "devDependencies": {
-    "@types/node": "^26.1.0",
-    "typescript": "^6.0.3"
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2"
   }
 }

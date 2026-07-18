@@ -3,6 +3,7 @@ import { fetchBalancerMetadata } from "../effects/balancer_metadata";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
+import { POLYGON_CHAIN_ID } from "../utils/constants";
 
 // In-memory cache for same-block poolId→address bridging (entity writes are staged
 // until block commit, so TokensRegistered in the same block as PoolRegistered needs
@@ -15,6 +16,28 @@ import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 // pre-reorg chain fork and must be evicted.
 const poolIdToAddrCache = new Map<string, { poolAddress: string; blockNumber: number }>();
 
+/** Addresses written without poolType — repaired on a slow onBlock stride (head RPC). */
+const incompletePoolTypeAddrs = new Set<string>();
+const REPAIR_EVERY = Number(process.env.BALANCER_POOLTYPE_REPAIR_EVERY ?? "2000");
+const REPAIR_BATCH = Number(process.env.BALANCER_POOLTYPE_REPAIR_BATCH ?? "8");
+const REPAIR_START = Number(process.env.BALANCER_POOLTYPE_REPAIR_START ?? "65000000");
+
+function noteIncomplete(address: string, poolType: string | undefined | null) {
+  if (poolType) incompletePoolTypeAddrs.delete(address.toLowerCase());
+  else incompletePoolTypeAddrs.add(address.toLowerCase());
+}
+
+function isIncompletePoolMeta(existing: {
+  poolType?: string | null;
+  fee?: number | null;
+  tokens?: string[] | null;
+}): boolean {
+  const missingType = existing.poolType == null || existing.poolType === "";
+  const missingFee = existing.fee == null;
+  const thinTokens = !existing.tokens || existing.tokens.length < 2;
+  return missingType || missingFee || thinTokens;
+}
+
 indexer.onEvent(
   {
     contract: "BalancerVault",
@@ -26,13 +49,19 @@ indexer.onEvent(
     const blockNumber = Number(event.block.number);
 
     const existing = await context.PoolMeta.get(pool);
-    if (existing) return;
+    // Re-enrich incomplete rows (historical RPC flakes left poolType/fee null).
+    if (existing && !isIncompletePoolMeta(existing)) return;
 
     // All effects scheduled early → participate in Envio v3 preload batching + dedup.
-    // Token effects moved before isPreload guard (were after) for full preload optimization.
-    const meta = await context.effect(fetchBalancerMetadata, { pool, poolId, blockNumber: BigInt(blockNumber) });
+    const meta = await context.effect(fetchBalancerMetadata, {
+      pool,
+      poolId,
+      // Prefer head for repairs so archival holes don't stick; use event block for new rows.
+      blockNumber: existing ? undefined : BigInt(blockNumber),
+    });
 
     if (meta.tokens.length < 2) {
+      if (meta.incompleteTransient) noteIncomplete(pool, undefined);
       return;
     }
 
@@ -48,9 +77,8 @@ indexer.onEvent(
     // only broken RPC returns or trivial pools hit the truncation path.
     const fee = meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
     const poolType = meta.poolType;
+    const createdBlock = existing?.createdBlock ?? blockNumber;
 
-    // Write to both entity (durable, auto-rolled back on reorg) and in-memory cache
-    // (same-block bridging for TokensRegistered which only emits poolId).
     poolIdToAddrCache.set(poolId, { poolAddress: pool, blockNumber });
     context.BalancerPoolIdMapping.set({
       id: poolId,
@@ -58,19 +86,23 @@ indexer.onEvent(
       updatedAtBlock: blockNumber,
     });
 
-    context.PoolMeta.set(poolMetaEntity({
-      id: pool,
-      address: pool,
-      protocol: "BALANCER_V2",
-      tokens: meta.tokens,
-      fee: fee > 0 ? fee : undefined,
-      tickSpacing: undefined,
-      createdBlock: blockNumber,
-      updatedAtBlock: blockNumber,
-      poolId: poolId,
-      specialization: Number(event.params.specialization),
-      poolType,
-    }));
+    context.PoolMeta.set(
+      poolMetaEntity({
+        id: pool,
+        address: pool,
+        protocol: "BALANCER_V2",
+        tokens: meta.tokens,
+        fee: fee > 0 ? fee : existing?.fee,
+        tickSpacing: undefined,
+        createdBlock,
+        updatedAtBlock: blockNumber,
+        poolId: poolId,
+        specialization: Number(event.params.specialization),
+        poolType: poolType ?? existing?.poolType,
+      }),
+    );
+
+    noteIncomplete(pool, poolType ?? existing?.poolType);
 
     await setTokenMetasIfMissing(
       context,
@@ -113,9 +145,6 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     poolIdToAddrCache.set(poolId, { poolAddress: poolAddr, blockNumber });
   }
 
-  // Await effects + DB read concurrently so all effects are registered in the preload
-  // batch before the isPreload guard. Previously tokenMetasPromise was only awaited
-  // after the guard, which lost preload batching for later tokens when concurrency=1.
   const [existing, tokenMetas] = await Promise.all([
     context.PoolMeta.get(poolAddr),
     tokenMetasPromise,
@@ -127,37 +156,131 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     return;
   }
 
-  const fee = existing.fee;
-  const poolType = existing.poolType;
-  const specialization = existing.specialization;
+  // Re-probe type/fee when incomplete (historical nulls); otherwise keep existing.
+  let fee = existing.fee;
+  let poolType = existing.poolType;
+  let tokens = rawTokens;
+  let specialization = existing.specialization;
+
+  if (isIncompletePoolMeta(existing)) {
+    const meta = await context.effect(fetchBalancerMetadata, {
+      pool: poolAddr,
+      poolId,
+      // head for repair
+      blockNumber: undefined,
+    });
+    if (meta.tokens.length >= 2) tokens = meta.tokens;
+    if (meta.poolType) poolType = meta.poolType;
+    if (meta.swapFee > 0n) {
+      const f = Number(meta.swapFee / 10n ** 14n);
+      if (f > 0) fee = f;
+    }
+  }
 
   if (context.isPreload) return;
 
   const tokensUnchanged =
     existing.tokens &&
-    existing.tokens.length === rawTokens.length &&
-    rawTokens.every((t, i) => t === existing.tokens![i]);
-  if (tokensUnchanged) return;
+    existing.tokens.length === tokens.length &&
+    tokens.every((t, i) => t === existing.tokens![i]);
+  const typeOrFeeChanged = poolType !== existing.poolType || fee !== existing.fee;
+  if (tokensUnchanged && !typeOrFeeChanged) return;
 
-  context.PoolMeta.set(poolMetaEntity({
-    id: poolAddr,
-    address: poolAddr,
-    protocol: "BALANCER_V2",
-    tokens: rawTokens,
-    fee,
-    tickSpacing: undefined,
-    createdBlock: existing.createdBlock,
-    updatedAtBlock: blockNumber,
-    poolId: poolId,
-    specialization,
-    poolType,
-  }));
+  context.PoolMeta.set(
+    poolMetaEntity({
+      id: poolAddr,
+      address: poolAddr,
+      protocol: "BALANCER_V2",
+      tokens,
+      fee,
+      tickSpacing: undefined,
+      createdBlock: existing.createdBlock,
+      updatedAtBlock: blockNumber,
+      poolId: poolId,
+      specialization,
+      poolType,
+    }),
+  );
+
+  noteIncomplete(poolAddr, poolType);
 
   await setTokenMetasIfMissing(
     context,
-    rawTokens,
+    tokens,
     tokenMetas.map((m) => m.decimals),
     tokenMetas.map((m) => m.trusted),
     tokenExisting,
   );
 });
+
+/** Slow-path repair for incomplete poolType rows seen this process lifetime. */
+indexer.onBlock(
+  {
+    name: "BalancerPoolTypeRepair",
+    where: ({ chain }) => {
+      if (chain.id !== POLYGON_CHAIN_ID) return false;
+      return {
+        block: { number: { _gte: REPAIR_START, _every: REPAIR_EVERY } },
+      };
+    },
+  },
+  async ({ block, context }) => {
+    if (context.isPreload) return;
+    if (incompletePoolTypeAddrs.size === 0) return;
+
+    const batch: string[] = [];
+    for (const addr of incompletePoolTypeAddrs) {
+      batch.push(addr);
+      if (batch.length >= REPAIR_BATCH) break;
+    }
+
+    const blockNumber = Number(block.number);
+    for (const pool of batch) {
+      const existing = await context.PoolMeta.get(pool);
+      if (!existing) {
+        incompletePoolTypeAddrs.delete(pool);
+        continue;
+      }
+      if (!isIncompletePoolMeta(existing)) {
+        incompletePoolTypeAddrs.delete(pool);
+        continue;
+      }
+
+      const meta = await context.effect(fetchBalancerMetadata, {
+        pool,
+        poolId: existing.poolId ?? undefined,
+        blockNumber: undefined,
+      });
+
+      if (meta.tokens.length < 2 && !meta.poolType && meta.swapFee === 0n) {
+        // still broken — leave in set for a later stride
+        if (!meta.incompleteTransient) incompletePoolTypeAddrs.delete(pool);
+        continue;
+      }
+
+      const feeFromMeta =
+        meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
+      const fee = feeFromMeta > 0 ? feeFromMeta : existing.fee;
+      const poolType = meta.poolType ?? existing.poolType;
+      const tokens = meta.tokens.length >= 2 ? meta.tokens : existing.tokens;
+
+      context.PoolMeta.set(
+        poolMetaEntity({
+          id: pool,
+          address: pool,
+          protocol: "BALANCER_V2",
+          tokens,
+          fee,
+          tickSpacing: undefined,
+          createdBlock: existing.createdBlock,
+          updatedAtBlock: blockNumber,
+          poolId: existing.poolId ?? (meta.poolId || undefined),
+          specialization: existing.specialization,
+          poolType,
+        }),
+      );
+
+      if (poolType) incompletePoolTypeAddrs.delete(pool);
+    }
+  },
+);

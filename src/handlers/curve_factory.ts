@@ -43,7 +43,13 @@ export function nCoinsFromEventParams(params: Record<string, unknown>): number {
 }
 
 function poolAddressFromEventParams(params: Record<string, unknown>): string | undefined {
-  return (params._0 as string | undefined) ?? (params.pool as string | undefined);
+  // Twocrypto/Tricrypto/PlainPoolDeployed use `pool`; crypto factory uses `token` (LP = pool).
+  const raw =
+    (params.pool as string | undefined) ??
+    (params.token as string | undefined) ??
+    (params._0 as string | undefined);
+  if (typeof raw !== "string" || !raw) return undefined;
+  return raw.toLowerCase();
 }
 
 function coinsFromEventParams(params: Record<string, unknown>): string[] {
@@ -120,5 +126,10 @@ async function handleCurvePoolAdded({
   );
 }
 
+// Twocrypto / Tricrypto NG
 indexer.onEvent({ contract: "CurveTwocryptoFactory", event: "TwocryptoPoolDeployed" }, handleCurvePoolAdded as never);
 indexer.onEvent({ contract: "CurveTricryptoFactory", event: "TricryptoPoolDeployed" }, handleCurvePoolAdded as never);
+// Stableswap-NG plain pools (metapools lack pool address in the event — covered by bootstrap growth re-probe)
+indexer.onEvent({ contract: "CurveStableswapNgFactory", event: "PlainPoolDeployed" }, handleCurvePoolAdded as never);
+// Legacy crypto factory
+indexer.onEvent({ contract: "CurveCryptoFactory", event: "CryptoPoolDeployed" }, handleCurvePoolAdded as never);

@@ -21,12 +21,14 @@ export async function fetchCurveFactoryPageHandler({
   input,
   context,
 }: {
-  input: { factory: string; offset: number; limit: number };
+  input: { factory: string; offset: number; limit: number; epoch?: number };
   context: { cache: boolean };
 }) {
   const factory = input.factory.toLowerCase() as `0x${string}`;
   const offset = Math.max(0, input.offset);
   const limit = Math.min(Math.max(1, input.limit), 100);
+  // epoch busts Envio effect cache when re-probing after completed bootstrap
+  void input.epoch;
 
   let total: number;
   try {
@@ -81,6 +83,8 @@ export const fetchCurveFactoryPage = createEffect(
       factory: S.string,
       offset: S.number,
       limit: S.number,
+      /** Optional cache-bust key (e.g. block number) for growth re-probes after completed. */
+      epoch: S.optional(S.number),
     },
     output: {
       total: S.number,
