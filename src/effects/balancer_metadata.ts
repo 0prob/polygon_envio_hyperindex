@@ -286,7 +286,7 @@ export const fetchBalancerMetadata = createEffect(
       amp: S.optional(S.bigint),
       scalingFactors: S.optional(S.array(S.bigint)),
       poolType: S.optional(S.string),
-      incompleteTransient: S.optional(S.bool),
+      incompleteTransient: S.optional(S.boolean),
     },
     rateLimit: { calls: 60, per: "second" as const },
     cache: true,
