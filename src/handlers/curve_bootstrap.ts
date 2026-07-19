@@ -23,6 +23,16 @@ const PAGE_SIZE = 40;
 const earliestCurveDeployBlock = CURVE_FACTORY_DEPLOY_BLOCK;
 const bootstrapStartBlock = Math.max(earliestCurveDeployBlock + 1, chainStart);
 const MAX_TRANSIENT_RETRIES = 3;
+/** onBlock stride while paginating incomplete factories (see indexer.onBlock below). */
+const BOOTSTRAP_EVERY = 250;
+/**
+ * After a factory is marked completed, only re-check pool_count this often.
+ * Factory onEvent handlers catch most new pools; growth re-probes cover metapools
+ * and missed deployments. Re-probing every 250 blocks with a unique epoch (cache
+ * bust) produced ~56k uncached RPC effects and stalled historical backfill at
+ * 0 events/sec around mid-chain.
+ */
+const GROWTH_PROBE_EVERY = 50_000;
 // ponytail: per-page retry counter so a transient RPC failure gets a second
 // chance, but permanently broken pools don't stall the whole bootstrap forever.
 const transientRetryCount = new Map<string, number>();
@@ -40,13 +50,19 @@ async function bootstrapFactoryPage(
   let offset = existingState?.lastIndex ?? 0;
 
   // Previously completed factories stay frozen unless pool_count grew.
-  // Re-probe with epoch=block so Envio effect cache does not return the old total.
+  // Coarse epoch so Envio effect cache reuses the probe within a growth window
+  // (unique per-block epochs were the stall).
   if (existingState?.completed) {
+    // Handler fires every BOOTSTRAP_EVERY; only probe on the first fire in each
+    // GROWTH_PROBE_EVERY window (blockNum % GROWTH_PROBE_EVERY < BOOTSTRAP_EVERY).
+    if (blockNum % GROWTH_PROBE_EVERY >= BOOTSTRAP_EVERY) return;
+
+    const growthEpoch = Math.floor(blockNum / GROWTH_PROBE_EVERY);
     const probe = await context.effect(fetchCurveFactoryPage, {
       factory: factory.address,
       offset: existingState.total,
       limit: PAGE_SIZE,
-      epoch: blockNum,
+      epoch: growthEpoch,
     });
     if (probe.total <= existingState.total) return;
     offset = existingState.total;
@@ -65,8 +81,8 @@ async function bootstrapFactoryPage(
     factory: factory.address,
     offset,
     limit: PAGE_SIZE,
-    // bust cache when resuming after a growth reopen (same offset may have been cached empty)
-    epoch: existingState?.completed ? blockNum : undefined,
+    // coarse cache key when resuming after a growth reopen
+    epoch: existingState?.completed ? Math.floor(blockNum / GROWTH_PROBE_EVERY) : undefined,
   });
 
   const storeProgress = (lastIndex: number, total: number) => {
@@ -192,8 +208,8 @@ async function bootstrapFactoryPage(
 }
 
 async function bootstrapCurvePools({ block, context }: any) {
-  if (context.isPreload) return;
-
+  // Run in preload too so fetchCurveFactoryPage / fetchCurveMetadata effects
+  // are registered and cached; entity writes already guard on isPreload.
   // Iterate each factory independently. A broken factory doesn't stall others.
   for (const factory of CURVE_FACTORIES) {
     try {
@@ -211,7 +227,7 @@ indexer.onBlock(
     where: ({ chain }) => {
       if (chain.id !== POLYGON_CHAIN_ID) return false;
       return {
-        block: { number: { _gte: bootstrapStartBlock, _every: 250 } },
+        block: { number: { _gte: bootstrapStartBlock, _every: BOOTSTRAP_EVERY } },
       };
     },
   },
