@@ -22,6 +22,14 @@ data/*
 # Envio codegen (ephemeral)
 .envio/
 
+# Local / generated scratch
+.tmp/
+.codegraph/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
 # AI/agent tool configs
 .claude/
 .gemini/

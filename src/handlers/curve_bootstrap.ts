@@ -3,6 +3,7 @@ import {
   curveFeeToPoolMetaInt,
   fetchCurveMetadata,
   isCurveMetadataEmpty,
+  curvePoolMetaNeedsEnrich,
 } from "../effects/curve_metadata";
 import type { CurveDiscoveryPoolType } from "../effects/curve_metadata";
 import { fetchCurveFactoryPage } from "../effects/curve_registry_bootstrap";
@@ -21,7 +22,21 @@ import {
 
 const PAGE_SIZE = 40;
 const earliestCurveDeployBlock = CURVE_FACTORY_DEPLOY_BLOCK;
-const bootstrapStartBlock = Math.max(earliestCurveDeployBlock + 1, chainStart);
+/**
+ * Factory pagination is Effect/RPC-heavy. Running it mid-backfill stalls the
+ * indexer when archival RPC is slow/rate-limited (progress_block freezes;
+ * fetchCurveFactoryPage never lands).
+ *
+ * Default: defer until ~90M (near current Polygon tip band). Factory onEvent
+ * handlers cover pools with deploy logs (event-embedded fee/coins); bootstrap
+ * backfills metapools / gaps once catch-up finishes. Override with
+ * CURVE_BOOTSTRAP_FROM_BLOCK.
+ */
+const bootstrapStartBlock = (() => {
+  const fromEnv = Number(process.env.CURVE_BOOTSTRAP_FROM_BLOCK);
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return Math.floor(fromEnv);
+  return Math.max(earliestCurveDeployBlock + 1, 90_000_000);
+})();
 const MAX_TRANSIENT_RETRIES = 3;
 /** onBlock stride while paginating incomplete factories (see indexer.onBlock below). */
 const BOOTSTRAP_EVERY = 250;
@@ -52,6 +67,8 @@ async function bootstrapFactoryPage(
   // Previously completed factories stay frozen unless pool_count grew.
   // Coarse epoch so Envio effect cache reuses the probe within a growth window
   // (unique per-block epochs were the stall).
+  // Migration 008 resets stuck completed rows after the historical pool_count fix;
+  // growth reopen still covers genuine post-completion deployments.
   if (existingState?.completed) {
     // Handler fires every BOOTSTRAP_EVERY; only probe on the first fire in each
     // GROWTH_PROBE_EVERY window (blockNum % GROWTH_PROBE_EVERY < BOOTSTRAP_EVERY).
@@ -63,6 +80,7 @@ async function bootstrapFactoryPage(
       offset: existingState.total,
       limit: PAGE_SIZE,
       epoch: growthEpoch,
+      blockNumber: block.number,
     });
     if (probe.total <= existingState.total) return;
     offset = existingState.total;
@@ -83,6 +101,7 @@ async function bootstrapFactoryPage(
     limit: PAGE_SIZE,
     // coarse cache key when resuming after a growth reopen
     epoch: existingState?.completed ? Math.floor(blockNum / GROWTH_PROBE_EVERY) : undefined,
+    blockNumber: block.number,
   });
 
   const storeProgress = (lastIndex: number, total: number) => {
@@ -107,11 +126,23 @@ async function bootstrapFactoryPage(
     return;
   }
 
-  // Batch-check existing pools.
+  // Batch-check existing pools. Re-enrich rows left incomplete by older fee()/N_COINS bugs.
   const allAddrs = page.pools.map((r: { address: string }) => r.address.toLowerCase());
   const existingPools = (await context.PoolMeta.getWhere({ address: { _in: allAddrs } })) ?? [];
-  const existingSet = new Set(existingPools.map((e: { address: string }) => e.address.toLowerCase()));
-  const newPools = page.pools.filter((r: { address: string }) => !existingSet.has(r.address.toLowerCase()));
+  const existingByAddr = new Map<
+    string,
+    { address: string; fee?: number | null; tokens?: readonly string[] | null; createdBlock?: number }
+  >(
+    existingPools.map((e: {
+      address: string;
+      fee?: number | null;
+      tokens?: readonly string[] | null;
+      createdBlock?: number;
+    }) => [e.address.toLowerCase(), e]),
+  );
+  const newPools = page.pools.filter((r: { address: string }) =>
+    curvePoolMetaNeedsEnrich(existingByAddr.get(r.address.toLowerCase())),
+  );
 
   if (newPools.length === 0) {
     const nextIndex = Math.min(page.total, offset + PAGE_SIZE);
@@ -166,6 +197,7 @@ async function bootstrapFactoryPage(
     const tokenMetas = await tokenMetasPromise;
 
     for (const pool of readyPools) {
+      const prior = existingByAddr.get(pool.address.toLowerCase());
       context.PoolMeta.set(
         poolMetaEntity({
           id: pool.address,
@@ -173,7 +205,7 @@ async function bootstrapFactoryPage(
           protocol: "CURVE",
           tokens: pool.coins,
           fee: curveFeeToPoolMetaInt(pool.fee),
-          createdBlock: blockNum,
+          createdBlock: prior?.createdBlock ?? blockNum,
           updatedAtBlock: blockNum,
           poolId: undefined,
           poolType: pool.poolType,

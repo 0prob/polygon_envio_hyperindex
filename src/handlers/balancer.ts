@@ -22,15 +22,19 @@ const REPAIR_EVERY = Number(process.env.BALANCER_POOLTYPE_REPAIR_EVERY ?? "2000"
 const REPAIR_BATCH = Number(process.env.BALANCER_POOLTYPE_REPAIR_BATCH ?? "8");
 const REPAIR_START = Number(process.env.BALANCER_POOLTYPE_REPAIR_START ?? "65000000");
 
-function noteIncomplete(address: string, poolType: string | undefined | null) {
-  if (poolType) incompletePoolTypeAddrs.delete(address.toLowerCase());
-  else incompletePoolTypeAddrs.add(address.toLowerCase());
+function noteIncomplete(
+  address: string,
+  row: { poolType?: string | null; fee?: number | null; tokens?: readonly string[] | null },
+) {
+  const key = address.toLowerCase();
+  if (isIncompletePoolMeta(row)) incompletePoolTypeAddrs.add(key);
+  else incompletePoolTypeAddrs.delete(key);
 }
 
 function isIncompletePoolMeta(existing: {
   poolType?: string | null;
   fee?: number | null;
-  tokens?: string[] | null;
+  tokens?: readonly string[] | null;
 }): boolean {
   const missingType = existing.poolType == null || existing.poolType === "";
   const missingFee = existing.fee == null;
@@ -61,7 +65,9 @@ indexer.onEvent(
     });
 
     if (meta.tokens.length < 2) {
-      if (meta.incompleteTransient) noteIncomplete(pool, undefined);
+      if (meta.incompleteTransient) {
+        noteIncomplete(pool, { poolType: undefined, fee: existing?.fee, tokens: undefined });
+      }
       return;
     }
 
@@ -78,6 +84,8 @@ indexer.onEvent(
     const fee = meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
     const poolType = meta.poolType;
     const createdBlock = existing?.createdBlock ?? blockNumber;
+    const feeOut = fee > 0 ? fee : existing?.fee;
+    const poolTypeOut = poolType ?? existing?.poolType;
 
     poolIdToAddrCache.set(poolId, { poolAddress: pool, blockNumber });
     context.BalancerPoolIdMapping.set({
@@ -92,17 +100,17 @@ indexer.onEvent(
         address: pool,
         protocol: "BALANCER_V2",
         tokens: meta.tokens,
-        fee: fee > 0 ? fee : existing?.fee,
+        fee: feeOut,
         tickSpacing: undefined,
         createdBlock,
         updatedAtBlock: blockNumber,
         poolId: poolId,
         specialization: Number(event.params.specialization),
-        poolType: poolType ?? existing?.poolType,
+        poolType: poolTypeOut,
       }),
     );
 
-    noteIncomplete(pool, poolType ?? existing?.poolType);
+    noteIncomplete(pool, { poolType: poolTypeOut, fee: feeOut, tokens: meta.tokens });
 
     await setTokenMetasIfMissing(
       context,
@@ -159,7 +167,7 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
   // Re-probe type/fee when incomplete (historical nulls); otherwise keep existing.
   let fee = existing.fee;
   let poolType = existing.poolType;
-  let tokens = rawTokens;
+  let tokens: readonly string[] = rawTokens;
   let specialization = existing.specialization;
 
   if (isIncompletePoolMeta(existing)) {
@@ -202,7 +210,7 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
     }),
   );
 
-  noteIncomplete(poolAddr, poolType);
+  noteIncomplete(poolAddr, { poolType, fee, tokens });
 
   await setTokenMetasIfMissing(
     context,
@@ -280,7 +288,12 @@ indexer.onBlock(
         }),
       );
 
-      if (poolType) incompletePoolTypeAddrs.delete(pool);
+      // Keep queued while any required field is still missing or the probe was transient.
+      if (meta.incompleteTransient || isIncompletePoolMeta({ poolType, fee, tokens })) {
+        incompletePoolTypeAddrs.add(pool);
+      } else {
+        incompletePoolTypeAddrs.delete(pool);
+      }
     }
   },
 );

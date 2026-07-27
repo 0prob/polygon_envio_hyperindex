@@ -8,6 +8,8 @@ import { ZERO_ADDRESS } from "../utils/constants";
 /** Discovery-only reads — PoolMeta needs coins, fee, crypto vs stable (gamma), and NG subtype. */
 const CURVE_DISCOVERY_ABI = parseAbi([
   "function fee() view returns (uint256)",
+  // Crypto pools (esp. older twocrypto/tricrypto) often lack fee() but expose mid_fee.
+  "function mid_fee() view returns (uint256)",
   "function gamma() view returns (uint256)",
   "function coins(uint256 i) view returns (address)",
   "function version() view returns (string)",
@@ -53,12 +55,69 @@ export function curveDiscoveryPoolType(gamma: bigint | null, isNg: boolean): Cur
   return base === "crypto" ? "crypto_ng" : "stable_ng";
 }
 
-/** Resolve coin count from MetaRegistry event hint or on-chain N_COINS(). */
+/** Resolve coin count from on-chain N_COINS(), event hint, or full probe window. */
 export function resolveCurveNCoins(eventNCoins: number, onChainNCoins: bigint | null): number {
-  const fromEvent = Number.isFinite(eventNCoins) && eventNCoins >= 2 ? Math.floor(eventNCoins) : 0;
   const fromChain = onChainNCoins != null && onChainNCoins >= 2n ? Number(onChainNCoins) : 0;
-  const n = Math.max(fromEvent, fromChain, 2);
-  return Math.min(n, MAX_CURVE_COINS);
+  if (fromChain > 0) return Math.min(fromChain, MAX_CURVE_COINS);
+  const fromEvent = Number.isFinite(eventNCoins) && eventNCoins >= 2 ? Math.floor(eventNCoins) : 0;
+  // Many crypto pools revert N_COINS(). If the caller only has the default hint (2),
+  // probe the full window so tricrypto (3) is not truncated; empty slots stop the loop.
+  if (fromEvent > 2) return Math.min(fromEvent, MAX_CURVE_COINS);
+  return MAX_CURVE_COINS;
+}
+
+/**
+ * Prefer fee() when present; fall back to mid_fee for crypto pools where fee() reverts.
+ * Both use Curve's 1e-10 fee fraction encoding.
+ */
+export function resolveCurveDiscoveryFee(fee: bigint | null, midFee: bigint | null): bigint {
+  if (fee != null && fee > 0n) return fee;
+  if (midFee != null && midFee > 0n) return midFee;
+  return 0n;
+}
+
+/** TwocryptoFactory._pack_3([mid_fee, out_fee, fee_gamma]) → mid_fee in bits [128..192). */
+export function midFeeFromPackedFeeParams(packed: bigint): bigint {
+  return (packed >> 128n) & ((1n << 64n) - 1n);
+}
+
+function asBigInt(v: unknown): bigint | null {
+  if (typeof v === "bigint") return v;
+  if (typeof v === "number" && Number.isFinite(v)) return BigInt(Math.trunc(v));
+  if (typeof v === "string" && v.length > 0) {
+    try {
+      return BigInt(v);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Fee (1e-10 units) embedded in Curve factory deploy events — avoids eth_call when
+ * archival RPC is unavailable. Prefer explicit fee/mid_fee; unpack packed_fee_params.
+ */
+export function feeFromCurveDeployEventParams(params: Record<string, unknown>): bigint {
+  const direct = resolveCurveDiscoveryFee(asBigInt(params.fee), asBigInt(params.mid_fee));
+  if (direct > 0n) return direct;
+  const packed = asBigInt(params.packed_fee_params);
+  if (packed == null || packed <= 0n) return 0n;
+  return midFeeFromPackedFeeParams(packed);
+}
+
+/** Best-effort poolType from deploy event fields (no RPC). */
+export function poolTypeFromCurveDeployEventParams(
+  params: Record<string, unknown>,
+): CurveDiscoveryPoolType {
+  const gamma = asBigInt(params.gamma) ?? asBigInt(params.packed_A_gamma);
+  const hasPacked = asBigInt(params.packed_fee_params) != null;
+  const hasMid = asBigInt(params.mid_fee) != null;
+  const isCrypto = (gamma != null && gamma > 0n) || hasPacked || hasMid;
+  // NG factories emit packed_* / Twocrypto|Tricrypto|PlainPool; legacy crypto has mid_fee only.
+  const isNg = hasPacked || params.pool != null;
+  if (!isCrypto) return isNg ? "stable_ng" : "stable";
+  return isNg ? "crypto_ng" : "crypto";
 }
 
 const inFlightCurve = new Map<
@@ -75,6 +134,17 @@ function normalizeKnownCoins(coins: string[] | undefined): string[] {
   return coins
     .map((c) => c.toLowerCase())
     .filter((c) => c && c !== ZERO_ADDRESS);
+}
+
+/** True when a persisted Curve PoolMeta row should be re-probed/rewritten. */
+export function curvePoolMetaNeedsEnrich(e: {
+  fee?: number | null;
+  tokens?: readonly string[] | null;
+} | undefined): boolean {
+  if (!e) return true;
+  if (e.fee == null || e.fee === 0) return true;
+  if (!e.tokens || e.tokens.length < 2) return true;
+  return false;
 }
 
 export async function fetchCurveMetadataHandler({
@@ -102,6 +172,7 @@ export async function fetchCurveMetadataHandler({
       const skipCoinProbes = knownCoins.length >= 2;
       const contracts = [
         { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "fee" as const },
+        { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "mid_fee" as const },
         { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "gamma" as const },
         { address: pool, abi: CURVE_DISCOVERY_ABI, functionName: "version" as const },
         ...(skipCoinProbes
@@ -128,23 +199,28 @@ export async function fetchCurveMetadataHandler({
       }
 
       const feeResult = results[0]!;
-      const gammaResult = results[1]!;
-      const versionResult = results[2]!;
-      const nCoinsResult = skipCoinProbes ? null : results[3]!;
-      const coinRawResults = skipCoinProbes ? [] : results.slice(4, 4 + MAX_CURVE_COINS);
+      const midFeeResult = results[1]!;
+      const gammaResult = results[2]!;
+      const versionResult = results[3]!;
+      const nCoinsResult = skipCoinProbes ? null : results[4]!;
+      const coinRawResults = skipCoinProbes ? [] : results.slice(5, 5 + MAX_CURVE_COINS);
 
       // Classify per-call failures for actionable error reasons
       const failures: string[] = [];
-      if (feeResult.status !== "success") {
-        const { reason } = classifyRpcError(feeResult.error ?? new Error("fee() call failed"));
-        failures.push(`fee(): ${reason}`);
+      if (feeResult.status !== "success" && midFeeResult.status !== "success") {
+        const { reason } = classifyRpcError(
+          feeResult.error ?? midFeeResult.error ?? new Error("fee()/mid_fee() call failed"),
+        );
+        failures.push(`fee()/mid_fee(): ${reason}`);
       }
       if (!skipCoinProbes && nCoinsResult?.status !== "success") {
         const { reason } = classifyRpcError(nCoinsResult?.error ?? new Error("N_COINS() call failed"));
         failures.push(`N_COINS(): ${reason}`);
       }
 
-      const fee = feeResult.status === "success" ? (feeResult.result as bigint) : 0n;
+      const feeRaw = feeResult.status === "success" ? (feeResult.result as bigint) : null;
+      const midFeeRaw = midFeeResult.status === "success" ? (midFeeResult.result as bigint) : null;
+      const fee = resolveCurveDiscoveryFee(feeRaw, midFeeRaw);
       const gamma = gammaResult.status === "success" ? (gammaResult.result as bigint) : null;
       const version = versionResult.status === "success" ? (versionResult.result as string) : null;
       const nCoinsOnChain =
@@ -163,10 +239,15 @@ export async function fetchCurveMetadataHandler({
           if (r.status === "success") {
             const addr = (r.result as string).toLowerCase();
             if (addr && addr !== ZERO_ADDRESS) coins.push(addr);
+            else break; // contiguous coin slots; stop at first empty
           } else {
-            anyCoinFailed = true;
-            const { reason } = classifyRpcError(r.error ?? new Error(`coins(${i}) call failed`));
-            failures.push(`coins(${i}): ${reason}`);
+            // Trailing reverts after ≥2 coins are expected when N_COINS is unknown.
+            if (coins.length < 2) {
+              anyCoinFailed = true;
+              const { reason } = classifyRpcError(r.error ?? new Error(`coins(${i}) call failed`));
+              failures.push(`coins(${i}): ${reason}`);
+            }
+            break;
           }
         }
       }

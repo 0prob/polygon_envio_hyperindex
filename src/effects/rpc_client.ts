@@ -34,12 +34,10 @@ export function getRpcUrls(): string[] {
     if (!raw) continue;
     const list = [...new Set(raw.split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean))];
     if (list.length > 0) {
-      // ponytail: append public fallbacks when user has < 3 endpoints — a single
-      // paid endpoint still hits quota under heavy archival eth_call volume
-      // (Balancer/DODO/Curve/WooFi bootstrapping). viem fallback() ranks the
-      // user's endpoints first, so fallbacks only serve during rate-limit bursts.
-      const fallbacks = PUBLIC_FALLBACK_RPC_URLS.filter((u) => !list.includes(u));
-      return [...list, ...fallbacks];
+      // Use only configured endpoints. Public fallbacks are often non-archival and
+      // (when dead/rate-limited) add multi-second timeouts ahead of a working paid RPC
+      // via viem fallback(), which stalls historical Effect-heavy sync.
+      return list;
     }
   }
   return [...PUBLIC_FALLBACK_RPC_URLS];
@@ -61,9 +59,10 @@ export function getRpcTransportTuning(): RpcTransportTuning {
     httpBatchWait: 16,
     multicallBatchSize: 64,
     multicallWait: 16,
-    timeoutMs: 12_000,
-    retryCount: 2,
-    retryDelayMs: 400,
+    // Keep timeouts tight so a dead primary in fallback() fails over quickly.
+    timeoutMs: 8_000,
+    retryCount: 1,
+    retryDelayMs: 200,
   };
 }
 

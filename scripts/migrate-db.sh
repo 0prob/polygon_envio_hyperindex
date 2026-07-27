@@ -22,7 +22,8 @@ if [[ -z "${PG_URL:-}" ]]; then
   source_env "$ROOT/.env"
 fi
 if [[ -z "${PG_URL:-}" ]]; then
-  # Arb bot .env (sibling repo) is the usual PG_URL source when running from h/.
+  # Optional: load PG_URL from a sibling checkout of
+  # https://github.com/0prob/rust_polygon_arbitrage_bot (../c/.env).
   source_env "$ROOT/../c/.env"
 fi
 
@@ -51,6 +52,9 @@ MIGRATIONS=(
   migrations/003_composite_incremental_index.sql
   migrations/004_pool_meta_updated_index.sql
   migrations/005_pool_meta_index_cleanup.sql
+  migrations/006_remove_zombie_v2_protocols.sql
+  migrations/007_pool_meta_updated_keyset_index.sql
+  migrations/008_reopen_curve_bootstrap.sql
 )
 
 echo "Using database: ${PG_URL%%@*}@***"

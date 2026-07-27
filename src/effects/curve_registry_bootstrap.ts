@@ -21,7 +21,14 @@ export async function fetchCurveFactoryPageHandler({
   input,
   context,
 }: {
-  input: { factory: string; offset: number; limit: number; epoch?: number };
+  input: {
+    factory: string;
+    offset: number;
+    limit: number;
+    epoch?: number;
+    /** Historical block — required so backfill does not read today's pool_count/list. */
+    blockNumber?: bigint;
+  };
   context: { cache: boolean };
 }) {
   const factory = input.factory.toLowerCase() as `0x${string}`;
@@ -29,6 +36,7 @@ export async function fetchCurveFactoryPageHandler({
   const limit = Math.min(Math.max(1, input.limit), 100);
   // epoch busts Envio effect cache when re-probing after completed bootstrap
   void input.epoch;
+  const opts = input.blockNumber != null ? { blockNumber: input.blockNumber } : undefined;
 
   let total: number;
   try {
@@ -37,6 +45,7 @@ export async function fetchCurveFactoryPageHandler({
         address: factory,
         abi: FACTORY_ABI,
         functionName: "pool_count",
+        ...opts,
       }),
     );
   } catch (err) {
@@ -58,6 +67,7 @@ export async function fetchCurveFactoryPageHandler({
         args: [BigInt(offset + j)] as const,
       })),
       allowFailure: true,
+      ...opts,
     });
 
     const pools: CurveFactoryPoolRow[] = [];
@@ -85,6 +95,8 @@ export const fetchCurveFactoryPage = createEffect(
       limit: S.number,
       /** Optional cache-bust key (e.g. block number) for growth re-probes after completed. */
       epoch: S.optional(S.number),
+      /** Pin factory reads to the handler block so historical bootstrap matches that block. */
+      blockNumber: S.optional(S.bigint),
     },
     output: {
       total: S.number,

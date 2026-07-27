@@ -2,7 +2,9 @@ import { indexer } from "envio";
 import type { Effect } from "envio";
 import {
   curveFeeToPoolMetaInt,
+  feeFromCurveDeployEventParams,
   fetchCurveMetadata,
+  poolTypeFromCurveDeployEventParams,
 } from "../effects/curve_metadata";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
@@ -16,7 +18,15 @@ interface CurveHandlerContext {
   effect: <I, O>(effect: Effect<I, O>, input: I extends undefined ? undefined : I) => Promise<O>;
   isPreload: boolean;
   PoolMeta: {
-    get(id: string): Promise<{ id?: string } | undefined>;
+    get(id: string): Promise<
+      | {
+          id?: string;
+          fee?: number | null;
+          tokens?: readonly string[] | null;
+          createdBlock?: number;
+        }
+      | undefined
+    >;
     set(entity: unknown): void;
   };
   TokenMeta: {
@@ -78,20 +88,45 @@ async function handleCurvePoolAdded({
   const blockNumber = Number(event.block.number);
 
   const existing = await context.PoolMeta.get(pool);
-  if (existing) return;
+  const existingComplete =
+    existing &&
+    existing.fee != null &&
+    existing.fee > 0 &&
+    existing.tokens != null &&
+    existing.tokens.length >= 2;
+  if (existingComplete) return;
 
-  const eventCoins = coinsFromEventParams(event.params as Record<string, unknown>);
-  const nCoins = eventCoins.length >= 2 ? eventCoins.length : nCoinsFromEventParams(event.params);
+  const params = event.params as Record<string, unknown>;
+  const eventCoins = coinsFromEventParams(params);
+  const nCoins = eventCoins.length >= 2 ? eventCoins.length : nCoinsFromEventParams(params);
+  // Prefer event-embedded fee/coins so deploy indexing does not stall when archival
+  // RPC is down (bootstrap still backfills metapools / gaps later).
+  const eventFee = feeFromCurveDeployEventParams(params);
 
-  const meta = await context.effect(fetchCurveMetadata, {
-    pool,
-    nCoins,
-    blockNumber: BigInt(blockNumber),
-    knownCoins: eventCoins.length >= 2 ? eventCoins : undefined,
-  });
+  let coins = eventCoins;
+  let fee = eventFee;
+  let poolType = poolTypeFromCurveDeployEventParams(params);
 
-  const coins = meta.coins.filter((c: string) => c && c !== ZERO_ADDRESS);
+  const eventComplete = coins.length >= 2 && fee > 0n;
+  if (!eventComplete) {
+    const meta = await context.effect(fetchCurveMetadata, {
+      pool,
+      nCoins,
+      blockNumber: BigInt(blockNumber),
+      knownCoins: eventCoins.length >= 2 ? eventCoins : undefined,
+    });
+    coins = meta.coins.filter((c: string) => c && c !== ZERO_ADDRESS);
+    fee = meta.fee;
+    poolType = meta.poolType as typeof poolType;
+  }
+
   if (coins.length < 2) {
+    return;
+  }
+
+  // Do not persist fee=0 — crypto pools where fee() reverts must resolve via mid_fee
+  // first; writing 0 blocks bootstrap from repairing the row later.
+  if (fee <= 0n) {
     return;
   }
 
@@ -102,7 +137,7 @@ async function handleCurvePoolAdded({
     return;
   }
 
-  const feeBps = curveFeeToPoolMetaInt(meta.fee);
+  const feeBps = curveFeeToPoolMetaInt(fee);
 
   context.PoolMeta.set(poolMetaEntity({
     id: pool,
@@ -111,10 +146,10 @@ async function handleCurvePoolAdded({
     tokens: coins,
     fee: feeBps,
     tickSpacing: undefined,
-    createdBlock: blockNumber,
+    createdBlock: existing?.createdBlock ?? blockNumber,
     updatedAtBlock: blockNumber,
     poolId: undefined,
-    poolType: meta.poolType,
+    poolType,
   }));
 
   await setTokenMetasIfMissing(

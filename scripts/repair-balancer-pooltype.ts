@@ -1,11 +1,11 @@
 #!/usr/bin/env bun
 /**
- * One-shot ops repair: re-probe Balancer pools missing poolType (and optionally fee)
+ * One-shot ops repair: re-probe Balancer pools missing poolType and/or fee
  * and UPDATE PoolMeta via envio-postgres + RPC.
  *
  *   bun scripts/repair-balancer-pooltype.ts
  *   bun scripts/repair-balancer-pooltype.ts --limit 50 --dry-run
- *   bun scripts/repair-balancer-pooltype.ts --null-fee   # also rows missing fee only
+ *   bun scripts/repair-balancer-pooltype.ts --pooltype-only  # skip null-fee-only rows
  */
 import { createPublicClient, http, parseAbi } from "viem";
 import { polygon } from "viem/chains";
@@ -18,8 +18,8 @@ const limitArg = process.argv.includes("--limit")
   ? Number(process.argv[process.argv.indexOf("--limit") + 1])
   : 2000;
 const dryRun = process.argv.includes("--dry-run");
-/** Also select rows that have poolType but null fee. */
-const includeNullFee = process.argv.includes("--null-fee");
+/** Default: also repair rows that have poolType but null fee. */
+const includeNullFee = !process.argv.includes("--pooltype-only");
 
 const rpc =
   process.env.ENVIO_POLYGON_RPC_URLS?.split(",")[0]?.trim() ||
@@ -201,12 +201,21 @@ for (const row of rows) {
 
 const remaining = psql(`
   SELECT COUNT(*)::text FROM "PoolMeta"
-  WHERE protocol = 'BALANCER_V2' AND ("poolType" IS NULL OR "poolType" = '');
+  WHERE protocol = 'BALANCER_V2'
+    AND (${includeNullFee
+      ? `"poolType" IS NULL OR "poolType" = '' OR fee IS NULL`
+      : `"poolType" IS NULL OR "poolType" = ''`});
 `);
 
 console.log(
   JSON.stringify(
-    { updated, skipped, dryRun, remainingMissingPoolType: Number(remaining) || 0 },
+    {
+      updated,
+      skipped,
+      dryRun,
+      includeNullFee,
+      remainingIncomplete: Number(remaining) || 0,
+    },
     null,
     2,
   ),
