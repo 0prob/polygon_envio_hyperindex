@@ -2,6 +2,21 @@ import { HypersyncClient } from "@envio-dev/hypersync-client";
 import { createEffect, S } from "envio";
 
 const HYPERSYNC_URL = process.env.ENVIO_POLYGON_HYPERSYNC_URL ?? "https://polygon.hypersync.xyz";
+const HYPERSYNC_PAGE_TIMEOUT_MS = 15_000;
+
+async function withTimeout<T>(promise: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("factory reconciliation request timed out")), HYPERSYNC_PAGE_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 export const fetchFactoryEventPage = createEffect(
   {
@@ -31,13 +46,13 @@ export const fetchFactoryEventPage = createEffect(
     if (!token) return { nextBlock: input.fromBlock, logs: [] };
     try {
       const client = new HypersyncClient({ url: HYPERSYNC_URL, apiToken: token });
-      const page = await client.get({
+      const page = await withTimeout(client.get({
         fromBlock: input.fromBlock,
         toBlock: input.toBlock,
         logs: [{ address: [input.address], topics: [[input.topic]] }],
         fieldSelection: { log: ["Address", "Data", "Topic0", "Topic1", "Topic2", "Topic3", "BlockNumber"] },
         maxNumLogs: 500,
-      });
+      }));
       return {
         nextBlock: Math.max(input.fromBlock, page.nextBlock),
         logs: page.data.logs.flatMap((log) => {

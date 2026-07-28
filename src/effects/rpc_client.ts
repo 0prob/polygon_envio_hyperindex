@@ -6,8 +6,8 @@ import { polygon } from "viem/chains";
  * Centralized RPC client for all effects (token decimals, Curve/Balancer/DODO metadata, etc.).
  *
  * Supports comma-separated POLYGON_RPC_URLS (preferred) or POLYGON_RPC_URL from .env.
- * .env endpoints are used with viem fallback(). Public fallbacks are appended as
- * secondary endpoints when the user provides fewer than 3 endpoints.
+ * .env endpoints are used with viem fallback(). Public fallbacks are used only
+ * when no configured endpoint is available.
  *
  * Recommended: paid archival providers for historical eth_call volume + multicall.
  */
@@ -122,4 +122,3 @@ export const publicClient: PublicClient = new Proxy({} as PublicClient, {
     return typeof value === "function" ? value.bind(publicClientInstance) : value;
   },
 });
-

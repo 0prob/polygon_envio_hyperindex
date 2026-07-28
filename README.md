@@ -40,18 +40,18 @@ See `.env.example` for the full set. Keys the code / Envio config actually read:
 | `DODO_FEE_REPAIR_EVERY` | No | DODO fee repair stride (default `5000`) |
 | `DODO_FEE_REPAIR_BATCH` | No | DODO pools repaired per stride (default `8`) |
 | `DODO_FEE_REPAIR_START` | No | First block for DODO repair onBlock (default `65000000`) |
-| `CURVE_BOOTSTRAP_FROM_BLOCK` | No | First block for Curve factory `pool_list` bootstrap (default `90000000`; mid-backfill + bad RPC freezes `progress_block`) |
+| `CURVE_BOOTSTRAP_FROM_BLOCK` | No | First durable block for Curve factory `pool_list` bootstrap (default `90000000`; preload blocks are skipped) |
 | `CURVE_BOOTSTRAP_EVERY` | No | Blocks between Curve bootstrap fires (default `100`; one factory per fire) |
 | `CURVE_BOOTSTRAP_GROWTH_EVERY` | No | Re-probe completed factories for growth (default `100000`) |
 | `CURVE_BOOTSTRAP_POOLS_PER_FIRE` | No | Max Curve metadata RPCs per fire (default `8`) |
-| `FACTORY_EVENT_RECONCILIATION_FROM_BLOCK` | No | First block for HyperSync factory-event reconciliation (default `90000000`; earlier fires flood Effect queue and stall start) |
+| `FACTORY_EVENT_RECONCILIATION_FROM_BLOCK` | No | First durable block for HyperSync factory-event reconciliation (default `90000000`; preload blocks are skipped) |
 | `FACTORY_EVENT_RECONCILIATION_EVERY` | No | Blocks between one HyperSync event-source reconciliation page (default `10000`) |
 | `FACTORY_EVENT_RECONCILIATION_PAGES` | No | HyperSync pages drained per reconciliation fire (default `5`) |
 | `V2_RECONCILIATION_FROM_BLOCK` | No | **Opt-in** — set to enable V2 `allPairs` recon (disabled by default; HyperSync PairCreated recon covers V2) |
 | `V2_RECONCILIATION_EVERY` | No | Blocks between bounded V2 factory enumeration pages when enabled (default `10000`) |
 | `ENVIO_NODE_MAX_OLD_SPACE_MB` | No | V8 heap for `envio-dev` (default `8192`) |
 | `ENVIO_KILL_GRACE_MS` | No | Grace before SIGKILL of prior indexer processes (default `2000`) |
-| `ENVIO_LOG_LEVEL` | No | Envio log level |
+| `LOG_LEVEL` | No | Envio console log level |
 | `PG_URL` / `ENVIO_PG_URL` / `DATABASE_URL` | No | Postgres URL for `migrate-db` |
 | `ENVIO_POSTGRES_*` | No | Container/db defaults for `migrate-db`, `backup-db`, `repair-balancer-pooltype` |
 | `BACKUP_DIR` | No | Output dir for `backup-db` (default `backups/`) |

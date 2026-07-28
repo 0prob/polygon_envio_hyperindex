@@ -83,13 +83,11 @@ function isPermanentRpcClass(failureReason: string | undefined): boolean {
 const PAGE_SIZE = 40;
 const earliestCurveDeployBlock = CURVE_FACTORY_DEPLOY_BLOCK;
 /**
- * Factory pagination is Effect/RPC-heavy. Running it mid-backfill stalls the
- * indexer when archival RPC is slow/rate-limited (progress_block freezes;
- * fetchCurveMetadata queue grows without bound).
+ * Factory pagination is Effect/RPC-heavy. It runs only after preload so
+ * archival RPC work does not grow the preload queue.
  *
- * Default: defer until ~90M. A large buffered batch that crosses this gate used
- * to fire every 250 blocks × all factories × 40 pool metadata effects and wedge
- * the pipeline — stride is coarse and only one factory is serviced per fire.
+ * Default: start at ~90M. The stride is coarse and only one factory is
+ * serviced per fire.
  * Override with CURVE_BOOTSTRAP_FROM_BLOCK.
  */
 const bootstrapStartBlock = (() => {
@@ -439,11 +437,7 @@ async function bootstrapCurvePools({
   block: { number: number | bigint };
   context: BootstrapContext;
 }) {
-  // Run in preload too so fetchCurveFactoryPage / fetchCurveMetadata effects
-  // are registered and cached; entity writes already guard on isPreload.
-  // One factory per stride (round-robin) — firing all four every 250 blocks
-  // inside a multi-100k buffered batch queued 10k+ Curve metadata effects and
-  // froze progress_block.
+  if (context.isPreload) return;
   const blockNum = Number(block.number);
   const factory =
     CURVE_FACTORIES[Math.floor(blockNum / BOOTSTRAP_EVERY) % CURVE_FACTORIES.length]!;

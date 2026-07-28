@@ -19,6 +19,13 @@ data/*
 
 # Secrets
 .env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.token
 
 # Envio codegen (ephemeral)
 .envio/

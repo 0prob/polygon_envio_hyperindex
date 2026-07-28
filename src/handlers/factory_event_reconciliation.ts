@@ -115,10 +115,8 @@ const SOURCES: Source[] = [
 ];
 const EVERY = Number(process.env.FACTORY_EVENT_RECONCILIATION_EVERY ?? "10000");
 /**
- * HyperSync page effects are rate-limited (1–N/sec). Firing every EVERY blocks from
- * genesis queues thousands of fetches and freezes the first processing batch
- * (progress_block stuck at start while fetchFactoryEventPage queue grows).
- * Defer until near tip — same pattern as CURVE_BOOTSTRAP_FROM_BLOCK.
+ * HyperSync page effects are rate-limited. Reconciliation runs only after
+ * preload and starts near the tip to bound durable catch-up work.
  */
 const reconcileStartBlock = (() => {
   const fromEnv = Number(process.env.FACTORY_EVENT_RECONCILIATION_FROM_BLOCK);
@@ -350,6 +348,7 @@ indexer.onBlock(
     },
   },
   async ({ block, context }) => {
+    if (context.isPreload) return;
     const blockNumber = Number(block.number);
     const source = SOURCES[Math.floor(blockNumber / EVERY) % SOURCES.length]!;
     const id = `${context.chain.id}-${source.id}`;
@@ -362,7 +361,6 @@ indexer.onBlock(
     let nextBlock = fromBlock;
     for (let pageIdx = 0; pageIdx < PAGES_PER_FIRE; pageIdx++) {
       if (fromBlock >= blockNumber) break;
-      // Schedule effect before isPreload gate so preload batching can run.
       const page = await context.effect(fetchFactoryEventPage, {
         address: source.address,
         topic: source.topic,
@@ -387,7 +385,6 @@ indexer.onBlock(
       fromBlock = page.nextBlock;
     }
 
-    if (context.isPreload) return;
     if (nextBlock > (state?.nextBlock ?? source.start)) {
       context.FactoryEventReconciliationProgress.set({
         id,
