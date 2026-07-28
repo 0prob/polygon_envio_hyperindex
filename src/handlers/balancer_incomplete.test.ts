@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 
 // Mirror of isIncompletePoolMeta in balancer.ts — keep in sync.
 function isIncompletePoolMeta(existing: {

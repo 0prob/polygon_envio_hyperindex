@@ -25,6 +25,7 @@ export const fetchDodoMetadata = createEffect(
       anyFailed: S.boolean,
     },
     rateLimit: { calls: 60, per: "second" as const },
+    crossChain: false,
     cache: true,
   },
   fetchDodoMetadataHandler,

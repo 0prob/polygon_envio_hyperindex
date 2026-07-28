@@ -233,7 +233,6 @@ indexer.onBlock(
     },
   },
   async ({ block, context }) => {
-    if (context.isPreload) return;
     if (incompletePoolTypeAddrs.size === 0) return;
 
     const batch: string[] = [];
@@ -243,6 +242,19 @@ indexer.onBlock(
     }
 
     const blockNumber = Number(block.number);
+    // Schedule all effects first so preload batching can run, then write after gate.
+    const repairs: Array<{
+      pool: string;
+      existing: NonNullable<Awaited<ReturnType<typeof context.PoolMeta.get>>>;
+      meta: {
+        tokens: string[];
+        poolType?: string | null;
+        swapFee: bigint;
+        poolId: string;
+        incompleteTransient?: boolean;
+      };
+    }> = [];
+
     for (const pool of batch) {
       const existing = await context.PoolMeta.get(pool);
       if (!existing) {
@@ -259,7 +271,12 @@ indexer.onBlock(
         poolId: existing.poolId ?? undefined,
         blockNumber: undefined,
       });
+      repairs.push({ pool, existing, meta });
+    }
 
+    if (context.isPreload) return;
+
+    for (const { pool, existing, meta } of repairs) {
       if (meta.tokens.length < 2 && !meta.poolType && meta.swapFee === 0n) {
         // still broken — leave in set for a later stride
         if (!meta.incompleteTransient) incompletePoolTypeAddrs.delete(pool);

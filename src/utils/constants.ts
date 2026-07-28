@@ -97,6 +97,28 @@ export const chainStart = (() => {
   const n = v ? Number(v) : 0;
   return Number.isFinite(n) && n > 0 ? n : 0;
 })();
+
+/**
+ * Deploy-block defaults matching config.yaml `${ENVIO_POLYGON_START_BLOCK:-N}` fallbacks.
+ * When ENVIO_POLYGON_START_BLOCK / POLYGON_START_BLOCK is set, that override wins
+ * (same interpolation semantics as Envio config).
+ */
+export const DEPLOY_START = {
+  V2_FACTORY: 4_931_780,
+  V3_FACTORY: 22_757_547,
+  ALGEBRA_FACTORY: 34_502_463,
+  POOL_MANAGER: 67_082_470,
+  BALANCER_VAULT: 15_832_990,
+  DODO_FACTORY: 14_722_979,
+  WOOFI_PP_V2: WOOFI_PP_V2_DEPLOY_BLOCK,
+  CURVE_FACTORY: CURVE_FACTORY_DEPLOY_BLOCK,
+} as const;
+
+/** Effective start block for a contract — aligns handlers/reconciliation with config.yaml. */
+export function contractStartBlock(deployDefault: number): number {
+  return chainStart > 0 ? chainStart : deployDefault;
+}
+
 export const DEFAULT_CURVE_N_COINS = 2;
 
 /**

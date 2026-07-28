@@ -17,12 +17,12 @@ indexer.onBlock(
       : false,
   },
   async ({ block, context }) => {
-    if (context.isPreload) return;
     const blockNumber = Number(block.number);
     for (const [factory, info] of FACTORIES) {
       const id = `${context.chain.id}-${factory}`;
       const prior = await context.V2FactoryReconciliationProgress.get(id);
       const initial = prior?.nextIndex;
+      // Schedule effects before isPreload gate so preload batching can run.
       const page = await context.effect(fetchV2FactoryPage, {
         factory,
         offset: initial ?? 0,
@@ -44,6 +44,7 @@ indexer.onBlock(
           fee: info.feeBps,
         });
       }
+      if (context.isPreload) continue;
       const nextIndex = offset + PAGE_SIZE >= reconciled.total ? 0 : offset + PAGE_SIZE;
       context.V2FactoryReconciliationProgress.set({ id, nextIndex, updatedAtBlock: blockNumber });
     }

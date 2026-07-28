@@ -16,7 +16,11 @@ import {
 import { safeDecimals } from "../utils/constants";
 import { normalizeTokenAddress } from "../utils/normalize_address";
 
-let db: any = null;
+type TokenRegistryDb = {
+  prepare: (sql: string) => { all: (...args: unknown[]) => unknown[] };
+};
+
+let db: TokenRegistryDb | null = null;
 
 async function initDb() {
   if (db !== null) return;
@@ -25,7 +29,7 @@ async function initDb() {
   // Bun runtime (scripts, direct handler runs)
   try {
     const { Database } = await import("bun:sqlite");
-    db = new Database(dbPath, { readonly: true });
+    db = new Database(dbPath, { readonly: true }) as unknown as TokenRegistryDb;
     return;
   } catch {
   }
@@ -33,7 +37,7 @@ async function initDb() {
   // Node 22+ built-in sqlite (Envio indexer runtime)
   try {
     const { DatabaseSync } = await import("node:sqlite");
-    db = new DatabaseSync(dbPath, { readOnly: true });
+    db = new DatabaseSync(dbPath, { readOnly: true }) as unknown as TokenRegistryDb;
     return;
   } catch {
   }
@@ -412,6 +416,7 @@ export const fetchTokenMeta = createEffect(
     },
     output: { address: S.string, decimals: S.number, trusted: S.boolean },
     rateLimit: { calls: 250, per: "second" as const },
+    crossChain: false,
     cache: true,
   },
   fetchTokenMetaHandler

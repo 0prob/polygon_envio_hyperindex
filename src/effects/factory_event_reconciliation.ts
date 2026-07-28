@@ -22,6 +22,7 @@ export const fetchFactoryEventPage = createEffect(
       })),
     },
     rateLimit: { calls: 1, per: "second" as const },
+    crossChain: false,
     cache: false,
   },
   async ({ input, context }) => {

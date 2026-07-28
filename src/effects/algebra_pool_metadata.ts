@@ -29,6 +29,7 @@ export const fetchAlgebraPoolMeta = createEffect(
       tickSpacing: S.optional(S.number),
     },
     rateLimit: { calls: 60, per: "second" as const },
+    crossChain: false,
     cache: true,
   },
   async ({ input, context }: {

@@ -10,7 +10,7 @@ import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 import { ZERO_ADDRESS, DEFAULT_CURVE_N_COINS } from "../utils/constants";
-
+import type { PoolMetaWritePayload } from "../utils/indexer_protocol";
 
 const DEFAULT_N_COINS = DEFAULT_CURVE_N_COINS;
 
@@ -27,7 +27,7 @@ interface CurveHandlerContext {
         }
       | undefined
     >;
-    set(entity: unknown): void;
+    set(entity: PoolMetaWritePayload): void;
   };
   TokenMeta: {
     get(id: string): Promise<{ decimals?: number } | undefined>;
@@ -75,9 +75,8 @@ async function handleCurvePoolAdded({
   context,
 }: {
   event: {
-    params: Record<string, unknown> & { pool: string };
-    block: { number: bigint };
-    transaction: { hash: string };
+    params: Record<string, unknown>;
+    block: { number: number | bigint };
   };
   context: CurveHandlerContext;
 }) {
@@ -150,7 +149,7 @@ async function handleCurvePoolAdded({
     updatedAtBlock: blockNumber,
     poolId: undefined,
     poolType,
-  }));
+  }) as PoolMetaWritePayload);
 
   await setTokenMetasIfMissing(
     context,
@@ -162,9 +161,29 @@ async function handleCurvePoolAdded({
 }
 
 // Twocrypto / Tricrypto NG
-indexer.onEvent({ contract: "CurveTwocryptoFactory", event: "TwocryptoPoolDeployed" }, handleCurvePoolAdded as never);
-indexer.onEvent({ contract: "CurveTricryptoFactory", event: "TricryptoPoolDeployed" }, handleCurvePoolAdded as never);
+indexer.onEvent(
+  { contract: "CurveTwocryptoFactory", event: "TwocryptoPoolDeployed" },
+  async ({ event, context }) => {
+    await handleCurvePoolAdded({ event, context });
+  },
+);
+indexer.onEvent(
+  { contract: "CurveTricryptoFactory", event: "TricryptoPoolDeployed" },
+  async ({ event, context }) => {
+    await handleCurvePoolAdded({ event, context });
+  },
+);
 // Stableswap-NG plain pools (metapools lack pool address in the event — covered by bootstrap growth re-probe)
-indexer.onEvent({ contract: "CurveStableswapNgFactory", event: "PlainPoolDeployed" }, handleCurvePoolAdded as never);
+indexer.onEvent(
+  { contract: "CurveStableswapNgFactory", event: "PlainPoolDeployed" },
+  async ({ event, context }) => {
+    await handleCurvePoolAdded({ event, context });
+  },
+);
 // Legacy crypto factory
-indexer.onEvent({ contract: "CurveCryptoFactory", event: "CryptoPoolDeployed" }, handleCurvePoolAdded as never);
+indexer.onEvent(
+  { contract: "CurveCryptoFactory", event: "CryptoPoolDeployed" },
+  async ({ event, context }) => {
+    await handleCurvePoolAdded({ event, context });
+  },
+);

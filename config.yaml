@@ -115,8 +115,7 @@ chains:
     # Default = earliest indexed deployment (QuickSwap V2 factory, block 4931780).
     # Override ENVIO_POLYGON_START_BLOCK in .env for live-tail / partial re-sync.
     start_block: ${ENVIO_POLYGON_START_BLOCK:-4931780}
-    # Max reorg depth for Polygon. Docs recommend 150 for Polygon, 250 for Ethereum.
-    # We use 200 (the global default) which is conservative but safe.
+    # Max reorg depth for Polygon (Envio docs recommend 150; Ethereum 250).
     # HyperIndex rolls back all entity state automatically when a reorg is detected.
     # Side effects in handler code (external calls, logs) are NOT rolled back.
     max_reorg_depth: 150

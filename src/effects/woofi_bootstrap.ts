@@ -113,6 +113,7 @@ export const fetchWooFiTokens = createEffect(
       feeBps: S.number,
     },
     rateLimit: { calls: 60, per: "second" as const },
+    crossChain: false,
     cache: true,
   },
   fetchWooFiTokensHandler,

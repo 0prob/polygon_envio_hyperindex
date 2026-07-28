@@ -8,20 +8,21 @@ import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { shouldSkipFactoryPool } from "../utils/guards";
+import type { PoolMetaWritePayload } from "../utils/indexer_protocol";
 
-interface DodoHandlerContext {
+export type DodoHandlerContext = {
   effect: <I, O>(effect: Effect<I, O>, input: I extends undefined ? undefined : I) => Promise<O>;
   isPreload: boolean;
   PoolMeta: {
     get: (id: string) => Promise<{ id?: string } | undefined>;
-    set: (entity: unknown) => void;
+    set: (entity: PoolMetaWritePayload) => void;
   };
   TokenMeta: {
     get: (id: string) => Promise<{ decimals?: number } | undefined>;
     getWhere: (filter: { id: { _in: string[] } }) => Promise<{ id: string; decimals?: number }[]>;
     set: (entity: { id: string; decimals: number }) => void;
   };
-}
+};
 
 export async function handleDodoPool(
   context: DodoHandlerContext,
@@ -37,9 +38,6 @@ export async function handleDodoPool(
   // Schedule ALL effects at the top (after cheap hot filter) so DODO + token metadata
   // participate in Envio preload batching + memoization. PoolMeta write moved after guard.
   // See https://docs.envio.dev/docs/HyperIndex/event-handlers#preload-optimization
-  //
-  // Use bounded concurrency (via runWithConcurrency) when HYPERSYNC_RPM_TARGET is low to avoid request spikes.
-  // We start the DODO meta effect + the (possibly limited) token effects concurrently.
   const tokenExisting = new Map<string, { decimals?: number } | undefined>();
   const dodoP = context.effect(fetchDodoMetadata, { pool, blockNumber: BigInt(blockNumber) });
   const tokensP = resolveTokenMetasBatch(context, [base, quote], tokenExisting);
@@ -69,7 +67,7 @@ export async function handleDodoPool(
     updatedAtBlock: blockNumber,
     poolId: undefined,
     poolType,
-  }));
+  }) as PoolMetaWritePayload);
 
   // Hot DODO state comes from arb bot RPC — skip DodoPoolState DB write.
   await setTokenMetasIfMissing(
@@ -82,32 +80,23 @@ export async function handleDodoPool(
   return true;
 }
 
-const DODO_POOL_EVENTS = [
-  { event: "NewDVM" as const, poolField: "dvm" as const, poolType: "dvm" },
-  { event: "NewDPP" as const, poolField: "dpp" as const, poolType: "dpp" },
-  { event: "NewDSP" as const, poolField: "dsp" as const, poolType: "dsp" },
-];
+indexer.onEvent({ contract: "DodoFactory", event: "NewDVM" }, async ({ event, context }) => {
+  const base = event.params.baseToken;
+  const quote = event.params.quoteToken;
+  if (shouldSkipFactoryPool(base, quote, event.srcAddress)) return;
+  await handleDodoPool(context, event.params.dvm, base, quote, Number(event.block.number), "dvm");
+});
 
-function registerDodoEvent(cfg: (typeof DODO_POOL_EVENTS)[number]): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  indexer.onEvent({ contract: "DodoFactory", event: cfg.event }, async ({ event: ev, context }: any) => {
-    const base = ev.params.baseToken;
-    const quote = ev.params.quoteToken;
-    if (shouldSkipFactoryPool(base, quote, ev.srcAddress)) {
-      return;
-    }
+indexer.onEvent({ contract: "DodoFactory", event: "NewDPP" }, async ({ event, context }) => {
+  const base = event.params.baseToken;
+  const quote = event.params.quoteToken;
+  if (shouldSkipFactoryPool(base, quote, event.srcAddress)) return;
+  await handleDodoPool(context, event.params.dpp, base, quote, Number(event.block.number), "dpp");
+});
 
-    await handleDodoPool(
-      context,
-      ev.params[cfg.poolField],
-      base,
-      quote,
-      Number(ev.block.number),
-      cfg.poolType,
-    );
-  });
-}
-
-for (const cfg of DODO_POOL_EVENTS) {
-  registerDodoEvent(cfg);
-}
+indexer.onEvent({ contract: "DodoFactory", event: "NewDSP" }, async ({ event, context }) => {
+  const base = event.params.baseToken;
+  const quote = event.params.quoteToken;
+  if (shouldSkipFactoryPool(base, quote, event.srcAddress)) return;
+  await handleDodoPool(context, event.params.dsp, base, quote, Number(event.block.number), "dsp");
+});

@@ -25,6 +25,8 @@ const env: Record<string, string | undefined> = { ...process.env };
 if (env.POLYGON_START_BLOCK && !env.ENVIO_POLYGON_START_BLOCK) env.ENVIO_POLYGON_START_BLOCK = env.POLYGON_START_BLOCK;
 if (env.POLYGON_RPC_URLS && !env.ENVIO_POLYGON_RPC_URLS) env.ENVIO_POLYGON_RPC_URLS = env.POLYGON_RPC_URLS;
 if (env.POLYGON_RPC_URL && !env.ENVIO_POLYGON_RPC_URL) env.ENVIO_POLYGON_RPC_URL = env.POLYGON_RPC_URL;
+// Completely disable Hasura GraphQL tracking / console (bot uses Postgres + LISTEN/NOTIFY).
+env.ENVIO_HASURA = "false";
 
 // Historical Polygon backfill exceeds Node's default ~4GB heap; host has headroom.
 const heapMb = Number(env.ENVIO_NODE_MAX_OLD_SPACE_MB ?? "8192");

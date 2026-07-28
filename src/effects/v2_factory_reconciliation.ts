@@ -76,6 +76,7 @@ export const fetchV2FactoryPage = createEffect(
       pools: S.array(S.schema({ address: S.string, token0: S.string, token1: S.string })),
     },
     rateLimit: { calls: 60, per: "second" as const },
+    crossChain: false,
     cache: false,
   },
   fetchV2FactoryPageHandler,

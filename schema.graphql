@@ -3,10 +3,11 @@
 # Key patterns applied:
 # - Protocol enum for type-safe predefined values (instead of free String).
 # - @index on high-cardinality / filter fields (addresses, blocks, protocol).
-# - @config(precision) on all BigInt / [BigInt] for large on-chain numerics (256-bit scale).
+# - Int fields only — fees/blocks are scaled in handlers to fit signed 32-bit;
+#   use BigInt! @config(precision: 76) if storing raw uint256.
 # - Explicit docs + clear camelCase names.
 # - Flat/denormalized design (no @derivedFrom relations) optimized for the bot's
-#   bulk GraphQL loads + in-memory pipeline.
+#   bulk Postgres loads + in-memory pipeline (Hasura GraphQL is disabled).
 # - ID! on all entities (addresses or natural keys, lowercased for consistency).
 #
 # After edits: run `bun run codegen` (or `bunx envio codegen`).

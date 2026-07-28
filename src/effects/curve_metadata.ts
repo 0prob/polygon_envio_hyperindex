@@ -298,6 +298,7 @@ export const fetchCurveMetadata = createEffect(
       failureReason: S.optional(S.string),
     },
     rateLimit: { calls: 60, per: "second" as const },
+    crossChain: false,
     cache: true,
   },
   fetchCurveMetadataHandler,

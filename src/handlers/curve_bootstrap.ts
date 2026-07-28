@@ -1,4 +1,5 @@
 import { indexer } from "envio";
+import type { Effect } from "envio";
 import {
   curveFeeToPoolMetaInt,
   fetchCurveMetadata,
@@ -11,6 +12,7 @@ import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch, type FactoryTokenMeta } from "../utils/factory_token_meta";
 import { runWithConcurrency } from "../utils/pacing";
+import type { PoolMetaWritePayload } from "../utils/indexer_protocol";
 import {
   CURVE_FACTORIES,
   POLYGON_CHAIN_ID,
@@ -20,6 +22,44 @@ import {
   CURVE_FACTORY_DEPLOY_BLOCK,
 } from "../utils/constants";
 
+type BootstrapContext = {
+  isPreload: boolean;
+  chain: { id: number };
+  effect: <I, O>(effect: Effect<I, O>, input: I extends undefined ? undefined : I) => Promise<O>;
+  CurveBootstrapProgress: {
+    get: (id: string) => Promise<{ lastIndex?: number; total?: number; completed?: boolean } | undefined>;
+    set: (entity: {
+      id: string;
+      lastIndex: number;
+      total: number;
+      completed: boolean;
+      updatedAtBlock: number;
+    }) => void;
+  };
+  PoolMeta: {
+    get: (id: string) => Promise<{
+      id?: string;
+      fee?: number | null;
+      tokens?: readonly string[] | null;
+      createdBlock?: number;
+      poolType?: string | null;
+    } | undefined>;
+    getWhere: (filter: Record<string, unknown>) => Promise<Array<{
+      id: string;
+      address: string;
+      fee?: number | null;
+      tokens?: readonly string[] | null;
+      poolType?: string | null;
+      createdBlock?: number;
+    }>>;
+    set: (entity: PoolMetaWritePayload) => void;
+  };
+  TokenMeta: {
+    get: (id: string) => Promise<{ decimals?: number } | undefined>;
+    getWhere: (filter: { id: { _in: string[] } }) => Promise<{ id: string; decimals?: number }[]>;
+    set: (entity: { id: string; decimals: number }) => void;
+  };
+};
 const PAGE_SIZE = 40;
 const earliestCurveDeployBlock = CURVE_FACTORY_DEPLOY_BLOCK;
 /**
@@ -48,10 +88,9 @@ const BOOTSTRAP_EVERY = 250;
  */
 const GROWTH_PROBE_EVERY = 50_000;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function bootstrapFactoryPage(
-  context: any,
-  block: { number: bigint },
+  context: BootstrapContext,
+  block: { number: number | bigint },
   factory: { address: string; id: string },
 ): Promise<void> {
   const stateId = `${context.chain.id}-${factory.id}`;
@@ -73,13 +112,13 @@ async function bootstrapFactoryPage(
     const growthEpoch = Math.floor(blockNum / GROWTH_PROBE_EVERY);
     const probe = await context.effect(fetchCurveFactoryPage, {
       factory: factory.address,
-      offset: existingState.total,
+      offset: existingState.total ?? 0,
       limit: PAGE_SIZE,
       epoch: growthEpoch,
-      blockNumber: block.number,
+      blockNumber: BigInt(block.number),
     });
-    if (probe.total <= existingState.total) return;
-    offset = existingState.total;
+    if (probe.total <= (existingState.total ?? 0)) return;
+    offset = existingState.total ?? 0;
     if (!context.isPreload) {
       context.CurveBootstrapProgress.set({
         id: stateId,
@@ -97,7 +136,7 @@ async function bootstrapFactoryPage(
     limit: PAGE_SIZE,
     // coarse cache key when resuming after a growth reopen
     epoch: existingState?.completed ? Math.floor(blockNum / GROWTH_PROBE_EVERY) : undefined,
-    blockNumber: block.number,
+    blockNumber: BigInt(block.number),
   });
 
   const storeProgress = (lastIndex: number, total: number) => {
@@ -155,7 +194,7 @@ async function bootstrapFactoryPage(
     const meta = await context.effect(fetchCurveMetadata, {
       pool: row.address,
       nCoins: DEFAULT_CURVE_N_COINS,
-      blockNumber: block.number,
+      blockNumber: BigInt(block.number),
     });
 
     const coins = meta.coins.filter((c: string) => c && c !== ZERO_ADDRESS);
@@ -174,7 +213,7 @@ async function bootstrapFactoryPage(
     readyPools.push({
       address: row.address,
       coins,
-      poolType: meta.poolType,
+      poolType: meta.poolType as CurveDiscoveryPoolType,
       fee: meta.fee,
     });
   });
@@ -201,11 +240,12 @@ async function bootstrapFactoryPage(
           protocol: "CURVE",
           tokens: pool.coins,
           fee: curveFeeToPoolMetaInt(pool.fee),
+          tickSpacing: undefined,
           createdBlock: prior?.createdBlock ?? blockNum,
           updatedAtBlock: blockNum,
           poolId: undefined,
           poolType: pool.poolType,
-        }),
+        }) as PoolMetaWritePayload,
       );
     }
 
@@ -226,7 +266,13 @@ async function bootstrapFactoryPage(
   storeProgress(nextIndex, page.total);
 }
 
-async function bootstrapCurvePools({ block, context }: any) {
+async function bootstrapCurvePools({
+  block,
+  context,
+}: {
+  block: { number: number | bigint };
+  context: BootstrapContext;
+}) {
   // Run in preload too so fetchCurveFactoryPage / fetchCurveMetadata effects
   // are registered and cached; entity writes already guard on isPreload.
   // Iterate each factory independently. A broken factory doesn't stall others.

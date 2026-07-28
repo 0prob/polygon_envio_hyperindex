@@ -289,6 +289,7 @@ export const fetchBalancerMetadata = createEffect(
       incompleteTransient: S.optional(S.boolean),
     },
     rateLimit: { calls: 60, per: "second" as const },
+    crossChain: false,
     cache: true,
   },
   fetchBalancerMetadataHandler,

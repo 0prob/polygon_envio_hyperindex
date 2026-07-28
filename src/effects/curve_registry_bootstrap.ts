@@ -107,6 +107,7 @@ export const fetchCurveFactoryPage = createEffect(
       ),
     },
     rateLimit: { calls: 60, per: "second" as const },
+    crossChain: false,
     cache: true,
   },
   fetchCurveFactoryPageHandler,

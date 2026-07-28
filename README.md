@@ -1,6 +1,6 @@
 # Polygon (137) DEX Pool Discovery Indexer
 
-Envio HyperIndex pipeline that indexes DEX pool-creation events on Polygon and writes discovery metadata for the arbitrage bot ([0prob/rust_polygon_arbitrage_bot](https://github.com/0prob/rust_polygon_arbitrage_bot)) via Postgres / Hasura GraphQL + `LISTEN/NOTIFY`.
+Envio HyperIndex pipeline that indexes DEX pool-creation events on Polygon and writes discovery metadata for the arbitrage bot ([0prob/rust_polygon_arbitrage_bot](https://github.com/0prob/rust_polygon_arbitrage_bot)) via Postgres + `LISTEN/NOTIFY` (Hasura GraphQL disabled).
 
 **Protocols:** Uniswap V2/V3/V4, SushiSwap V2/V3, QuickSwap V2/V3/V4 (Algebra), Curve, Balancer V2, DODO V2, WOOFi.
 
@@ -22,6 +22,7 @@ See `.env.example` for the full set. Keys the code / Envio config actually read:
 | Variable | Required | Description |
 |---|---|---|
 | `ENVIO_API_TOKEN` | Yes | Envio HyperSync API token |
+| `ENVIO_HASURA` | No | Forced `false` by `bun run dev` — Hasura GraphQL disabled |
 | `ENVIO_POLYGON_RPC_URLS` | Yes* | Comma-separated archival RPCs for Effect metadata reads |
 | `ENVIO_POLYGON_RPC_URL` / `POLYGON_RPC_URLS` / `POLYGON_RPC_URL` / `POLYGON_RPC` | No | Aliases; first non-empty key in that order wins (`rpc_client.ts`). `bun run dev` also bridges `POLYGON_*` → `ENVIO_POLYGON_*` |
 | `ENVIO_POLYGON_HYPERSYNC_URL` | No | HyperSync URL (default `https://polygon.hypersync.xyz`) |
@@ -66,8 +67,8 @@ Balancer `poolType`: `weighted` / `stable` / `linear` from capability probes. Cu
 ```
 HyperSync (chain logs) → onEvent / onBlock handlers → Effect API (RPC) → Postgres
         ↑                                                      ↘
-  ENVIO_API_TOKEN + hypersync_config              Hasura GraphQL + LISTEN/NOTIFY
-                                                  → arbitrage bot
+  ENVIO_API_TOKEN + hypersync_config              LISTEN/NOTIFY → arbitrage bot
+                                                  (Hasura GraphQL off)
 ```
 
 - **Chain ingestion** is HyperSync-only (`hypersync_config` in `config.yaml`). There is no Envio RPC chain fallback.
@@ -84,6 +85,7 @@ HyperSync (chain logs) → onEvent / onBlock handlers → Effect API (RPC) → P
 |---|---|
 | `bun run dev` | Indexer (`scripts/envio-dev.ts` → `envio dev`) |
 | `bun run run` | Same wrapper with `envio run` |
+| `bun run test` | Vitest + `createTestIndexer` (replay/reorg checks) |
 | `bun run codegen` | Regenerate types from `config.yaml` + `schema.graphql` |
 | `bun run validate` / `validate-config` / `validate-data` | Static checks |
 | `bun run generate-tokens` | Rebuild `data/token_registry.db` from local data (no network) |
@@ -129,7 +131,8 @@ Default Docker DB: `postgres://postgres:testing@localhost:5433/envio-dev`.
 ## Constraints
 
 - **Polygon only** (chain id `137`).
-- **HyperSync for log ingest** (Envio `3.2.1`). Archival RPC still required for Effect reads (token decimals, incomplete Curve/Balancer metadata, Curve bootstrap).
+- **HyperSync for log ingest** (Envio `3.4.0`). Archival RPC still required for Effect reads (token decimals, incomplete Curve/Balancer metadata, Curve bootstrap).
+- **Hasura GraphQL disabled** (`ENVIO_HASURA=false`). Entity schema remains `schema.graphql` for Envio codegen/Postgres; the bot queries Postgres directly.
 - **No hot pool state** in this repo — metadata only.
 - **Reorgs:** `rollback_on_reorg: true`, `max_reorg_depth: 150`. Handler side effects (RPC) are not rolled back; Balancer in-memory poolId cache self-heals on entity rollback.
 - Package manager is **Bun** (not pnpm).
