@@ -3,6 +3,7 @@ import { fetchBalancerMetadata } from "../effects/balancer_metadata";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
+import { isIncompletePoolMeta } from "../utils/balancer_incomplete";
 import { POLYGON_CHAIN_ID } from "../utils/constants";
 
 // In-memory cache for same-block poolId→address bridging (entity writes are staged
@@ -29,17 +30,6 @@ function noteIncomplete(
   const key = address.toLowerCase();
   if (isIncompletePoolMeta(row)) incompletePoolTypeAddrs.add(key);
   else incompletePoolTypeAddrs.delete(key);
-}
-
-function isIncompletePoolMeta(existing: {
-  poolType?: string | null;
-  fee?: number | null;
-  tokens?: readonly string[] | null;
-}): boolean {
-  const missingType = existing.poolType == null || existing.poolType === "";
-  const missingFee = existing.fee == null;
-  const thinTokens = !existing.tokens || existing.tokens.length < 2;
-  return missingType || missingFee || thinTokens;
 }
 
 indexer.onEvent(

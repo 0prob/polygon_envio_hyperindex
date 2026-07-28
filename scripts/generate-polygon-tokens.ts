@@ -11,7 +11,6 @@
  *
  * Usage:
  *   bun run generate-tokens
- *   bun run generate-tokens:auto
  */
 import {
   DISCOVERED_DECIMALS_NDJSON,

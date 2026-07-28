@@ -18,7 +18,6 @@ import {
   POLYGON_CHAIN_ID,
   ZERO_ADDRESS,
   DEFAULT_CURVE_N_COINS,
-  chainStart,
   CURVE_FACTORY_DEPLOY_BLOCK,
 } from "../utils/constants";
 

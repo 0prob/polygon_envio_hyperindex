@@ -29,7 +29,6 @@ TOKEN_REGISTRY_DB = DATA_DIR / "token_registry.db"
 HEX_ADDR = re.compile(r"^0x[a-f0-9]{40}$")
 
 DISCOVERED_NDJSON = DATA_DIR / "discovered-decimals.ndjson"
-DISCOVERED_JSON_LEGACY = DATA_DIR / "discovered-decimals.json"
 FAILED_NDJSON = DATA_DIR / "failed-decimals.ndjson"
 EXTRA_TOKENS = DATA_DIR / "extra-tokens.json"
 POOLS_JSON = DATA_DIR / "pools.json"
@@ -196,26 +195,6 @@ def load_db(path: Path) -> tuple[dict[str, int], list[str]]:
     return out, issues
 
 
-def check_legacy_json(path: Path) -> list[str]:
-    issues: list[str] = []
-    if not path.exists():
-        return issues
-    data, parse_issues = load_json_addr_map(path)
-    issues.extend(parse_issues)
-    n = len(data)
-    nine_count = sum(1 for d in data.values() if d == LEGACY_SUSPICIOUS_DECIMAL)
-    issues.append(
-        f"  ⚠️  {path.name}: deprecated legacy bulk snapshot ({n} entries, "
-        f"{nine_count} with decimals={LEGACY_SUSPICIOUS_DECIMAL}). "
-        f"Not used by generate-tokens or runtime — safe to delete after review."
-    )
-    if nine_count >= LEGACY_SUSPICIOUS_THRESHOLD:
-        issues.append(
-            f"  ⚠️  {path.name}: {nine_count} entries use decimals={LEGACY_SUSPICIOUS_DECIMAL} "
-            f"(likely old defaulting bug). Do not merge into token_registry.db."
-        )
-    return issues
-
 
 def cross_check(
     db: dict[str, int],
@@ -282,7 +261,6 @@ def validate() -> list[str]:
     failed, failed_issues = load_failed_ndjson(FAILED_NDJSON)
     issues.extend(failed_issues)
 
-    issues.extend(check_legacy_json(DISCOVERED_JSON_LEGACY))
     issues.extend(cross_check(db, ndjson, extra, pool_tokens, failed))
 
     # Summary info

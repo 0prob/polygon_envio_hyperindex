@@ -50,8 +50,14 @@ declare namespace NodeJS {
 
     // Curve bootstrap gate (curve_bootstrap.ts)
     CURVE_BOOTSTRAP_FROM_BLOCK?: string;
+    FACTORY_EVENT_RECONCILIATION_FROM_BLOCK?: string;
     FACTORY_EVENT_RECONCILIATION_EVERY?: string;
+    FACTORY_EVENT_RECONCILIATION_PAGES?: string;
+    V2_RECONCILIATION_FROM_BLOCK?: string;
     V2_RECONCILIATION_EVERY?: string;
+
+    // Forced false by scripts/envio-dev.ts; also set in vitest.config.ts
+    ENVIO_HASURA?: string;
   }
 }
 

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "chain": {"name": "polygon", "chain_id": 137},
+  "sources": {
+    "uniswap_v3_core": {"repository": "https://github.com/Uniswap/v3-core", "commit": "d0831dc6b8a318df3872b6d68f6de135c9f3ec29", "artifact_sha256": "local-abi-pinned"},
+    "uniswap_v4_core": {"repository": "https://github.com/Uniswap/v4-core", "commit": "46c6834698c48bc4a463a86d8420f4eb1d7f3b75", "artifact_sha256": "local-abi-pinned"},
+    "algebra": {"repository": "https://github.com/cryptoalgebra/Algebra", "commit": "62f01348af24b96d7d16f6b56fbaa61e512ba1c5", "artifact_sha256": "local-abi-pinned"},
+    "balancer": {"repository": "https://github.com/balancer/balancer-deployments", "commit": "f8b6f44f21afaf3c802536ed478277f945e7f256", "artifact_sha256": "local-abi-pinned"},
+    "dodo": {"repository": "https://github.com/DODOEX/contractV2", "commit": "2f1bcdac7ef1beee7599a756e2eed26732c2536d", "artifact_sha256": "local-abi-pinned"},
+    "curve": {"repository": "https://github.com/curvefi/metaregistry", "commit": "external-pinned-in-abi", "artifact_sha256": "local-abi-pinned"},
+    "woofi": {"repository": "https://github.com/woonetwork/WooPoolV2", "commit": "external-pinned-in-abi", "artifact_sha256": "local-abi-pinned"},
+    "aave_v3_origin": {"repository": "https://github.com/aave-dao/aave-v3-origin", "commit": "external-pinned-in-abi", "artifact_sha256": "local-abi-pinned"}
+  },
+  "deployments": [
+    {"name":"wmatic","address":"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270","kind":"token","decimals":18,"outcome":"verified executable"},
+    {"name":"usdc","address":"0x3c499c542cef5e3811e1192ce70d8cc03d5c3359","kind":"token","decimals":6,"outcome":"verified executable"},
+    {"name":"usdc.e","address":"0x2791bca1f2de4661ed88a30c99a7a9449aa84174","kind":"token","decimals":6,"outcome":"verified executable"},
+    {"name":"balancer_vault","address":"0xba12222222228d8ba445958a75a0704d566bf2c8","kind":"vault","outcome":"verified executable"},
+    {"name":"uniswap_v3_factory","address":"0x1f98431c8ad98523631ae4a59f267346ea31f984","kind":"factory","outcome":"verified executable"},
+    {"name":"uniswap_v4_pool_manager","address":"0x67366782805870060151383f4bbff9dab53e5cd6","kind":"pool_manager","outcome":"verified executable"},
+    {"name":"woofi_pool_v2","address":"0x5520385bfcf07ec87c4c53a7d8d65595dff69fa4","kind":"pool","outcome":"verified executable"},
+    {"name":"aave_v3_pool","address":"0x794a61358d6845594f94dc1db02a252b5b4814ad","kind":"lender","outcome":"verified executable"}
+  ],
+  "capabilities": {"default": {"discovery_event":true,"metadata_abi":true,"mutable_fields":[],"state_abi":true,"local_math":true,"authoritative_quote":true,"calldata_encoder":true,"executor_callback":true,"flash_compatibility":true,"fork_fixture":true,"outcome":"verified executable"}}
+}

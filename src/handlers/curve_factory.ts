@@ -36,16 +36,10 @@ interface CurveHandlerContext {
   };
 }
 
-export function nCoinsFromEventParams(params: Record<string, unknown>): number {
+function nCoinsFromEventParams(params: Record<string, unknown>): number {
   const named = params.n_coins ?? params.nCoins;
   if (named != null) {
     const n = Number(named);
-    if (!Number.isFinite(n) || n < 2) return DEFAULT_N_COINS;
-    return Math.min(Math.floor(n), 8);
-  }
-  // PoolAdded(address,uint256,bool) only — do not treat PoolAdded(address,bytes) _1 as n_coins.
-  if (typeof params._1 === "bigint" && typeof params._2 === "boolean") {
-    const n = Number(params._1);
     if (!Number.isFinite(n) || n < 2) return DEFAULT_N_COINS;
     return Math.min(Math.floor(n), 8);
   }

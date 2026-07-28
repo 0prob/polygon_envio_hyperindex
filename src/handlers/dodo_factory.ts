@@ -49,12 +49,10 @@ export async function handleDodoPool(
     return true;
   }
 
-  const metadataUnavailable = meta.fee === 0n || meta.anyFailed;
-  if (metadataUnavailable) {
-    return false;
-  }
-
-  const feeBps = dodoFeeToBps(meta.fee);
+  // Always persist discovery (tokens + poolType). Fee RPC failures used to drop the
+  // pool entirely and stall factory-event recon pages — prefer fee=undefined so the
+  // bot still sees the pool; fee can be filled on a later successful effect.
+  const feeBps = meta.fee > 0n && !meta.anyFailed ? dodoFeeToBps(meta.fee) : undefined;
 
   context.PoolMeta.set(poolMetaEntity({
     id: pool,

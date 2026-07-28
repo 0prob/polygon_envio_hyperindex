@@ -17,13 +17,14 @@ raw_events: false
 # === HYPERINDEX CONFIG ===
 # Run with `bun run dev` (bridges root .env aliases + batch sizing) or bare `envio dev` if ENVIO_* vars are set.
 #
-# This indexer serves as a lightweight live discovery feed for the arb bot:
-#   → fast startup
-#   → minimal historical backfill
+# This indexer serves as a live discovery feed for the arb bot:
+#   → factory/registry onEvent handlers write PoolMeta + TokenMeta
+#   → Effect-heavy onBlock bootstrap/recon is deferred near tip (~90M) so
+#     historical HyperSync backfill is not stalled by RPC/Effect queues
 #
-# Historical backfill processes 50M+ events from 2021.
-# Discovery uses factory/registry onEvent handlers only.
-# Guards (shouldSkipFactoryPool) + onBlock `where` strides reject garbage early.
+# Historical backfill processes factory events from each contract's deploy block
+# (override with ENVIO_POLYGON_START_BLOCK). Guards (shouldSkipFactoryPool) +
+# onBlock `where` strides reject garbage early.
 
 # Polygon batch sizing. This is one of the most important knobs for backfill throughput.
 full_batch_size: ${ENVIO_FULL_BATCH_SIZE:-6000}

@@ -125,27 +125,26 @@ export const DEFAULT_CURVE_N_COINS = 2;
  * Major high-liquidity tokens on the network.
  * Used as "bases" for rate propagation and prioritizing pool discovery.
  */
-export const MAJOR_TOKEN_DATA = (() => {
-  const PREC = 10n ** 18n;
-  return {
-  WMATIC: { address: WMATIC, decimals: 18, approxWholeMaticWei: PREC },
-  WETH: { address: WETH, decimals: 18, approxWholeMaticWei: PREC * 1000n },
-  USDC: { address: USDC, decimals: 6, approxWholeMaticWei: PREC * 2n },
-  USDC_E: { address: USDC_E, decimals: 6, approxWholeMaticWei: PREC * 2n },
-  USDT: { address: USDT, decimals: 6, approxWholeMaticWei: PREC * 2n },
-  DAI: { address: DAI, decimals: 18, approxWholeMaticWei: PREC * 2n },
-  WBTC: { address: WBTC, decimals: 8, approxWholeMaticWei: PREC * 30000n },
-  LINK: { address: LINK, decimals: 18, approxWholeMaticWei: PREC * 5n },
-  AAVE: { address: AAVE, decimals: 18, approxWholeMaticWei: PREC * 50n },
-  CRV: { address: CRV, decimals: 18, approxWholeMaticWei: PREC * 2n },
-  BAL: { address: BAL, decimals: 18, approxWholeMaticWei: PREC * 3n },
-  UNI: { address: UNI, decimals: 18, approxWholeMaticWei: PREC * 5n },
-  GHST: { address: GHST, decimals: 18, approxWholeMaticWei: PREC * 3n },
-  QUICK: { address: QUICK, decimals: 18, approxWholeMaticWei: PREC * 100n },
-  TEL: { address: TEL, decimals: 2, approxWholeMaticWei: PREC / 100n },
-  SAND: { address: SAND, decimals: 18, approxWholeMaticWei: PREC / 2n },
-  GRT: { address: GRT, decimals: 18, approxWholeMaticWei: PREC / 4n },
-} as const; })();
+/** Major Polygon tokens used as WOOFi bootstrap probe candidates. */
+export const MAJOR_TOKEN_DATA = {
+  WMATIC: { address: WMATIC, decimals: 18 },
+  WETH: { address: WETH, decimals: 18 },
+  USDC: { address: USDC, decimals: 6 },
+  USDC_E: { address: USDC_E, decimals: 6 },
+  USDT: { address: USDT, decimals: 6 },
+  DAI: { address: DAI, decimals: 18 },
+  WBTC: { address: WBTC, decimals: 8 },
+  LINK: { address: LINK, decimals: 18 },
+  AAVE: { address: AAVE, decimals: 18 },
+  CRV: { address: CRV, decimals: 18 },
+  BAL: { address: BAL, decimals: 18 },
+  UNI: { address: UNI, decimals: 18 },
+  GHST: { address: GHST, decimals: 18 },
+  QUICK: { address: QUICK, decimals: 18 },
+  TEL: { address: TEL, decimals: 2 },
+  SAND: { address: SAND, decimals: 18 },
+  GRT: { address: GRT, decimals: 18 },
+} as const;
 
 /** Set of lowercased major token addresses for fast lookup */
 export const MAJOR_TOKENS = new Set(Object.values(MAJOR_TOKEN_DATA).map((t) => t.address.toLowerCase()));
@@ -163,7 +162,12 @@ export const KNOWN_FACTORIES_SET = new Set(
     DODO_DVM_FACTORY,
     DODO_DPP_FACTORY,
     DODO_DSP_FACTORY,
+    CURVE_TWOCRYPTO_FACTORY,
+    CURVE_TRICRYPTO_FACTORY,
     CURVE_STABLESWAP_NG_FACTORY,
+    CURVE_CRYPTO_FACTORY,
+    BALANCER_VAULT,
+    WOOFI_PP_V2,
   ].map((a) => a.toLowerCase()),
 );
 

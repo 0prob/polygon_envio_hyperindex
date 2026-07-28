@@ -12,9 +12,10 @@ generated/
 backups/
 hyperindex.db
 
-# Data (keep pools.json)
+# Data (keep pools.json + protocol manifest for validate-manifest)
 data/*
 !data/pools.json
+!data/polygon-protocol-manifest.json
 
 # Secrets
 .env
@@ -25,6 +26,7 @@ data/*
 # Local / generated scratch
 .tmp/
 .codegraph/
+.serena/
 
 # OS junk
 .DS_Store

@@ -138,6 +138,8 @@ type ReconcileContext = {
   PoolMeta: {
     get: (id: string) => Promise<{
       id?: string;
+      address?: string;
+      protocol?: Protocol;
       fee?: number | null;
       tokens?: readonly string[] | null;
       poolType?: string | null;
@@ -245,14 +247,33 @@ async function reconcileLog(context: ReconcileContext, source: Source, log: { da
     if (meta.fee === 0n) return false;
     const protocol = ALGEBRA_FACTORY_PROTOCOLS[source.address] as Protocol | undefined;
     if (!protocol) return true;
+    const fee = Number(meta.fee);
+    const tickSpacing = meta.tickSpacing != null ? meta.tickSpacing : undefined;
+    // persistFactoryPoolMeta is first-write-wins — repair incomplete rows in place
+    // (same path as algebra_factory.ts primary handler).
+    if (existing) {
+      if (context.isPreload) return false;
+      context.PoolMeta.set(poolMetaEntity({
+        id: pool,
+        address: existing.address ?? pool,
+        protocol: existing.protocol ?? protocol,
+        tokens: existing.tokens?.length ? [...existing.tokens] : [token0, token1],
+        fee,
+        tickSpacing,
+        createdBlock: existing.createdBlock ?? log.blockNumber,
+        updatedAtBlock: log.blockNumber,
+        poolId: existing.poolId ?? undefined,
+      }) as PoolMetaWritePayload);
+      return true;
+    }
     await persistFactoryPoolMeta(context, {
       poolAddr: pool,
       protocol,
       token0,
       token1,
       blockNumber: log.blockNumber,
-      fee: Number(meta.fee),
-      tickSpacing: meta.tickSpacing,
+      fee,
+      tickSpacing,
     });
     return true;
   }

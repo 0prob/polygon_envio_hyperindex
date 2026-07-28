@@ -90,7 +90,7 @@ HyperSync (chain logs) → onEvent / onBlock handlers → Effect API (RPC) → P
 | `bun run run` | Same wrapper with `envio run` |
 | `bun run test` | Vitest + `createTestIndexer` (replay/reorg checks) |
 | `bun run codegen` | Regenerate types from `config.yaml` + `schema.graphql` |
-| `bun run validate` / `validate-config` / `validate-data` | Static checks |
+| `bun run validate` / `validate-config` / `validate-data` / `validate-manifest` | Static checks (config, local token data, protocol manifest) |
 | `bun run generate-tokens` | Rebuild `data/token_registry.db` from local data (no network) |
 | `bun run migrate-db` | Apply `migrations/001`–`008` |
 | `bun run backup-db` | `pg_dump` via Docker `envio-postgres` |
