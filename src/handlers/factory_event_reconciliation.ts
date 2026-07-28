@@ -25,7 +25,10 @@ import type { IndexerProtocol as Protocol, PoolMetaWritePayload } from "../utils
 import type { Effect } from "envio";
 
 const V2_ABI = parseAbi(["event PairCreated(address indexed token0, address indexed token1, address pair, uint256)"]);
-const V3_ABI = parseAbi(["event PoolCreated(address indexed token0, address indexed token1, uint24 fee, int24 tickSpacing, address pool)"]);
+// fee is indexed on-chain (Uniswap V3 / Sushi V3). A non-indexed ABI makes viem
+	// read the pool address word as uint24 → IntegerOutOfRangeError and kills the indexer
+	// the first time FactoryEventReconciliation runs (~block 90M / ~97% sync).
+	const V3_ABI = parseAbi(["event PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)"]);
 const ALGEBRA_ABI = parseAbi(["event Pool(address indexed token0, address indexed token1, address pool)"]);
 const V4_ABI = parseAbi(["event Initialize(bytes32 indexed id, address indexed currency0, address indexed currency1, uint24 fee, int24 tickSpacing, address hooks, uint160 sqrtPriceX96, int24 tick)"]);
 const BALANCER_ABI = parseAbi(["event PoolRegistered(bytes32 indexed poolId, address indexed poolAddress, uint8 specialization)"]);
@@ -152,8 +155,13 @@ type ReconcileContext = {
   };
 };
 
-function decode(abi: ReturnType<typeof parseAbi>, log: { data: string; topics: string[] }) {
-  return decodeEventLog({ abi, data: log.data as Hex, topics: log.topics as [Hex, ...Hex[]] }).args as unknown as Record<string, unknown>;
+function decode(abi: ReturnType<typeof parseAbi>, log: { data: string; topics: string[] }): Record<string, unknown> | null {
+  try {
+    return decodeEventLog({ abi, data: log.data as Hex, topics: log.topics as [Hex, ...Hex[]] }).args as unknown as Record<string, unknown>;
+  } catch {
+    // Malformed / ABI-mismatched HyperSync rows must not abort the onBlock handler.
+    return null;
+  }
 }
 
 async function reconcileBalancer(context: ReconcileContext, args: Record<string, unknown>, blockNumber: number): Promise<boolean> {
@@ -206,6 +214,8 @@ async function reconcileLog(context: ReconcileContext, source: Source, log: { da
         : source.kind === "v4" ? decode(V4_ABI, log)
           : source.kind === "balancer" ? decode(BALANCER_ABI, log)
             : decode(DODO_ABI, log);
+  // Skip undecodable logs; returning true advances the HyperSync cursor past poison rows.
+  if (!args) return true;
   if (source.kind === "v2") {
     const token0 = String(args.token0).toLowerCase();
     const token1 = String(args.token1).toLowerCase();
