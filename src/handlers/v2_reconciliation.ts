@@ -8,13 +8,25 @@ import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
 const FACTORIES = Object.entries(V2_FACTORY_PROTOCOLS);
 const PAGE_SIZE = 40;
 const EVERY = Number(process.env.V2_RECONCILIATION_EVERY ?? "500");
+/**
+ * allPairs RPC pagination during historical backfill stalls the pipeline and
+ * reads tip-state lengths at historical blocks. Defer until near tip.
+ */
+const reconcileStartBlock = (() => {
+  const fromEnv = Number(process.env.V2_RECONCILIATION_FROM_BLOCK);
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return Math.floor(fromEnv);
+  return 90_000_000;
+})();
 
 indexer.onBlock(
   {
     name: "V2FactoryReconciliation",
-    where: ({ chain }) => chain.id === POLYGON_CHAIN_ID
-      ? { block: { number: { _every: EVERY } } }
-      : false,
+    where: ({ chain }) => {
+      if (chain.id !== POLYGON_CHAIN_ID) return false;
+      return {
+        block: { number: { _gte: reconcileStartBlock, _every: EVERY } },
+      };
+    },
   },
   async ({ block, context }) => {
     const blockNumber = Number(block.number);

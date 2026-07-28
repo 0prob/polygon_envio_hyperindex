@@ -35,7 +35,10 @@ See `.env.example` for the full set. Keys the code / Envio config actually read:
 | `BALANCER_POOLTYPE_REPAIR_BATCH` | No | Pools repaired per stride (default `8`) |
 | `BALANCER_POOLTYPE_REPAIR_START` | No | First block for Balancer repair onBlock (default `65000000`) |
 | `CURVE_BOOTSTRAP_FROM_BLOCK` | No | First block for Curve factory `pool_list` bootstrap (default `90000000`; mid-backfill + bad RPC freezes `progress_block`) |
+| `FACTORY_EVENT_RECONCILIATION_FROM_BLOCK` | No | First block for HyperSync factory-event reconciliation (default `90000000`; earlier fires flood Effect queue and stall start) |
 | `FACTORY_EVENT_RECONCILIATION_EVERY` | No | Blocks between one HyperSync event-source reconciliation page (default `500`) |
+| `FACTORY_EVENT_RECONCILIATION_PAGES` | No | HyperSync pages drained per reconciliation fire (default `5`) |
+| `V2_RECONCILIATION_FROM_BLOCK` | No | First block for V2 `allPairs` reconciliation (default `90000000`) |
 | `V2_RECONCILIATION_EVERY` | No | Blocks between bounded V2 factory enumeration pages (default `500`) |
 | `ENVIO_NODE_MAX_OLD_SPACE_MB` | No | V8 heap for `envio-dev` (default `8192`) |
 | `ENVIO_KILL_GRACE_MS` | No | Grace before SIGKILL of prior indexer processes (default `2000`) |

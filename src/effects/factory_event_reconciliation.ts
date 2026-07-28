@@ -21,7 +21,8 @@ export const fetchFactoryEventPage = createEffect(
         blockNumber: S.number,
       })),
     },
-    rateLimit: { calls: 1, per: "second" as const },
+    // Was 1/sec — backlog of hundreds of pages froze progress_block at start.
+    rateLimit: { calls: 10, per: "second" as const },
     crossChain: false,
     cache: false,
   },

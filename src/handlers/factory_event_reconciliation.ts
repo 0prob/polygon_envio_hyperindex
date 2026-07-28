@@ -118,6 +118,19 @@ const SOURCES: Source[] = [
   },
 ];
 const EVERY = Number(process.env.FACTORY_EVENT_RECONCILIATION_EVERY ?? "500");
+/**
+ * HyperSync page effects are rate-limited (1–N/sec). Firing every EVERY blocks from
+ * genesis queues thousands of fetches and freezes the first processing batch
+ * (progress_block stuck at start while fetchFactoryEventPage queue grows).
+ * Defer until near tip — same pattern as CURVE_BOOTSTRAP_FROM_BLOCK.
+ */
+const reconcileStartBlock = (() => {
+  const fromEnv = Number(process.env.FACTORY_EVENT_RECONCILIATION_FROM_BLOCK);
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return Math.floor(fromEnv);
+  return 90_000_000;
+})();
+/** Pages drained per onBlock fire once reconciliation is active. */
+const PAGES_PER_FIRE = Math.max(1, Number(process.env.FACTORY_EVENT_RECONCILIATION_PAGES ?? "5"));
 
 type ReconcileContext = {
   isPreload: boolean;
@@ -298,9 +311,12 @@ async function reconcileLog(context: ReconcileContext, source: Source, log: { da
 indexer.onBlock(
   {
     name: "FactoryEventReconciliation",
-    where: ({ chain }) => chain.id === POLYGON_CHAIN_ID
-      ? { block: { number: { _every: EVERY } } }
-      : false,
+    where: ({ chain }) => {
+      if (chain.id !== POLYGON_CHAIN_ID) return false;
+      return {
+        block: { number: { _gte: reconcileStartBlock, _every: EVERY } },
+      };
+    },
   },
   async ({ block, context }) => {
     const blockNumber = Number(block.number);
@@ -309,20 +325,44 @@ indexer.onBlock(
     const state = await context.FactoryEventReconciliationProgress.get(id);
     // Clamp to effective start so a raised ENVIO_POLYGON_START_BLOCK can't resume
     // HyperSync replay from a stale pre-override cursor.
-    const fromBlock = Math.max(state?.nextBlock ?? source.start, source.start);
+    let fromBlock = Math.max(state?.nextBlock ?? source.start, source.start);
     if (fromBlock >= blockNumber) return;
-    // Schedule effect before isPreload gate so preload batching can run.
-    const page = await context.effect(fetchFactoryEventPage, {
-      address: source.address,
-      topic: source.topic,
-      fromBlock,
-      toBlock: blockNumber + 1,
-    });
-    if (page.nextBlock <= fromBlock) return;
-    for (const log of page.logs) {
-      if (!(await reconcileLog(context, source, log))) return;
+
+    let nextBlock = fromBlock;
+    for (let pageIdx = 0; pageIdx < PAGES_PER_FIRE; pageIdx++) {
+      if (fromBlock >= blockNumber) break;
+      // Schedule effect before isPreload gate so preload batching can run.
+      const page = await context.effect(fetchFactoryEventPage, {
+        address: source.address,
+        topic: source.topic,
+        fromBlock,
+        toBlock: blockNumber + 1,
+      });
+      if (page.nextBlock <= fromBlock) break;
+      for (const log of page.logs) {
+        if (!(await reconcileLog(context, source, log))) {
+          if (context.isPreload) return;
+          if (nextBlock > (state?.nextBlock ?? source.start)) {
+            context.FactoryEventReconciliationProgress.set({
+              id,
+              nextBlock,
+              updatedAtBlock: blockNumber,
+            });
+          }
+          return;
+        }
+      }
+      nextBlock = page.nextBlock;
+      fromBlock = page.nextBlock;
     }
+
     if (context.isPreload) return;
-    context.FactoryEventReconciliationProgress.set({ id, nextBlock: page.nextBlock, updatedAtBlock: blockNumber });
+    if (nextBlock > (state?.nextBlock ?? source.start)) {
+      context.FactoryEventReconciliationProgress.set({
+        id,
+        nextBlock,
+        updatedAtBlock: blockNumber,
+      });
+    }
   },
 );
