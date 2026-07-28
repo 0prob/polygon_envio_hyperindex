@@ -5,12 +5,13 @@
     "": {
       "name": "arb-bot-ingestion",
       "dependencies": {
-        "envio": "latest",
-        "viem": "latest",
+        "@envio-dev/hypersync-client": "^1.4.0",
+        "envio": "3.2.1",
+        "viem": "^2.55.8",
       },
       "devDependencies": {
-        "@types/node": "latest",
-        "typescript": "latest",
+        "@types/node": "^26.1.1",
+        "typescript": "^7.0.2",
       },
     },
   },
@@ -40,6 +41,18 @@
     "@envio-dev/hyperfuel-client-linux-x64-musl": ["@envio-dev/hyperfuel-client-linux-x64-musl@1.2.2", "", { "os": "linux", "cpu": "x64" }, "sha512-DKnKJJSwsYtA7YT0EFGhFB5Eqoo42X0l0vZBv4lDuxngEXiiNjeLemXoKQVDzhcbILD7eyXNa5jWUc+2hpmkEg=="],
 
     "@envio-dev/hyperfuel-client-win32-x64-msvc": ["@envio-dev/hyperfuel-client-win32-x64-msvc@1.2.2", "", { "os": "win32", "cpu": "x64" }, "sha512-SwIgTAVM9QhCFPyHwL+e1yQ6o3paV6q25klESkXw+r/KW9QPhOOyA6Yr8nfnur3uqMTLJHAKHTLUnkyi/Nh7Aw=="],
+
+    "@envio-dev/hypersync-client": ["@envio-dev/hypersync-client@1.4.0", "", { "optionalDependencies": { "@envio-dev/hypersync-client-darwin-arm64": "1.4.0", "@envio-dev/hypersync-client-darwin-x64": "1.4.0", "@envio-dev/hypersync-client-linux-arm64-gnu": "1.4.0", "@envio-dev/hypersync-client-linux-x64-gnu": "1.4.0", "@envio-dev/hypersync-client-linux-x64-musl": "1.4.0" } }, "sha512-nZrWVOtm2+ahQjCUGeBQBJE2qntlDfywtkoUOgQAlXuZy1Lpwhh44a4LkYc/bqynPCOBGUTmMlYR9uotXFZWcA=="],
+
+    "@envio-dev/hypersync-client-darwin-arm64": ["@envio-dev/hypersync-client-darwin-arm64@1.4.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-WShYeMSJQL+G0Fs4xxifuUqvZUa+ZAqs2yvNZ4VWrjpjC1jiyTWUwqp8DlRWk2qRtITwkLQs7ZnutnAbQnuOWg=="],
+
+    "@envio-dev/hypersync-client-darwin-x64": ["@envio-dev/hypersync-client-darwin-x64@1.4.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-hBmsyDn5iY+chwSZlKExseK/0VG5aealwKL6iG0NUvdXAw5QOGyaOWKWRYZB4NE/bldUNtthvAh1pgpnx9ejqQ=="],
+
+    "@envio-dev/hypersync-client-linux-arm64-gnu": ["@envio-dev/hypersync-client-linux-arm64-gnu@1.4.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-tqiaUfdkqKTlE+P0a3Giov37a5bTP/TiqybCyjscgVOt0UmSE3X/Bk8cBK6an1Y1/PVDaCq12k2Awj+bJooLAQ=="],
+
+    "@envio-dev/hypersync-client-linux-x64-gnu": ["@envio-dev/hypersync-client-linux-x64-gnu@1.4.0", "", { "os": "linux", "cpu": "x64" }, "sha512-zgpPTBXk/bQRloAFTx7JN3Jedm0n4m2AyIbQh+RWMwuDyBfWmWn6GAamK9NGxaCF2bkYl5TXaflNL8ms71scRg=="],
+
+    "@envio-dev/hypersync-client-linux-x64-musl": ["@envio-dev/hypersync-client-linux-x64-musl@1.4.0", "", { "os": "linux", "cpu": "x64" }, "sha512-0BE7Fw21c4swumttF73sCIR7Ud1kn2yltHK8QhPas1MguJOAGprvXV2gFejTV+GOV3cHS6cgqYNmMhmVwcPKRg=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.7", "", { "os": "aix", "cpu": "ppc64" }, "sha512-EKX3Qwmhz1eMdEJokhALr0YiD0lhQNwDqkPYyPhiSwKrh7/4KRjQc04sZ8db+5DVVnZ1LmbNDI1uAMPEUBnQPg=="],
 

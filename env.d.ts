@@ -50,6 +50,8 @@ declare namespace NodeJS {
 
     // Curve bootstrap gate (curve_bootstrap.ts)
     CURVE_BOOTSTRAP_FROM_BLOCK?: string;
+    FACTORY_EVENT_RECONCILIATION_EVERY?: string;
+    V2_RECONCILIATION_EVERY?: string;
   }
 }
 

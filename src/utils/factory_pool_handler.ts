@@ -8,7 +8,7 @@ import type { IndexerProtocol, PoolMetaWritePayload } from "./indexer_protocol";
 // Safe because Envio processes events sequentially within a block.
 const _sharedExisting = new Map<string, { decimals?: number } | undefined>();
 
-type FactoryPoolMetaContext = {
+export type FactoryPoolMetaContext = {
   isPreload: boolean;
   PoolMeta: {
     get(id: string): Promise<{ id?: string } | undefined>;

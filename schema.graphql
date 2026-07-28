@@ -93,6 +93,18 @@ type CurveBootstrapProgress {
   updatedAtBlock: Int!
 }
 
+type V2FactoryReconciliationProgress {
+  id: ID!
+  nextIndex: Int!
+  updatedAtBlock: Int!
+}
+
+type FactoryEventReconciliationProgress {
+  id: ID!
+  nextBlock: Int!
+  updatedAtBlock: Int!
+}
+
 """
 Maps Balancer poolId (bytes32) to pool address (string).
 Needed because TokensRegistered events only emit poolId, not the pool address.

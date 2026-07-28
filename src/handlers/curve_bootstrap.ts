@@ -37,7 +37,6 @@ const bootstrapStartBlock = (() => {
   if (Number.isFinite(fromEnv) && fromEnv > 0) return Math.floor(fromEnv);
   return Math.max(earliestCurveDeployBlock + 1, 90_000_000);
 })();
-const MAX_TRANSIENT_RETRIES = 3;
 /** onBlock stride while paginating incomplete factories (see indexer.onBlock below). */
 const BOOTSTRAP_EVERY = 250;
 /**
@@ -48,9 +47,6 @@ const BOOTSTRAP_EVERY = 250;
  * 0 events/sec around mid-chain.
  */
 const GROWTH_PROBE_EVERY = 50_000;
-// ponytail: per-page retry counter so a transient RPC failure gets a second
-// chance, but permanently broken pools don't stall the whole bootstrap forever.
-const transientRetryCount = new Map<string, number>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function bootstrapFactoryPage(
@@ -222,21 +218,12 @@ async function bootstrapFactoryPage(
     );
   }
 
-  // Track retries: after N consecutive transient failures on the same page,
-  // skip past the broken pools instead of looping forever.
   if (hasTransient) {
-    const retryKey = `${factory.id}-${offset}`;
-    const fails = (transientRetryCount.get(retryKey) ?? 0) + 1;
-    transientRetryCount.set(retryKey, fails);
-    if (fails < MAX_TRANSIENT_RETRIES) return;
+    return;
   }
 
   const nextIndex = Math.min(page.total, offset + page.pools.length);
   storeProgress(nextIndex, page.total);
-  // ponytail: prune retry entries for pages we've advanced past
-  for (const [key] of transientRetryCount) {
-    if (key.startsWith(factory.id + "-")) transientRetryCount.delete(key);
-  }
 }
 
 async function bootstrapCurvePools({ block, context }: any) {

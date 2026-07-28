@@ -23,16 +23,16 @@ interface DodoHandlerContext {
   };
 }
 
-async function handleDodoPool(
+export async function handleDodoPool(
   context: DodoHandlerContext,
   pool: string,
   base: string,
   quote: string,
   blockNumber: number,
   poolType: string,
-) {
+): Promise<boolean> {
   const existing = await context.PoolMeta.get(pool);
-  if (existing) return;
+  if (existing) return true;
 
   // Schedule ALL effects at the top (after cheap hot filter) so DODO + token metadata
   // participate in Envio preload batching + memoization. PoolMeta write moved after guard.
@@ -48,12 +48,12 @@ async function handleDodoPool(
   const quoteMeta = results[1]!;
 
   if (context.isPreload) {
-    return; // Aggressive preload exit: effects done (batched), skip writes (ignored anyway) and any future work.
+    return true;
   }
 
   const metadataUnavailable = meta.fee === 0n || meta.anyFailed;
   if (metadataUnavailable) {
-    return;
+    return false;
   }
 
   const feeBps = dodoFeeToBps(meta.fee);
@@ -79,6 +79,7 @@ async function handleDodoPool(
     [baseMeta.trusted, quoteMeta.trusted],
     tokenExisting,
   );
+  return true;
 }
 
 const DODO_POOL_EVENTS = [
