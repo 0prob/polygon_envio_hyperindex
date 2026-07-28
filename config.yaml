@@ -103,11 +103,8 @@ contracts:
       - event: NewDPP
       - event: NewDSP
 
-  # WOOFi
-  - name: WooPPV2
-    abi_file_path: abis/woofi_pool.json
-    events:
-      - event: WooSwap
+# WOOFi: no HyperIndex contract. WooSwap is too hot for full_batch_size; discovery
+# is WooFiBootstrap onBlock only (src/handlers/woofi.ts).
 
 # === Chains ===
 chains:
@@ -179,9 +176,6 @@ chains:
           - "0xd24153244066f0afa9415563bfc7ba248bfb7a51" # DPP
           - "0x43c49f8dd240e1545f147211ec9f917376ac1e87" # DSP
 
-      # WOOFi
-      - name: WooPPV2
-        start_block: ${ENVIO_POLYGON_START_BLOCK:-30000000}
-        address: "0x5520385bfcf07ec87c4c53a7d8d65595dff69fa4"
+# WOOFi omitted — see note above global contracts (bootstrap-only).
 
 

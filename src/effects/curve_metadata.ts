@@ -142,7 +142,8 @@ export function curvePoolMetaNeedsEnrich(e: {
   tokens?: readonly string[] | null;
 } | undefined): boolean {
   if (!e) return true;
-  if (e.fee == null || e.fee === 0) return true;
+  // fee === 0 is a valid on-chain zero; only null/undefined means "not yet known".
+  if (e.fee == null) return true;
   if (!e.tokens || e.tokens.length < 2) return true;
   return false;
 }

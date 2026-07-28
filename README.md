@@ -77,6 +77,8 @@ HyperSync (chain logs) → onEvent / onBlock handlers → Effect API (RPC) → P
 - **Chain ingestion** is HyperSync-only (`hypersync_config` in `config.yaml`). There is no Envio RPC chain fallback.
 - **Effects** still use viem RPC (`src/effects/rpc_client.ts`) for decimals and protocol metadata.
 - **No per-pool `contractRegister`.** Discovery is factory/registry events + Curve/WOOFi/Balancer onBlock helpers. Hot pool state lives in the bot via RPC.
+- **WOOFi:** bootstrap-only (`WooFiBootstrap` onBlock). WooSwap is not subscribed (too hot for `full_batch_size`).
+- **Arb metadata:** Never abandon fee/tokens/tickSpacing/poolType/etc. on transient RPC (rate-limit/network). Retry until known. Intentional drops: V4 `0x800000` dynamic fee (bot hydrates per-swap); Curve permanent interface absence; TokenMeta only persists trusted decimals (never assumed 18).
 - **Token decimals:** `data/token_registry.db` → `data/discovered-decimals.ndjson` → multicall RPC.
 - **Errors:** `classifyRpcError()` — permanent failures are cached; transient failures retry.
 - **Curve:** MetaRegistry is unused (broken on Polygon). Factory `onEvent` handlers write pools from deploy-event fee/coins when present (avoids RPC stalls). Bootstrap (deferred by default to ~90M) pages each factory’s `pool_count`/`pool_list` at the handler block; growth re-probes after completion. Incomplete rows (fee 0/null, thin tokens) are re-enriched.

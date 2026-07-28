@@ -21,9 +21,9 @@ indexer.onEvent(
       token0: currency0,
       token1: currency1,
       blockNumber: Number(event.block.number),
-      // 0x800000 is the Uniswap V4 DYNAMIC_FEE_FLAG sentinel — not a real fee.
-      // Dynamic-fee pools determine the actual LP fee on-chain per-swap via a hooks
-      // contract. Until we track updateDynamicLPFee events, use the default fallback.
+      // 0x800000 is the Uniswap V4 DYNAMIC_FEE_FLAG — not a static fee.
+      // Actual LP fee is hook-owned and changes per-swap; the arb bot hydrates
+      // it at quote time (more appropriate than indexer static PoolMeta.fee).
       fee: Number(event.params.fee) === 0x800000 ? undefined : Number(event.params.fee),
       tickSpacing: Number(event.params.tickSpacing),
       poolId,

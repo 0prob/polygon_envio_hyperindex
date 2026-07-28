@@ -71,9 +71,9 @@ describe("curvePoolMetaNeedsEnrich", () => {
     expect(curvePoolMetaNeedsEnrich(undefined)).toBe(true);
   });
 
-  test("fee null/0 or thin tokens need enrich", () => {
+  test("fee null or thin tokens need enrich; fee 0 is valid on-chain zero", () => {
     expect(curvePoolMetaNeedsEnrich({ fee: null, tokens: ["0xa", "0xb"] })).toBe(true);
-    expect(curvePoolMetaNeedsEnrich({ fee: 0, tokens: ["0xa", "0xb"] })).toBe(true);
+    expect(curvePoolMetaNeedsEnrich({ fee: 0, tokens: ["0xa", "0xb"] })).toBe(false);
     expect(curvePoolMetaNeedsEnrich({ fee: 26, tokens: ["0xa"] })).toBe(true);
   });
 

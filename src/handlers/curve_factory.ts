@@ -117,12 +117,6 @@ async function handleCurvePoolAdded({
     return;
   }
 
-  // Do not persist fee=0 — crypto pools where fee() reverts must resolve via mid_fee
-  // first; writing 0 blocks bootstrap from repairing the row later.
-  if (fee <= 0n) {
-    return;
-  }
-
   const tokenExisting = new Map<string, { decimals?: number } | undefined>();
   const coinMetas = await resolveTokenMetasBatch(context, coins, tokenExisting);
 
@@ -130,7 +124,9 @@ async function handleCurvePoolAdded({
     return;
   }
 
-  const feeBps = curveFeeToPoolMetaInt(fee);
+  // Persist even when fee RPC fails — fee=undefined lets bootstrap enrich later.
+  // Dropping the row entirely left zero CURVE pools after historical fee RPC misses.
+  const feeBps = fee > 0n ? curveFeeToPoolMetaInt(fee) : undefined;
 
   context.PoolMeta.set(poolMetaEntity({
     id: pool,

@@ -21,4 +21,14 @@ describe("balancer incomplete repair gate", () => {
       }),
     ).toBe(false);
   });
+
+  test("unknown poolType is type-resolved (does not wedge on type alone)", () => {
+    expect(
+      isIncompletePoolMeta({
+        poolType: "unknown",
+        fee: 30,
+        tokens: ["0xa", "0xb"],
+      }),
+    ).toBe(false);
+  });
 });

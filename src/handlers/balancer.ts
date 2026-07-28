@@ -3,7 +3,7 @@ import { fetchBalancerMetadata } from "../effects/balancer_metadata";
 import { setTokenMetasIfMissing } from "../utils/entity_writes";
 import { poolMetaEntity } from "../utils/pool_meta_entity";
 import { resolveTokenMetasBatch } from "../utils/factory_token_meta";
-import { isIncompletePoolMeta } from "../utils/balancer_incomplete";
+import { isIncompletePoolMeta, BALANCER_POOL_TYPE_UNKNOWN } from "../utils/balancer_incomplete";
 import { POLYGON_CHAIN_ID } from "../utils/constants";
 
 // In-memory cache for same-block poolId→address bridging (entity writes are staged
@@ -23,13 +23,21 @@ const REPAIR_EVERY = Number(process.env.BALANCER_POOLTYPE_REPAIR_EVERY ?? "2000"
 const REPAIR_BATCH = Number(process.env.BALANCER_POOLTYPE_REPAIR_BATCH ?? "8");
 const REPAIR_START = Number(process.env.BALANCER_POOLTYPE_REPAIR_START ?? "65000000");
 
-function noteIncomplete(
+/** Track incomplete Balancer rows for the onBlock repair stride (also used by recon). */
+export function noteBalancerIncomplete(
   address: string,
   row: { poolType?: string | null; fee?: number | null; tokens?: readonly string[] | null },
 ) {
   const key = address.toLowerCase();
   if (isIncompletePoolMeta(row)) incompletePoolTypeAddrs.add(key);
   else incompletePoolTypeAddrs.delete(key);
+}
+
+function noteIncomplete(
+  address: string,
+  row: { poolType?: string | null; fee?: number | null; tokens?: readonly string[] | null },
+) {
+  noteBalancerIncomplete(address, row);
 }
 
 indexer.onEvent(
@@ -72,10 +80,13 @@ indexer.onEvent(
     // Legitimate Balancer swap fees are always ≥ 0.0001 bps (swapFee ≥ 10^12), so
     // only broken RPC returns or trivial pools hit the truncation path.
     const fee = meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
-    const poolType = meta.poolType;
     const createdBlock = existing?.createdBlock ?? blockNumber;
     const feeOut = fee > 0 ? fee : existing?.fee;
-    const poolTypeOut = poolType ?? existing?.poolType;
+    // Permanent type miss → "unknown" so repair/recon don't wedge; bot can live-RPC.
+    const poolTypeOut =
+      meta.poolType ??
+      existing?.poolType ??
+      (!meta.incompleteTransient ? BALANCER_POOL_TYPE_UNKNOWN : undefined);
 
     poolIdToAddrCache.set(poolId, { poolAddress: pool, blockNumber });
     context.BalancerPoolIdMapping.set({
@@ -100,7 +111,13 @@ indexer.onEvent(
       }),
     );
 
-    noteIncomplete(pool, { poolType: poolTypeOut, fee: feeOut, tokens: meta.tokens });
+    // Transient probe flakes must stay in the repair set even if prior fields look set.
+    noteIncomplete(
+      pool,
+      meta.incompleteTransient
+        ? { poolType: undefined, fee: feeOut, tokens: meta.tokens }
+        : { poolType: poolTypeOut, fee: feeOut, tokens: meta.tokens },
+    );
 
     await setTokenMetasIfMissing(
       context,
@@ -168,10 +185,12 @@ indexer.onEvent({ contract: "BalancerVault", event: "TokensRegistered" }, async 
       blockNumber: undefined,
     });
     if (meta.tokens.length >= 2) tokens = meta.tokens;
-    if (meta.poolType) poolType = meta.poolType;
-    if (meta.swapFee > 0n) {
-      const f = Number(meta.swapFee / 10n ** 14n);
-      if (f > 0) fee = f;
+    if (!meta.incompleteTransient) {
+      if (meta.poolType) poolType = meta.poolType;
+      if (meta.swapFee > 0n) {
+        const f = Number(meta.swapFee / 10n ** 14n);
+        if (f > 0) fee = f;
+      }
     }
   }
 
@@ -232,21 +251,16 @@ indexer.onBlock(
     }
 
     const blockNumber = Number(block.number);
-    // Schedule all effects first so preload batching can run, then write after gate.
-    const repairs: Array<{
+    // Schedule all entity reads + effects concurrently for preload batching.
+    // https://docs.envio.dev/docs/HyperIndex/preload-optimization
+    const existings = await Promise.all(batch.map((pool) => context.PoolMeta.get(pool)));
+    const toFetch: Array<{
       pool: string;
-      existing: NonNullable<Awaited<ReturnType<typeof context.PoolMeta.get>>>;
-      meta: {
-        tokens: string[];
-        poolType?: string | null;
-        swapFee: bigint;
-        poolId: string;
-        incompleteTransient?: boolean;
-      };
+      existing: NonNullable<(typeof existings)[number]>;
     }> = [];
-
-    for (const pool of batch) {
-      const existing = await context.PoolMeta.get(pool);
+    for (let i = 0; i < batch.length; i++) {
+      const pool = batch[i]!;
+      const existing = existings[i];
       if (!existing) {
         incompletePoolTypeAddrs.delete(pool);
         continue;
@@ -255,20 +269,25 @@ indexer.onBlock(
         incompletePoolTypeAddrs.delete(pool);
         continue;
       }
-
-      const meta = await context.effect(fetchBalancerMetadata, {
-        pool,
-        poolId: existing.poolId ?? undefined,
-        blockNumber: undefined,
-      });
-      repairs.push({ pool, existing, meta });
+      toFetch.push({ pool, existing });
     }
+
+    const metas = await Promise.all(
+      toFetch.map(({ pool, existing }) =>
+        context.effect(fetchBalancerMetadata, {
+          pool,
+          poolId: existing.poolId ?? undefined,
+          blockNumber: undefined,
+        }),
+      ),
+    );
 
     if (context.isPreload) return;
 
-    for (const { pool, existing, meta } of repairs) {
+    for (let i = 0; i < toFetch.length; i++) {
+      const { pool, existing } = toFetch[i]!;
+      const meta = metas[i]!;
       if (meta.tokens.length < 2 && !meta.poolType && meta.swapFee === 0n) {
-        // still broken — leave in set for a later stride
         if (!meta.incompleteTransient) incompletePoolTypeAddrs.delete(pool);
         continue;
       }
@@ -276,7 +295,10 @@ indexer.onBlock(
       const feeFromMeta =
         meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
       const fee = feeFromMeta > 0 ? feeFromMeta : existing.fee;
-      const poolType = meta.poolType ?? existing.poolType;
+      const poolType =
+        meta.poolType ??
+        existing.poolType ??
+        (!meta.incompleteTransient ? BALANCER_POOL_TYPE_UNKNOWN : undefined);
       const tokens = meta.tokens.length >= 2 ? meta.tokens : existing.tokens;
 
       context.PoolMeta.set(
@@ -295,7 +317,6 @@ indexer.onBlock(
         }),
       );
 
-      // Keep queued while any required field is still missing or the probe was transient.
       if (meta.incompleteTransient || isIncompletePoolMeta({ poolType, fee, tokens })) {
         incompletePoolTypeAddrs.add(pool);
       } else {

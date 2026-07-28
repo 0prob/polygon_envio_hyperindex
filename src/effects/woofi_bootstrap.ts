@@ -27,7 +27,7 @@ const inFlightWooFi = new Map<string, Promise<{ quoteToken: string; activeTokens
  *   3. Returning the subset that has reserve > 0, along with the on-chain fee rate.
  *
  * WOOFi V2 exposes no factory event and no token enumeration function, so this is the
- * only way to get the full active token set without waiting for WooSwap events.
+ * only discovery path (no WooSwap HyperIndex subscription).
  * Uses single multicall for all reads.
  */
 export async function fetchWooFiTokensHandler({
@@ -67,9 +67,15 @@ export async function fetchWooFiTokensHandler({
 
       const activeTokens: string[] = [quoteToken];
       const feeRates: number[] = [];
+      let anyTokenInfoFailed = false;
       for (let i = 0; i < tokenList.length; i++) {
         const r = results[1 + i]!;
-        if (r.status !== "success") continue;
+        if (r.status !== "success") {
+          // tokenInfos returns (0,0) for unsupported tokens — a failed call is
+          // transient RPC, not "token absent". Retry the whole bootstrap.
+          anyTokenInfoFailed = true;
+          continue;
+        }
         const rVal = r.result as unknown as { reserve: bigint; feeRate: number } | [bigint, number];
         const reserve = Array.isArray(rVal) ? rVal[0] : rVal.reserve;
         const feeRate = Array.isArray(rVal) ? rVal[1] : rVal.feeRate;
@@ -80,7 +86,7 @@ export async function fetchWooFiTokensHandler({
         }
       }
 
-      if (activeTokens.length < 2) {
+      if (anyTokenInfoFailed || activeTokens.length < 2) {
         context.cache = false;
         return EMPTY;
       }
@@ -88,6 +94,8 @@ export async function fetchWooFiTokensHandler({
       const poolFeeBps = feeRates.length > 0
         ? woofiFeeRateToBps(feeRates.reduce((a, b) => a + b, 0) / feeRates.length)
         : 0;
+
+      if (poolFeeBps <= 0) context.cache = false;
 
       return { quoteToken, activeTokens, feeBps: poolFeeBps };
     } catch (err) {

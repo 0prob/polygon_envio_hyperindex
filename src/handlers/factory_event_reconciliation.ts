@@ -4,12 +4,14 @@ import { fetchFactoryEventPage } from "../effects/factory_event_reconciliation";
 import { fetchAlgebraPoolMeta } from "../effects/algebra_pool_metadata";
 import { fetchBalancerMetadata } from "../effects/balancer_metadata";
 import { handleDodoPool } from "./dodo_factory";
+import { noteBalancerIncomplete } from "./balancer";
+import { noteAlgebraIncomplete, clearAlgebraIncomplete } from "./algebra_factory";
+import { BALANCER_POOL_TYPE_UNKNOWN } from "../utils/balancer_incomplete";
 import {
   ALGEBRA_FACTORY_PROTOCOLS,
   DEPLOY_START,
   POLYGON_CHAIN_ID,
   V2_FACTORY_PROTOCOLS,
-  WOOFI_PP_V2,
   ZERO_ADDRESS,
   contractStartBlock,
   lookupV3FactoryProtocol,
@@ -32,9 +34,7 @@ const DODO_ABI = parseAbi([
   "event NewDPP(address baseToken, address quoteToken, address creator, address dpp)",
   "event NewDSP(address baseToken, address quoteToken, address creator, address dsp)",
 ]);
-const WOOFI_ABI = parseAbi(["event WooSwap(address indexed fromToken, address indexed toToken, uint256 fromAmount, uint256 toAmount, address from, address indexed to, address rebateTo, uint256 swapVol, uint256 swapFee)"]);
-
-type SourceKind = "v2" | "v3" | "algebra" | "v4" | "balancer" | "dvm" | "dpp" | "dsp" | "woofi";
+type SourceKind = "v2" | "v3" | "algebra" | "v4" | "balancer" | "dvm" | "dpp" | "dsp";
 type Source = { id: string; address: string; start: number; topic: Hex; kind: SourceKind };
 
 /** Starts match config.yaml `${ENVIO_POLYGON_START_BLOCK:-N}` via contractStartBlock(). */
@@ -109,15 +109,8 @@ const SOURCES: Source[] = [
     topic: toEventSelector("NewDSP(address,address,address,address)"),
     kind: "dsp",
   },
-  {
-    id: "woofi",
-    address: WOOFI_PP_V2,
-    start: contractStartBlock(DEPLOY_START.WOOFI_PP_V2),
-    topic: toEventSelector("WooSwap(address,address,uint256,uint256,address,address,address,uint256,uint256)"),
-    kind: "woofi",
-  },
 ];
-const EVERY = Number(process.env.FACTORY_EVENT_RECONCILIATION_EVERY ?? "500");
+const EVERY = Number(process.env.FACTORY_EVENT_RECONCILIATION_EVERY ?? "10000");
 /**
  * HyperSync page effects are rate-limited (1–N/sec). Firing every EVERY blocks from
  * genesis queues thousands of fetches and freezes the first processing batch
@@ -170,13 +163,17 @@ async function reconcileBalancer(context: ReconcileContext, args: Record<string,
   const existing = await context.PoolMeta.get(pool);
   if (existing?.poolType && existing.fee != null && (existing.tokens?.length ?? 0) >= 2) return true;
   const meta = await context.effect(fetchBalancerMetadata, { pool, poolId, blockNumber: existing ? undefined : BigInt(blockNumber) });
-  if (meta.tokens.length < 2) return false;
+  // Identity unknown yet and probe empty — hold cursor only on transient; permanent empty advances.
+  if (meta.tokens.length < 2) return !meta.incompleteTransient;
   const tokenExisting = new Map<string, { decimals?: number } | undefined>();
   const tokenMetas = await resolveTokenMetasBatch(context, meta.tokens, tokenExisting);
   const fee = meta.swapFee > 0n ? Number(meta.swapFee / 10n ** 14n) : 0;
   const feeOut = fee > 0 ? fee : existing?.fee;
-  const poolType = meta.poolType ?? existing?.poolType;
-  if (context.isPreload) return false;
+  const poolType =
+    meta.poolType ??
+    existing?.poolType ??
+    (!meta.incompleteTransient ? BALANCER_POOL_TYPE_UNKNOWN : undefined);
+  if (context.isPreload) return true; // keep scheduling effects for later logs in this page
   context.BalancerPoolIdMapping.set({ id: poolId, poolAddress: pool, updatedAtBlock: blockNumber });
   context.PoolMeta.set(poolMetaEntity({
     id: pool,
@@ -192,7 +189,14 @@ async function reconcileBalancer(context: ReconcileContext, args: Record<string,
     poolType,
   }) as PoolMetaWritePayload);
   await setTokenMetasIfMissing(context, meta.tokens, tokenMetas.map((m) => m.decimals), tokenMetas.map((m) => m.trusted), tokenExisting);
-  return poolType != null && feeOut != null;
+  // Identity known → advance recon. Incomplete fee/type stays on the Balancer repair stride.
+  noteBalancerIncomplete(
+    pool,
+    meta.incompleteTransient
+      ? { poolType: undefined, fee: feeOut, tokens: meta.tokens }
+      : { poolType, fee: feeOut, tokens: meta.tokens },
+  );
+  return true;
 }
 
 async function reconcileLog(context: ReconcileContext, source: Source, log: { data: string; topics: string[]; blockNumber: number }): Promise<boolean> {
@@ -201,8 +205,7 @@ async function reconcileLog(context: ReconcileContext, source: Source, log: { da
       : source.kind === "algebra" ? decode(ALGEBRA_ABI, log)
         : source.kind === "v4" ? decode(V4_ABI, log)
           : source.kind === "balancer" ? decode(BALANCER_ABI, log)
-            : source.kind === "woofi" ? decode(WOOFI_ABI, log)
-              : decode(DODO_ABI, log);
+            : decode(DODO_ABI, log);
   if (source.kind === "v2") {
     const token0 = String(args.token0).toLowerCase();
     const token1 = String(args.token1).toLowerCase();
@@ -243,38 +246,61 @@ async function reconcileLog(context: ReconcileContext, source: Source, log: { da
     const pool = String(args.pool).toLowerCase();
     const existing = await context.PoolMeta.get(pool);
     if (existing?.fee != null && existing.tickSpacing != null) return true;
-    const meta = await context.effect(fetchAlgebraPoolMeta, { pool, blockNumber: BigInt(log.blockNumber) });
-    if (meta.fee === 0n) return false;
     const protocol = ALGEBRA_FACTORY_PROTOCOLS[source.address] as Protocol | undefined;
     if (!protocol) return true;
-    const fee = Number(meta.fee);
-    const tickSpacing = meta.tickSpacing != null ? meta.tickSpacing : undefined;
-    // persistFactoryPoolMeta is first-write-wins — repair incomplete rows in place
-    // (same path as algebra_factory.ts primary handler).
+
+    // Recon is archival-heavy — schedule hist + head concurrently for preload batching.
+    const [hist, head] = await Promise.all([
+      context.effect(fetchAlgebraPoolMeta, { pool, blockNumber: BigInt(log.blockNumber) }),
+      context.effect(fetchAlgebraPoolMeta, { pool }),
+    ]);
+    const meta =
+      hist.fee > 0n && hist.tickSpacing != null
+        ? hist
+        : head.fee > 0n && head.tickSpacing != null
+          ? head
+          : hist;
+
+    const fee = meta.fee > 0n ? Number(meta.fee) : undefined;
+    const tickSpacing = meta.tickSpacing ?? undefined;
+
+    if (context.isPreload) return true; // keep scheduling effects for later logs in this page
+
     if (existing) {
-      if (context.isPreload) return false;
       context.PoolMeta.set(poolMetaEntity({
         id: pool,
         address: existing.address ?? pool,
         protocol: existing.protocol ?? protocol,
         tokens: existing.tokens?.length ? [...existing.tokens] : [token0, token1],
-        fee,
-        tickSpacing,
+        fee: fee ?? existing.fee ?? undefined,
+        tickSpacing: tickSpacing ?? existing.tickSpacing ?? undefined,
         createdBlock: existing.createdBlock ?? log.blockNumber,
         updatedAtBlock: log.blockNumber,
         poolId: existing.poolId ?? undefined,
       }) as PoolMetaWritePayload);
-      return true;
+    } else {
+      await persistFactoryPoolMeta(context, {
+        poolAddr: pool,
+        protocol,
+        token0,
+        token1,
+        blockNumber: log.blockNumber,
+        fee,
+        tickSpacing,
+      });
     }
-    await persistFactoryPoolMeta(context, {
-      poolAddr: pool,
-      protocol,
-      token0,
-      token1,
-      blockNumber: log.blockNumber,
-      fee,
-      tickSpacing,
-    });
+
+    // Identity always known from the event — advance recon. Fee/tick repaired onBlock.
+    if (fee == null || tickSpacing == null) {
+      noteAlgebraIncomplete(pool, {
+        token0,
+        token1,
+        protocol,
+        createdBlock: existing?.createdBlock ?? log.blockNumber,
+      });
+    } else {
+      clearAlgebraIncomplete(pool);
+    }
     return true;
   }
   if (source.kind === "v4") {
@@ -288,7 +314,7 @@ async function reconcileLog(context: ReconcileContext, source: Source, log: { da
       token0,
       token1,
       blockNumber: log.blockNumber,
-      fee: Number(args.fee) === 0x800000 ? undefined : Number(args.fee),
+      fee: Number(args.fee) === 0x800000 ? undefined : Number(args.fee), // dynamic fee → bot hydrates
       tickSpacing: Number(args.tickSpacing),
       poolId,
       hooks: String(args.hooks).toLowerCase(),
@@ -296,32 +322,6 @@ async function reconcileLog(context: ReconcileContext, source: Source, log: { da
     return true;
   }
   if (source.kind === "balancer") return reconcileBalancer(context, args, log.blockNumber);
-  if (source.kind === "woofi") {
-    const existing = await context.PoolMeta.get(source.address);
-    const tokens = [...new Set([
-      ...(existing?.tokens ?? []),
-      String(args.fromToken).toLowerCase(),
-      String(args.toToken).toLowerCase(),
-    ].filter((token) => token !== ZERO_ADDRESS))];
-    if (tokens.length < 2) return true;
-    const newTokens = tokens.filter((token) => !existing?.tokens?.includes(token));
-    const tokenExisting = new Map<string, { decimals?: number } | undefined>();
-    const tokenMetas = await resolveTokenMetasBatch(context, newTokens, tokenExisting);
-    if (context.isPreload) return true;
-    context.PoolMeta.set(poolMetaEntity({
-      id: source.address,
-      address: source.address,
-      protocol: "WOOFI",
-      tokens,
-      fee: existing?.fee ?? undefined,
-      tickSpacing: undefined,
-      createdBlock: existing?.createdBlock ?? log.blockNumber,
-      updatedAtBlock: log.blockNumber,
-      poolId: undefined,
-    }) as PoolMetaWritePayload);
-    await setTokenMetasIfMissing(context, newTokens, tokenMetas.map((m) => m.decimals), tokenMetas.map((m) => m.trusted), tokenExisting);
-    return true;
-  }
   const base = String(args.baseToken).toLowerCase();
   const quote = String(args.quoteToken).toLowerCase();
   if (shouldSkipFactoryPool(base, quote, source.address)) return true;

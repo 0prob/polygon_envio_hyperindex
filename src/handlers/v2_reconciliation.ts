@@ -7,7 +7,7 @@ import type { IndexerProtocol as Protocol } from "../utils/indexer_protocol";
 
 const FACTORIES = Object.entries(V2_FACTORY_PROTOCOLS);
 const PAGE_SIZE = 40;
-const EVERY = Number(process.env.V2_RECONCILIATION_EVERY ?? "500");
+const EVERY = Number(process.env.V2_RECONCILIATION_EVERY ?? "10000");
 /**
  * allPairs RPC pagination during historical backfill stalls the pipeline and
  * reads tip-state lengths at historical blocks. Defer until near tip.

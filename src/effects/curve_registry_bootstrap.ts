@@ -49,14 +49,15 @@ export async function fetchCurveFactoryPageHandler({
       }),
     );
   } catch (err) {
+    // Transient RPC must NOT look like an empty factory (handler would mark completed).
     const { isPermanent } = classifyRpcError(err);
     context.cache = isPermanent;
-    return { total: 0, pools: [] };
+    return { ok: false, total: 0, pools: [] };
   }
 
   const end = Math.min(total, offset + limit);
   const count = end - offset;
-  if (count <= 0) return { total, pools: [] };
+  if (count <= 0) return { ok: true, total, pools: [] };
 
   try {
     const results = await publicClient.multicall({
@@ -78,11 +79,11 @@ export async function fetchCurveFactoryPageHandler({
       }
     }
 
-    return { total, pools };
+    return { ok: true, total, pools };
   } catch (err) {
     const { isPermanent } = classifyRpcError(err);
     context.cache = isPermanent;
-    return { total, pools: [] };
+    return { ok: false, total: 0, pools: [] };
   }
 }
 
@@ -99,6 +100,8 @@ export const fetchCurveFactoryPage = createEffect(
       blockNumber: S.optional(S.bigint),
     },
     output: {
+      /** false = RPC miss; caller must retry (do not treat total=0 as empty factory). */
+      ok: S.boolean,
       total: S.number,
       pools: S.array(
         S.schema({
