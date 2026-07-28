@@ -27,6 +27,16 @@ declare namespace NodeJS {
     BALANCER_POOLTYPE_REPAIR_BATCH?: string;
     BALANCER_POOLTYPE_REPAIR_START?: string;
 
+    // Algebra repair onBlock (algebra_factory.ts)
+    ALGEBRA_META_REPAIR_EVERY?: string;
+    ALGEBRA_META_REPAIR_BATCH?: string;
+    ALGEBRA_META_REPAIR_START?: string;
+
+    // DODO fee repair onBlock (dodo_factory.ts)
+    DODO_FEE_REPAIR_EVERY?: string;
+    DODO_FEE_REPAIR_BATCH?: string;
+    DODO_FEE_REPAIR_START?: string;
+
     // Paths
     TOKEN_REGISTRY_DB?: string;
     POOLS_JSON?: string;
@@ -53,9 +63,13 @@ declare namespace NodeJS {
     CURVE_BOOTSTRAP_EVERY?: string;
     CURVE_BOOTSTRAP_GROWTH_EVERY?: string;
     CURVE_BOOTSTRAP_POOLS_PER_FIRE?: string;
+
+    // HyperSync factory-event recon (factory_event_reconciliation.ts)
     FACTORY_EVENT_RECONCILIATION_FROM_BLOCK?: string;
     FACTORY_EVENT_RECONCILIATION_EVERY?: string;
     FACTORY_EVENT_RECONCILIATION_PAGES?: string;
+
+    // V2 allPairs recon — opt-in via FROM_BLOCK (v2_reconciliation.ts)
     V2_RECONCILIATION_FROM_BLOCK?: string;
     V2_RECONCILIATION_EVERY?: string;
 
@@ -69,11 +83,21 @@ interface ImportMeta {
   dir: string | undefined;
 }
 
+/** Minimal Bun globals used by scripts (avoid full @types/bun). */
+declare const Bun: {
+  file(path: string): { text(): Promise<string> };
+};
+
 // Bun built-in sqlite module (loaded via dynamic import for Bun-only path).
 declare module "bun:sqlite" {
   export class Database {
     constructor(path: string, options?: { readonly?: boolean });
-    prepare(sql: string): { all<T = Record<string, unknown>>(): T[] };
+    prepare(sql: string): {
+      all<T = Record<string, unknown>>(...params: unknown[]): T[];
+      run(...params: unknown[]): unknown;
+    };
+    run(sql: string, ...params: unknown[]): unknown;
+    transaction<T extends (...args: never[]) => unknown>(fn: T): T;
     close(): void;
   }
 }

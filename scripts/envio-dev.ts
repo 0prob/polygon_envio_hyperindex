@@ -8,9 +8,13 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
 
-const ROOT = path.resolve(import.meta.dir, "..");
+const ROOT = path.resolve(
+  import.meta.dir ?? path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 const SELF_PID = process.pid;
 const ENVIO_BIN = path.resolve(ROOT, "node_modules/.bin/envio");
 const ENVIO_BIN_MJS = path.resolve(ROOT, "node_modules/envio/bin.mjs");
@@ -25,6 +29,10 @@ const env: Record<string, string | undefined> = { ...process.env };
 if (env.POLYGON_START_BLOCK && !env.ENVIO_POLYGON_START_BLOCK) env.ENVIO_POLYGON_START_BLOCK = env.POLYGON_START_BLOCK;
 if (env.POLYGON_RPC_URLS && !env.ENVIO_POLYGON_RPC_URLS) env.ENVIO_POLYGON_RPC_URLS = env.POLYGON_RPC_URLS;
 if (env.POLYGON_RPC_URL && !env.ENVIO_POLYGON_RPC_URL) env.ENVIO_POLYGON_RPC_URL = env.POLYGON_RPC_URL;
+// Bare POLYGON_RPC (singular) — same alias rpc_client.ts accepts.
+if (env.POLYGON_RPC && !env.ENVIO_POLYGON_RPC_URL && !env.ENVIO_POLYGON_RPC_URLS) {
+  env.ENVIO_POLYGON_RPC_URL = env.POLYGON_RPC;
+}
 // Completely disable Hasura GraphQL tracking / console (bot uses Postgres + LISTEN/NOTIFY).
 env.ENVIO_HASURA = "false";
 

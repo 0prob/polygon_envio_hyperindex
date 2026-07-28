@@ -10,6 +10,7 @@
     "dev": "bun scripts/envio-dev.ts",
     "run": "bun scripts/envio-dev.ts run",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "validate-config": "python3 scripts/validate_envio_config.py",
     "validate-data": "python3 scripts/validate_data.py",
     "validate-manifest": "python3 scripts/validate_polygon_manifest.py",

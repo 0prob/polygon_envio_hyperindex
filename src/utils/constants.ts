@@ -99,9 +99,9 @@ export const chainStart = (() => {
 })();
 
 /**
- * Deploy-block defaults matching config.yaml `${ENVIO_POLYGON_START_BLOCK:-N}` fallbacks.
- * When ENVIO_POLYGON_START_BLOCK / POLYGON_START_BLOCK is set, that override wins
- * (same interpolation semantics as Envio config).
+ * Deploy-block defaults matching config.yaml `${ENVIO_POLYGON_START_BLOCK:-N}` fallbacks
+ * when the env var is unset. If ENVIO_POLYGON_START_BLOCK / POLYGON_START_BLOCK is set,
+ * Envio (and this helper) apply that single value everywhere — not a per-contract override.
  */
 export const DEPLOY_START = {
   V2_FACTORY: 4_931_780,
@@ -114,7 +114,10 @@ export const DEPLOY_START = {
   CURVE_FACTORY: CURVE_FACTORY_DEPLOY_BLOCK,
 } as const;
 
-/** Effective start block for a contract — aligns handlers/reconciliation with config.yaml. */
+/**
+ * Effective start for handlers/reconciliation — mirrors config.yaml:
+ * env set → global rewind; unset → per-contract deployDefault.
+ */
 export function contractStartBlock(deployDefault: number): number {
   return chainStart > 0 ? chainStart : deployDefault;
 }

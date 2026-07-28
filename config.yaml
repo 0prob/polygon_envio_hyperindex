@@ -22,9 +22,10 @@ raw_events: false
 #   → Effect-heavy onBlock bootstrap/recon is deferred near tip (~90M) so
 #     historical HyperSync backfill is not stalled by RPC/Effect queues
 #
-# Historical backfill processes factory events from each contract's deploy block
-# (override with ENVIO_POLYGON_START_BLOCK). Guards (shouldSkipFactoryPool) +
-# onBlock `where` strides reject garbage early.
+# Historical backfill processes factory events from each contract's deploy block.
+# Set ENVIO_POLYGON_START_BLOCK only for live-tail / full rewind (overrides ALL
+# contract start floors to that single value — see chains[].start_block note).
+# Guards (shouldSkipFactoryPool) + onBlock `where` strides reject garbage early.
 
 # Polygon batch sizing. This is one of the most important knobs for backfill throughput.
 full_batch_size: ${ENVIO_FULL_BATCH_SIZE:-6000}
@@ -61,8 +62,8 @@ contracts:
     events:
       - event: Pool
 
-  # Curve factories — event-based discovery + 250-block bootstrap stride
-  # (pool_count/pool_list per factory; re-opens when pool_count grows after completed).
+  # Curve factories — event-based discovery + onBlock bootstrap
+  # (default every 100 blocks, one factory/fire; growth re-probe every 100000 when completed).
   # MetaRegistry is deprecated/broken on Polygon — see curvefi/metaregistry repo.
   - name: CurveTwocryptoFactory
     abi_file_path: abis/curve_twocrypto_factory.json
@@ -111,7 +112,10 @@ chains:
   - id: 137
     # Chain start_block must be <= every contract start_block (Envio rejects contract < chain).
     # Default = earliest indexed deployment (QuickSwap V2 factory, block 4931780).
-    # Override ENVIO_POLYGON_START_BLOCK in .env for live-tail / partial re-sync.
+    #
+    # FOOTGUN: if ENVIO_POLYGON_START_BLOCK is SET, Envio substitutes that SAME value into
+    # every `${ENVIO_POLYGON_START_BLOCK:-N}` below (chain + all contracts). That is
+    # intentional for live-tail / full rewind. Leave it UNSET for per-contract deploy floors.
     start_block: ${ENVIO_POLYGON_START_BLOCK:-4931780}
     # Max reorg depth for Polygon (Envio docs recommend 150; Ethereum 250).
     # HyperIndex rolls back all entity state automatically when a reorg is detected.

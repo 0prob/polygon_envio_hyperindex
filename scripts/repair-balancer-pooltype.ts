@@ -10,6 +10,7 @@
 import { createPublicClient, http, parseAbi } from "viem";
 import { polygon } from "viem/chains";
 import { spawnSync } from "node:child_process";
+import { getRpcUrls } from "../src/effects/rpc_client";
 
 const CONTAINER = process.env.ENVIO_POSTGRES_CONTAINER ?? "envio-postgres";
 const DB = process.env.ENVIO_POSTGRES_DB ?? "envio-dev";
@@ -21,11 +22,7 @@ const dryRun = process.argv.includes("--dry-run");
 /** Default: also repair rows that have poolType but null fee. */
 const includeNullFee = !process.argv.includes("--pooltype-only");
 
-const rpc =
-  process.env.ENVIO_POLYGON_RPC_URLS?.split(",")[0]?.trim() ||
-  process.env.POLYGON_RPC_URLS?.split(",")[0]?.trim() ||
-  process.env.ENVIO_POLYGON_RPC_URL ||
-  process.env.POLYGON_RPC_URL;
+const rpc = getRpcUrls()[0];
 if (!rpc) {
   console.error("No Polygon RPC URL in env");
   process.exit(1);

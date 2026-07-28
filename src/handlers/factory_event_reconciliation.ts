@@ -40,7 +40,7 @@ const DODO_ABI = parseAbi([
 type SourceKind = "v2" | "v3" | "algebra" | "v4" | "balancer" | "dvm" | "dpp" | "dsp";
 type Source = { id: string; address: string; start: number; topic: Hex; kind: SourceKind };
 
-/** Starts match config.yaml `${ENVIO_POLYGON_START_BLOCK:-N}` via contractStartBlock(). */
+/** Starts match config.yaml deploy floors via contractStartBlock() (global env rewind applies). */
 const SOURCES: Source[] = [
   ...Object.keys(V2_FACTORY_PROTOCOLS).map((address) => ({
     id: `v2-${address}`,

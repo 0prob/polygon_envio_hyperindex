@@ -8,9 +8,16 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "lib": ["es2022"],
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "envio-env.d.ts", "env.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "vitest.config.ts",
+    "envio-env.d.ts",
+    "env.d.ts"
+  ],
   "exclude": []
 }

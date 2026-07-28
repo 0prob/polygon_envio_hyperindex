@@ -27,19 +27,28 @@ See `.env.example` for the full set. Keys the code / Envio config actually read:
 | `ENVIO_POLYGON_RPC_URL` / `POLYGON_RPC_URLS` / `POLYGON_RPC_URL` / `POLYGON_RPC` | No | Aliases; first non-empty key in that order wins (`rpc_client.ts`). `bun run dev` also bridges `POLYGON_*` → `ENVIO_POLYGON_*` |
 | `ENVIO_POLYGON_HYPERSYNC_URL` | No | HyperSync URL (default `https://polygon.hypersync.xyz`) |
 | `ENVIO_FULL_BATCH_SIZE` | No | Blocks per HyperSync request (default `6000` via `config.yaml`) |
-| `ENVIO_POLYGON_START_BLOCK` / `POLYGON_START_BLOCK` | No | Override contract/chain start blocks |
+| `ENVIO_POLYGON_START_BLOCK` / `POLYGON_START_BLOCK` | No | **Global** rewind: when set, overrides chain AND every contract start floor to this one value (leave unset for per-contract defaults) |
 | `INDEXER_PROGRESS_REALTIME_START` | No | Historical→realtime progress stride switch (default `65000000`) |
 | `INDEXER_PROGRESS_HISTORICAL_EVERY` | No | Historical progress every N blocks (default `4000`) |
 | `INDEXER_PROGRESS_REALTIME_EVERY` | No | Realtime progress every N blocks (default `500`) |
 | `BALANCER_POOLTYPE_REPAIR_EVERY` | No | Balancer incomplete-row repair stride (default `2000`) |
 | `BALANCER_POOLTYPE_REPAIR_BATCH` | No | Pools repaired per stride (default `8`) |
 | `BALANCER_POOLTYPE_REPAIR_START` | No | First block for Balancer repair onBlock (default `65000000`) |
+| `ALGEBRA_META_REPAIR_EVERY` | No | Algebra fee/tick repair stride (default `5000`) |
+| `ALGEBRA_META_REPAIR_BATCH` | No | Algebra pools repaired per stride (default `8`) |
+| `ALGEBRA_META_REPAIR_START` | No | First block for Algebra repair onBlock (default `65000000`) |
+| `DODO_FEE_REPAIR_EVERY` | No | DODO fee repair stride (default `5000`) |
+| `DODO_FEE_REPAIR_BATCH` | No | DODO pools repaired per stride (default `8`) |
+| `DODO_FEE_REPAIR_START` | No | First block for DODO repair onBlock (default `65000000`) |
 | `CURVE_BOOTSTRAP_FROM_BLOCK` | No | First block for Curve factory `pool_list` bootstrap (default `90000000`; mid-backfill + bad RPC freezes `progress_block`) |
+| `CURVE_BOOTSTRAP_EVERY` | No | Blocks between Curve bootstrap fires (default `100`; one factory per fire) |
+| `CURVE_BOOTSTRAP_GROWTH_EVERY` | No | Re-probe completed factories for growth (default `100000`) |
+| `CURVE_BOOTSTRAP_POOLS_PER_FIRE` | No | Max Curve metadata RPCs per fire (default `8`) |
 | `FACTORY_EVENT_RECONCILIATION_FROM_BLOCK` | No | First block for HyperSync factory-event reconciliation (default `90000000`; earlier fires flood Effect queue and stall start) |
-| `FACTORY_EVENT_RECONCILIATION_EVERY` | No | Blocks between one HyperSync event-source reconciliation page (default `500`) |
+| `FACTORY_EVENT_RECONCILIATION_EVERY` | No | Blocks between one HyperSync event-source reconciliation page (default `10000`) |
 | `FACTORY_EVENT_RECONCILIATION_PAGES` | No | HyperSync pages drained per reconciliation fire (default `5`) |
-| `V2_RECONCILIATION_FROM_BLOCK` | No | First block for V2 `allPairs` reconciliation (default `90000000`) |
-| `V2_RECONCILIATION_EVERY` | No | Blocks between bounded V2 factory enumeration pages (default `500`) |
+| `V2_RECONCILIATION_FROM_BLOCK` | No | **Opt-in** — set to enable V2 `allPairs` recon (disabled by default; HyperSync PairCreated recon covers V2) |
+| `V2_RECONCILIATION_EVERY` | No | Blocks between bounded V2 factory enumeration pages when enabled (default `10000`) |
 | `ENVIO_NODE_MAX_OLD_SPACE_MB` | No | V8 heap for `envio-dev` (default `8192`) |
 | `ENVIO_KILL_GRACE_MS` | No | Grace before SIGKILL of prior indexer processes (default `2000`) |
 | `ENVIO_LOG_LEVEL` | No | Envio log level |
